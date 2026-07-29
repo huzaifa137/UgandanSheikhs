@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Search — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="search-field" style="max-width:640px;margin-bottom:20px;">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input id="page-search" type="text" placeholder="Search artists, albums, tracks and playlists" autocomplete="off" />
+        </div>
+
+        <div class="chip-row" id="filter-chips" style="margin-bottom:24px;"></div>
+
+        <div id="empty-search">
+          <div class="section-header" style="margin-top:0;"><h2>Recent Searches</h2><button class="see-all" onclick="document.getElementById('recent-list').innerHTML='';toast('Search history cleared')">Clear history</button></div>
+          <div class="chip-row" id="recent-list"></div>
+
+          <div class="section-header"><h2>Trending Searches</h2></div>
+          <div class="chip-row" id="trending-searches"></div>
+
+          <div class="section-header"><h2>Browse Genres</h2></div>
+          <div class="grid grid-6" id="genre-grid"></div>
+        </div>
+
+        <div id="results" style="display:none;">
+          <div id="top-result"></div>
+          <div class="section-header"><h2>Songs</h2></div>
+          <table class="track-table"><tbody id="result-songs"></tbody></table>
+          <div class="section-header"><h2>Artists</h2></div>
+          <div class="grid grid-6" id="result-artists"></div>
+          <div class="section-header"><h2>Albums</h2></div>
+          <div class="grid grid-6" id="result-albums"></div>
+          <div class="section-header"><h2>Playlists</h2></div>
+          <div class="grid grid-5" id="result-playlists"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("search");
+
+    const filterChips = document.getElementById("filter-chips");
+    filterChips.innerHTML = ["All","Songs","Artists","Albums","Playlists"].map((f,i)=>`<button class="chip ${i===0?"active":""}">${f}</button>`).join("");
+    wireChips(filterChips);
+
+    document.getElementById("recent-list").innerHTML = ["Amara Ndlovu","Golden Hymn","Afro Discovery","Kofi Asante"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.clock}${q}</button>`).join("");
+    document.getElementById("trending-searches").innerHTML = ["Afrobeats 2026","Nnamdi Eze","Sunday Acoustic","Static Bloom","gospel playlists"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.trendingUp}${q}</button>`).join("");
+    document.getElementById("genre-grid").innerHTML = GENRES.map(g => `<a class="genre-tile" href="discover.html?genre=${g.slug}" style="background:${g.color};"><span style="color:#fff;">${g.name}</span></a>`).join("");
+
+    function runSearch(q) {
+      document.getElementById("page-search").value = q;
+      const query = q.toLowerCase();
+      const artists = ARTISTS.filter(a => a.name.toLowerCase().includes(query) || a.genre.toLowerCase().includes(query));
+      const tracks = TRACKS.filter(t => t.title.toLowerCase().includes(query));
+      const albums = ALBUMS.filter(a => a.title.toLowerCase().includes(query));
+      const playlists = PLAYLISTS.filter(p => p.name.toLowerCase().includes(query));
+
+      if (!artists.length && !tracks.length && !albums.length && !playlists.length) {
+        document.getElementById("empty-search").style.display = "none";
+        document.getElementById("results").style.display = "block";
+        document.getElementById("top-result").innerHTML = `<div class="empty-state">${ICONS.search}<h3>No results for "${q}"</h3><p>Try checking your spelling or searching for something more general.</p></div>`;
+        ["result-songs","result-artists","result-albums","result-playlists"].forEach(id=>document.getElementById(id).innerHTML="");
+        return;
+      }
+
+      document.getElementById("empty-search").style.display = "none";
+      document.getElementById("results").style.display = "block";
+
+      const top = artists[0] || albums[0] || tracks[0];
+      document.getElementById("top-result").innerHTML = top ? `
+        <div class="section-header" style="margin-top:0;"><h2>Top Result</h2></div>
+        <a class="card" href="${artists[0] ? 'artist.html?id='+artists[0].id : albums[0] ? 'album.html?id='+albums[0].id : 'track.html?id='+tracks[0].id}" style="display:flex;gap:18px;align-items:center;padding:20px;max-width:420px;">
+          <img src="${artists[0]?.img || albums[0]?.art || tracks[0]?.art}" style="width:88px;height:88px;border-radius:${artists[0]?'50%':'10px'};object-fit:cover;" />
+          <div><div class="card-title" style="font-size:19px;">${artists[0]?.name || albums[0]?.title || tracks[0]?.title}</div><div class="card-sub">${artists[0]?'Artist':albums[0]?'Album':'Song'}</div></div>
+        </a>` : "";
+
+      document.getElementById("result-songs").innerHTML = tracks.slice(0,6).map((t,i)=>trackRowHTML(t,i,{album:true})).join("");
+      document.getElementById("result-artists").innerHTML = artists.slice(0,6).map(a=>cardHTML(a,"artist")).join("");
+      document.getElementById("result-albums").innerHTML = albums.slice(0,6).map(a=>cardHTML(a,"album")).join("");
+      document.getElementById("result-playlists").innerHTML = playlists.length ? playlists.slice(0,5).map(p=>cardHTML(p,"playlist")).join("") : PLAYLISTS.slice(0,5).map(p=>cardHTML(p,"playlist")).join("");
+    }
+
+    document.getElementById("page-search").addEventListener("input", (e) => {
+      if (e.target.value.trim()) runSearch(e.target.value.trim());
+      else { document.getElementById("empty-search").style.display="block"; document.getElementById("results").style.display="none"; }
+    });
+  </script>
+</body>
+</html>

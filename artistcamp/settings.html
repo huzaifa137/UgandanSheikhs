@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+<style>
+  .settings-layout{display:grid;grid-template-columns:220px 1fr;gap:40px;align-items:start;}
+  .settings-nav a{display:block;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--text-secondary);}
+  .settings-nav a:hover{background:var(--surface-1);color:var(--text-primary);}
+  .settings-nav a.active{background:var(--accent-soft);color:var(--accent);}
+  .settings-section{display:none;max-width:620px;}
+  .settings-section.active{display:block;}
+  .settings-section h2{font-size:20px;margin-bottom:6px;}
+  .settings-section>p.desc{color:var(--text-secondary);font-size:13.5px;margin-bottom:24px;}
+  @media (max-width:860px){.settings-layout{grid-template-columns:1fr;} .settings-nav{display:flex;overflow-x:auto;gap:4px;} .settings-nav a{white-space:nowrap;}}
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+        <div class="page-header"><div><h1>Settings</h1><p>Manage your account, playback and privacy preferences.</p></div></div>
+
+        <div class="settings-layout">
+          <nav class="settings-nav" id="settings-nav">
+            <a data-target="account" class="active">Account</a>
+            <a data-target="appearance">Appearance</a>
+            <a data-target="audio">Audio Quality</a>
+            <a data-target="downloads">Downloads</a>
+            <a data-target="playback">Playback</a>
+            <a data-target="notifications">Notifications</a>
+            <a data-target="privacy">Privacy</a>
+            <a data-target="offline">Offline</a>
+          </nav>
+
+          <div>
+            <section class="settings-section active" data-section="account">
+              <h2>Account</h2><p class="desc">Update your profile information and password.</p>
+              <div class="field"><label>Display name</label><input class="input" value="Sena Okafor" /></div>
+              <div class="field"><label>Username</label><input class="input" value="senaokafor" /></div>
+              <div class="field"><label>Email</label><input class="input" value="sena@artistcamp.dev" /></div>
+              <div class="field"><label>Password</label><input class="input" type="password" value="••••••••••" /></div>
+              <button class="btn btn-primary" onclick="toast('Account details saved','success')">Save Changes</button>
+            </section>
+
+            <section class="settings-section" data-section="appearance">
+              <h2>Appearance</h2><p class="desc">Choose how ArtistCamp looks on this device.</p>
+              <div class="field"><label>Theme</label>
+                <select class="select"><option>Dark (recommended)</option><option disabled>Light — coming soon</option><option>Match system</option></select>
+              </div>
+              <div class="field"><label>Accent color</label>
+                <div class="flex gap-12">
+                  <button style="width:32px;height:32px;border-radius:50%;background:#FF5A4E;border:2px solid var(--text-primary);"></button>
+                  <button style="width:32px;height:32px;border-radius:50%;background:#F6B73C;border:2px solid transparent;"></button>
+                  <button style="width:32px;height:32px;border-radius:50%;background:#5AA9FF;border:2px solid transparent;"></button>
+                  <button style="width:32px;height:32px;border-radius:50%;background:#32C48D;border:2px solid transparent;"></button>
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section" data-section="audio">
+              <h2>Audio Quality</h2><p class="desc">Balance sound quality against data usage.</p>
+              <div class="field"><label>Streaming quality</label><select class="select"><option>Low (96 kbps)</option><option selected>Normal (160 kbps)</option><option>High (256 kbps)</option><option>Very High (320 kbps)</option></select></div>
+              <div class="field"><label>Download quality</label><select class="select"><option>Normal (160 kbps)</option><option selected>High (256 kbps)</option><option>Very High (320 kbps)</option></select></div>
+            </section>
+
+            <section class="settings-section" data-section="downloads">
+              <h2>Downloads</h2><p class="desc">Control how and where ArtistCamp saves music.</p>
+              <div class="settings-row"><div><div class="label">Download over Wi-Fi only</div><div class="desc">Avoid using mobile data for downloads.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Auto-download liked songs</div><div class="desc">Save songs you like automatically.</div></div><button class="switch" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Download location</div><div class="desc">/storage/ArtistCamp/downloads</div></div><button class="btn btn-secondary btn-sm" onclick="toast('Change location dialog opened')">Change</button></div>
+              <div class="settings-row"><div><div class="label">Storage management</div><div class="desc">3.8 GB used of 16 GB available.</div></div><a class="btn btn-secondary btn-sm" href="downloads.html">Manage</a></div>
+            </section>
+
+            <section class="settings-section" data-section="playback">
+              <h2>Playback</h2><p class="desc">Fine-tune how music plays across ArtistCamp.</p>
+              <div class="settings-row"><div><div class="label">Autoplay</div><div class="desc">Keep music playing when your queue ends.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Crossfade</div><div class="desc">Blend the end of one track into the next.</div></div><button class="switch" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Normalize volume</div><div class="desc">Keep loudness consistent between tracks.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Explicit content</div><div class="desc">Allow explicit tracks to play.</div></div><button class="switch on" data-switch></button></div>
+            </section>
+
+            <section class="settings-section" data-section="notifications">
+              <h2>Notifications</h2><p class="desc">Choose what ArtistCamp should notify you about.</p>
+              <div class="settings-row"><div><div class="label">New releases</div><div class="desc">Artists you follow drop new music.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Artist updates</div><div class="desc">News and announcements from artists.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Playlist updates</div><div class="desc">Changes to playlists you follow.</div></div><button class="switch" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Comment replies</div><div class="desc">Someone replies to your comment.</div></div><button class="switch on" data-switch></button></div>
+            </section>
+
+            <section class="settings-section" data-section="privacy">
+              <h2>Privacy</h2><p class="desc">Control what other listeners can see.</p>
+              <div class="field"><label>Profile visibility</label><select class="select"><option>Public</option><option>Followers only</option><option>Private</option></select></div>
+              <div class="settings-row"><div><div class="label">Show listening activity</div><div class="desc">Let others see what you're playing.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Public playlists by default</div><div class="desc">New playlists are visible to everyone.</div></div><button class="switch" data-switch></button></div>
+            </section>
+
+            <section class="settings-section" data-section="offline">
+              <h2>Offline</h2><p class="desc">Manage what's cached for offline listening.</p>
+              <div class="card" style="padding:16px;margin-bottom:20px;">
+                <div class="flex" style="justify-content:space-between;font-size:13px;font-weight:600;"><span>3.8 GB cached</span><span class="text-secondary">of 16 GB free</span></div>
+                <div class="storage-bar"><div class="fill" style="width:24%;"></div></div>
+              </div>
+              <div class="settings-row"><div><div class="label">Clear cached music</div><div class="desc">Frees space but keeps your download list.</div></div><button class="btn btn-danger btn-sm" onclick="toast('Cached music cleared','warning')">Clear Cache</button></div>
+              <div class="settings-row"><div><div class="label">Manage offline content</div><div class="desc">Review everything saved to this device.</div></div><a class="btn btn-secondary btn-sm" href="offline.html">Open</a></div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("");
+    document.querySelectorAll("#settings-nav a").forEach(link => {
+      link.addEventListener("click", () => {
+        document.querySelectorAll("#settings-nav a").forEach(l => l.classList.remove("active"));
+        link.classList.add("active");
+        document.querySelectorAll(".settings-section").forEach(s => s.classList.toggle("active", s.dataset.section === link.dataset.target));
+      });
+    });
+    document.querySelectorAll("[data-switch]").forEach(sw => {
+      sw.addEventListener("click", () => { sw.classList.toggle("on"); toast(sw.classList.contains("on") ? "Setting enabled" : "Setting disabled"); });
+    });
+  </script>
+</body>
+</html>

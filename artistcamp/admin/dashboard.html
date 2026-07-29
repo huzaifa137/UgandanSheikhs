@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — ArtistCamp Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="grid grid-4" style="margin-bottom:28px;" id="stat-cards"></div>
+
+        <div class="grid grid-2" style="margin-bottom:28px;">
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Streams Over Time</h2></div>
+            <div class="chart-placeholder" id="chart-streams"></div>
+          </div>
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Downloads Over Time</h2></div>
+            <div class="chart-placeholder" id="chart-downloads"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-bottom:28px;">
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">New Users</h2></div>
+            <div class="chart-placeholder" id="chart-users"></div>
+          </div>
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Genres</h2></div>
+            <div class="chart-placeholder" id="chart-genres"></div>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Tracks</h2></div>
+        <table class="data-table" style="margin-bottom:28px;">
+          <thead><tr><th>Track</th><th>Artist</th><th>Plays</th><th>Downloads</th></tr></thead>
+          <tbody id="top-tracks-table"></tbody>
+        </table>
+
+        <div class="grid grid-2">
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Recent Users</h2></div>
+            <table class="data-table"><tbody id="recent-users-table"></tbody></table>
+          </div>
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Recent Comments</h2></div>
+            <table class="data-table"><tbody id="recent-comments-table"></tbody></table>
+          </div>
+        </div>
+
+        <div class="section-header"><h2 style="font-size:16px;">Recent Activity</h2></div>
+        <div id="activity-feed"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    initAdminPage("dashboard", "Dashboard");
+
+    const stats = [
+      { label: "Total Artists", value: ARTISTS.length, delta: "+3 this month", up: true },
+      { label: "Total Albums", value: ALBUMS.length, delta: "+5 this month", up: true },
+      { label: "Total Tracks", value: TRACKS.length, delta: "+12 this month", up: true },
+      { label: "Total Users", value: ADMIN_USERS.length * 214, delta: "+8.2%", up: true },
+      { label: "Total Streams", value: fmtCount(TRACKS.reduce((s,t)=>s+t.plays,0)), delta: "+14.1%", up: true },
+      { label: "Total Downloads", value: fmtCount(TRACKS.reduce((s,t)=>s+t.downloads,0)), delta: "+6.4%", up: true },
+      { label: "Comments Today", value: 47, delta: "-2.1%", up: false },
+      { label: "Storage Used", value: "412 GB", delta: "of 1 TB", up: true },
+    ];
+    document.getElementById("stat-cards").innerHTML = stats.slice(0,4).map(s => `
+      <div class="stat-card"><div class="label">${s.label}</div><div class="value">${s.value}</div><div class="delta ${s.up?'up':'down'}">${s.delta}</div></div>`).join("");
+    document.querySelector(".admin-content").insertBefore(
+      Object.assign(document.createElement("div"), { className: "grid grid-4", style: "margin-bottom:28px;", innerHTML: stats.slice(4).map(s => `<div class="stat-card"><div class="label">${s.label}</div><div class="value">${s.value}</div><div class="delta ${s.up?'up':'down'}">${s.delta}</div></div>`).join("") }),
+      document.querySelectorAll(".admin-content .grid.grid-2")[0]
+    );
+
+    function bars(id, n, seedMod) {
+      document.getElementById(id).innerHTML = Array.from({length:n},(_,i)=>{
+        const h = 20 + ((i*seedMod)%80);
+        return `<div class="bar" style="height:${h}%;" title="${h}"></div>`;
+      }).join("");
+    }
+    bars("chart-streams", 24, 37);
+    bars("chart-downloads", 24, 53);
+    bars("chart-users", 12, 29);
+    bars("chart-genres", 10, 41);
+
+    document.getElementById("top-tracks-table").innerHTML = [...TRACKS].sort((a,b)=>b.plays-a.plays).slice(0,6).map(t => `
+      <tr><td>${t.title}</td><td>${t.artist}</td><td>${fmtCount(t.plays)}</td><td>${fmtCount(t.downloads)}</td></tr>`).join("");
+
+    document.getElementById("recent-users-table").innerHTML = ADMIN_USERS.slice(0,5).map(u => `
+      <tr><td class="flex items-center gap-8"><img class="avatar" src="${u.avatar}" width="26" height="26"/>${u.name}</td><td><span class="badge ${u.status==='Active'?'badge-success':'badge-error'}">${u.status}</span></td></tr>`).join("");
+
+    document.getElementById("recent-comments-table").innerHTML = COMMENTS.slice(0,5).map(c => `
+      <tr><td>${c.user}</td><td class="truncate" style="max-width:220px;">${c.body}</td></tr>`).join("");
+
+    const activityItems = [
+      "Nnamdi Eze uploaded a new single, \"Golden Hymn\"",
+      "Admin approved 4 pending comments",
+      "New user Tendai M. registered",
+      "Album \"Static Bloom\" was featured on the homepage",
+      "Track \"Blue Gravity\" flagged for review",
+    ];
+    document.getElementById("activity-feed").innerHTML = activityItems.map((a,i) => `
+      <div class="flex gap-12" style="padding:11px 0;border-bottom:1px solid var(--border-subtle);align-items:center;">
+        <span class="icon-btn" style="background:var(--surface-2);">${ICONS.clock}</span>
+        <div style="font-size:13.5px;">${a}</div>
+        <span class="text-tertiary" style="margin-left:auto;font-size:12px;">${(i+1)*3}h ago</span>
+      </div>`).join("");
+  </script>
+</body>
+</html>

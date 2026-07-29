@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Recently Played — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="page-header">
+          <div><h1>Recently Played</h1><p>Your listening history across ArtistCamp.</p></div>
+          <button class="btn btn-secondary" onclick="document.getElementById('history-body').innerHTML='';document.getElementById('history-empty').style.display='flex';toast('Listening history cleared')">Clear History</button>
+        </div>
+
+        <div id="history-groups"></div>
+        <div class="empty-state" id="history-empty" style="display:none;">
+          <div class="icon-wrap"></div>
+          <h3>No listening history</h3>
+          <p>Tracks you play will show up here, grouped by when you played them.</p>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("history");
+    document.querySelector("#history-empty .icon-wrap").innerHTML = ICONS.clock;
+
+    function historyRow(t, time) {
+      return `<div style="display:flex;align-items:center;gap:14px;padding:9px 4px;border-radius:8px;" class="hist-row">
+        <img src="${t.art}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;" />
+        <div style="flex:1;min-width:0;"><div class="truncate" style="font-weight:600;font-size:13.5px;">${t.title}</div><a class="truncate text-secondary" style="font-size:12px;" href="artist.html?id=${t.artistId}">${t.artist}</a></div>
+        <span class="text-tertiary truncate" style="font-size:12px;width:120px;">${t.album}</span>
+        <span class="text-secondary" style="font-size:12px;">${time}</span>
+        <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Playing ${t.title.replace(/'/g,"")}')">${ICONS.play}</button>
+        <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Track options opened')">${ICONS.more}</button>
+      </div>`;
+    }
+
+    const groups = [
+      { label: "Today", tracks: TRACKS.slice(0,4), times: ["2:14 PM","11:02 AM","9:40 AM","8:15 AM"] },
+      { label: "Yesterday", tracks: TRACKS.slice(4,8), times: ["9:50 PM","6:30 PM","1:12 PM","10:05 AM"] },
+      { label: "This Week", tracks: TRACKS.slice(8,14), times: ["Mon","Mon","Sun","Sat","Sat","Fri"] },
+      { label: "Earlier", tracks: TRACKS.slice(14,20), times: ["3 wks ago","3 wks ago","1 mo ago","1 mo ago","1 mo ago","2 mo ago"] },
+    ];
+    document.getElementById("history-groups").innerHTML = groups.map(g => `
+      <div class="section-header" style="margin-top:32px;"><h2 style="font-size:17px;">${g.label}</h2></div>
+      <div>${g.tracks.map((t,i)=>historyRow(t, g.times[i])).join("")}</div>
+    `).join("");
+  </script>
+</body>
+</html>

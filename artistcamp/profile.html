@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Profile — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="entity-hero">
+          <div class="entity-hero-bg" style="background-image:url('https://picsum.photos/seed/profile-cover/1600/500');"></div>
+          <div class="entity-hero-body">
+            <img class="entity-hero-art round" id="profile-avatar" alt="Profile avatar" />
+            <div class="entity-hero-info">
+              <div class="kind">@<span id="profile-username"></span></div>
+              <h1 id="profile-name"></h1>
+              <div class="entity-hero-meta">
+                <span id="profile-followers"></span><span>·</span><span id="profile-following"></span>
+              </div>
+            </div>
+          </div>
+          <div class="entity-hero-actions">
+            <button class="btn btn-secondary" onclick="location.href='settings.html'">${''}<span>Edit Profile</span></button>
+          </div>
+        </div>
+
+        <p class="text-secondary" style="max-width:56ch;margin:20px 0 32px;" id="profile-bio"></p>
+
+        <div class="section-header" style="margin-top:0;"><h2>Favorite Artists</h2></div>
+        <div class="rail" id="profile-artists"></div>
+
+        <div class="section-header"><h2>Public Playlists</h2></div>
+        <div class="grid grid-5" id="profile-playlists"></div>
+
+        <div class="section-header"><h2>Recently Played</h2></div>
+        <div class="rail" id="profile-recent"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("profile");
+    document.getElementById("profile-avatar").src = CURRENT_USER.avatar;
+    document.getElementById("profile-username").textContent = CURRENT_USER.username;
+    document.getElementById("profile-name").textContent = CURRENT_USER.name;
+    document.getElementById("profile-followers").textContent = CURRENT_USER.followers + " followers";
+    document.getElementById("profile-following").textContent = CURRENT_USER.following + " following";
+    document.getElementById("profile-bio").textContent = CURRENT_USER.bio;
+    document.querySelector(".entity-hero-actions .btn-secondary").innerHTML = ICONS.edit + "<span>Edit Profile</span>";
+
+    document.getElementById("profile-artists").innerHTML = ARTISTS.slice(0,8).map(a=>cardHTML(a,"artist")).join("");
+    document.getElementById("profile-playlists").innerHTML = PLAYLISTS.slice(0,5).map(p=>cardHTML(p,"playlist")).join("");
+    document.getElementById("profile-recent").innerHTML = TRACKS.slice(0,8).map(t => `
+      <div class="card card-w"><div class="card-art"><img src="${t.art}" alt="${t.title}"/><span class="card-play">${ICONS.play}</span></div><div class="card-title truncate">${t.title}</div><div class="card-sub truncate">${t.artist}</div></div>`).join("");
+  </script>
+</body>
+</html>

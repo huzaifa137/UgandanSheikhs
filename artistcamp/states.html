@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UI States Reference — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="page-header"><div><h1>UI States Reference</h1><p>Empty, loading and error states used throughout ArtistCamp — for design QA, not part of the live navigation.</p></div></div>
+
+        <div class="section-header" style="margin-top:0;"><h2>Empty States</h2></div>
+        <div class="grid grid-3" id="empty-states-grid"></div>
+
+        <div class="section-header"><h2>Inline Error States</h2></div>
+        <div class="grid grid-3" id="error-states-grid"></div>
+
+        <div class="section-header"><h2>Skeleton Loaders</h2></div>
+        <div class="grid grid-6" id="skeleton-grid"></div>
+        <table class="track-table" style="margin-top:20px;max-width:600px;"><tbody id="skeleton-rows"></tbody></table>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("");
+
+    function emptyCard(icon, title, body, actionLabel) {
+      return `<div class="card"><div class="empty-state" style="padding:36px 16px;"><div class="icon-wrap">${ICONS[icon]}</div><h3 style="font-size:15px;">${title}</h3><p style="font-size:12.5px;">${body}</p>${actionLabel ? `<button class="btn btn-primary btn-sm" onclick="toast('${actionLabel} triggered')">${actionLabel}</button>` : ""}</div></div>`;
+    }
+    document.getElementById("empty-states-grid").innerHTML = [
+      emptyCard("library","No playlists yet","Create your first playlist to start organizing music.","Create Playlist"),
+      emptyCard("download","No downloads yet","Download tracks and albums to listen offline.","Browse Music"),
+      emptyCard("heart","No liked songs","Tap the heart on any track to save it here.",""),
+      emptyCard("search","No results found","Try checking your spelling or searching something else.",""),
+      emptyCard("message","No comments yet","Be the first to share your thoughts on this track.",""),
+      emptyCard("bell","You're all caught up","New notifications will appear here.",""),
+      emptyCard("cloudOff","You're offline","Showing downloaded music. Reconnect to see everything else.",""),
+      emptyCard("clock","No listening history","Tracks you play will show up here.",""),
+      emptyCard("userPlus","Not following anyone yet","Follow artists to see their updates here.","Discover Artists"),
+    ].join("");
+
+    function errorCard(icon, title, body, actionLabel) {
+      return `<div class="card"><div class="empty-state" style="padding:36px 16px;"><div class="icon-wrap" style="color:var(--error);background:var(--error-soft);">${ICONS[icon]}</div><h3 style="font-size:15px;">${title}</h3><p style="font-size:12.5px;">${body}</p>${actionLabel ? `<button class="btn btn-secondary btn-sm" onclick="toast('${actionLabel} triggered')">${actionLabel}</button>` : ""}</div></div>`;
+    }
+    document.getElementById("error-states-grid").innerHTML = [
+      errorCard("cloudOff","No internet connection","Check your connection and try again.","Retry"),
+      errorCard("alertTriangle","Unable to play track","This track couldn't be streamed right now.","Try Again"),
+      errorCard("alertTriangle","Download failed","We couldn't finish this download.","Retry Download"),
+    ].join("");
+
+    document.getElementById("skeleton-grid").innerHTML = Array.from({length:6},()=>`<div><div class="skel skel-art"></div><div class="skel skel-line" style="width:70%;"></div><div class="skel skel-line" style="width:45%;"></div></div>`).join("");
+    document.getElementById("skeleton-rows").innerHTML = Array.from({length:4},()=>`<tr><td style="padding:8px;"><div class="flex items-center gap-12"><div class="skel" style="width:42px;height:42px;border-radius:6px;"></div><div style="flex:1;"><div class="skel skel-line" style="width:60%;"></div><div class="skel skel-line" style="width:35%;"></div></div></div></td></tr>`).join("");
+  </script>
+</body>
+</html>

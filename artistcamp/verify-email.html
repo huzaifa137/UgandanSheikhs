@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Verify Email — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="error-page">
+    <div class="icon-wrap" style="width:64px;height:64px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:20px;" id="verify-icon"></div>
+    <h1>Verify your email</h1>
+    <p>We sent a confirmation link to <strong>sena@artistcamp.dev</strong>. Click it to activate your account.</p>
+    <div class="flex gap-12">
+      <button class="btn btn-secondary" onclick="toast('Verification email resent','success')">Resend Email</button>
+      <a class="btn btn-primary" href="index.html">Continue to ArtistCamp</a>
+    </div>
+  </div>
+  <script src="js/icons.js"></script>
+  <script src="js/app.js"></script>
+  <script>document.getElementById("verify-icon").innerHTML = ICONS.mail;</script>
+</body>
+</html>

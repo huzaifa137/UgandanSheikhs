@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Offline Music — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="page-header">
+          <div><h1>Offline Music</h1><p>Music available without an internet connection.</p></div>
+          <a class="btn btn-secondary" href="downloads.html">Manage Downloads</a>
+        </div>
+
+        <div class="card" style="padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:28px;max-width:520px;border-color:var(--warning);background:var(--warning-soft);" id="offline-banner">
+          <span style="color:var(--warning);">${''}</span>
+          <div style="font-size:13px;">
+            <strong>Offline-ready.</strong> Everything below plays without a connection. <span class="text-secondary">3.8 GB cached on this device.</span>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top:0;"><h2>Downloaded Tracks</h2></div>
+        <table class="track-table"><tbody id="offline-tracks"></tbody></table>
+
+        <div class="section-header"><h2>Downloaded Albums</h2></div>
+        <div class="grid grid-6" id="offline-albums"></div>
+
+        <div class="section-header"><h2>Downloaded Playlists</h2></div>
+        <div class="grid grid-5" id="offline-playlists"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("offline");
+    document.querySelector("#offline-banner span").innerHTML = ICONS.cloudOff;
+
+    document.getElementById("offline-tracks").innerHTML = TRACKS.filter(t=>t.downloadable).slice(0,8).map((t,i)=>`
+      <tr class="track-row">
+        <td class="t-num"><span class="num">${i+1}</span></td>
+        <td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td>
+        <td><span class="badge badge-success">Available Offline</span></td>
+        <td class="t-meta">${fmtDuration(t.duration)}</td>
+        <td><div class="t-actions"><button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Playing offline')">${ICONS.play}</button></div></td>
+      </tr>`).join("");
+
+    document.getElementById("offline-albums").innerHTML = ALBUMS.slice(0,6).map(a=>`
+      <div class="card card-w">
+        <div class="card-art"><img src="${a.art}" alt="${a.title}" /><span class="badge badge-success" style="position:absolute;left:8px;top:8px;">${ICONS.cloudOff} Offline</span></div>
+        <div class="card-title truncate">${a.title}</div>
+        <div class="card-sub truncate">${a.artist}</div>
+      </div>`).join("");
+
+    document.getElementById("offline-playlists").innerHTML = PLAYLISTS.slice(0,5).map(p=>`
+      <div class="card card-w">
+        <div class="card-art"><img src="${p.art}" alt="${p.name}" /><span class="badge badge-success" style="position:absolute;left:8px;top:8px;">${ICONS.cloudOff} Offline</span></div>
+        <div class="card-title truncate">${p.name}</div>
+        <div class="card-sub truncate">By ${p.creator}</div>
+      </div>`).join("");
+  </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Playlist — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content" id="content"></main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("");
+    const params = new URLSearchParams(location.search);
+    const playlist = PLAYLISTS.find(p => p.id === params.get("id")) || PLAYLISTS[0];
+    const isOwner = playlist.creator === "You";
+    const totalSecs = playlist.tracks.reduce((s,t)=>s+t.duration,0);
+
+    document.getElementById("content").innerHTML = `
+      <div class="entity-hero">
+        <div class="entity-hero-body" style="margin-top:0;">
+          <img class="entity-hero-art" src="${playlist.art}" alt="${playlist.name}" />
+          <div class="entity-hero-info">
+            <div class="kind">${playlist.privacy} Playlist</div>
+            <h1>${playlist.name}</h1>
+            <p class="text-secondary" style="margin:6px 0 10px;max-width:52ch;">${playlist.description}</p>
+            <div class="entity-hero-meta">
+              <strong style="color:var(--text-primary);">${playlist.creator}</strong><span>·</span>
+              <span>${playlist.tracks.length} songs, ${Math.round(totalSecs/60)} min</span><span>·</span>
+              <span>Updated ${playlist.updated}</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-hero-actions">
+          <button class="btn btn-primary" onclick="toast('Playing ${playlist.name.replace(/'/g,"")}')">${ICONS.play}<span>Play</span></button>
+          <button class="btn btn-secondary" onclick="toast('Shuffling playlist')">${ICONS.shuffle}<span>Shuffle</span></button>
+          <button class="btn btn-outline" onclick="toast('Playlist download started','success')">${ICONS.download}<span>Download Playlist</span></button>
+          <button class="icon-btn btn-icon-only" onclick="toast('Saved to library','success')">${ICONS.heart}</button>
+          <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
+          ${isOwner ? `<button class="icon-btn btn-icon-only" id="edit-playlist-btn">${ICONS.edit}</button>` : ""}
+        </div>
+      </div>
+
+      <table class="track-table" style="margin-top:24px;">
+        <thead><tr><th>#</th><th>Track</th><th>Album</th><th>Time</th><th></th></tr></thead>
+        <tbody>
+          ${playlist.tracks.map((t,i)=>`
+          <tr class="track-row">
+            <td class="t-num">${isOwner ? `<span style="cursor:grab;color:var(--text-tertiary);">::</span>` : `<span class="num">${i+1}</span><button class="icon-btn play-ico" style="background:none;width:18px;height:18px;">${ICONS.play}</button>`}</td>
+            <td><div class="t-title-cell"><img src="${t.art}" /><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td>
+            <td class="t-meta truncate">${t.album}</td>
+            <td class="t-meta">${fmtDuration(t.duration)}</td>
+            <td><div class="t-actions">
+              ${isOwner ? `<button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Removed from playlist')">${ICONS.x}</button>` : ""}
+              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Track options opened')">${ICONS.more}</button>
+            </div></td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+
+      <div class="modal" id="edit-playlist-modal">
+        <div class="modal-head"><h3>Edit Playlist</h3><button class="icon-btn" onclick="closeModals()">${ICONS.x}</button></div>
+        <div class="field"><label>Playlist name</label><input class="input" value="${playlist.name}" /></div>
+        <div class="field"><label>Description</label><textarea class="textarea">${playlist.description}</textarea></div>
+        <div class="field"><label>Privacy</label>
+          <select class="select">
+            <option ${playlist.privacy==="Public"?"selected":""}>Public</option>
+            <option ${playlist.privacy==="Private"?"selected":""}>Private</option>
+            <option>Unlisted</option>
+          </select>
+        </div>
+        <div class="field"><label>Cover image</label><div class="dropzone" style="padding:24px;"><div class="icon-wrap" style="margin:0 auto 10px;width:40px;height:40px;">${ICONS.upload}</div><p style="font-size:13px;">Drop an image or browse</p></div></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModals();toast('Playlist updated','success')">Save Changes</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("edit-playlist-btn")?.addEventListener("click", () => { ensureOverlay(); openModal("edit-playlist-modal"); });
+  </script>
+</body>
+</html>

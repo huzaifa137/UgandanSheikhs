@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Sign In — ArtistCamp</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+</head>
+<body style="background:var(--bg-canvas);">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div class="card" style="width:100%;max-width:380px;padding:36px;">
+      <div class="flex items-center gap-8" style="margin-bottom:8px;">
+        <span style="width:26px;height:26px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;" id="admin-lock"></span>
+        <span class="eyebrow" style="color:var(--text-secondary);">Admin Console</span>
+      </div>
+      <h1 style="font-size:22px;margin-bottom:6px;">ArtistCamp Admin</h1>
+      <p class="text-secondary" style="font-size:13.5px;margin-bottom:26px;">Restricted access. Sign in with your administrator account.</p>
+      <form onsubmit="event.preventDefault();toast('Signed in — loading dashboard…','success');setTimeout(()=>location.href='dashboard.html',700);">
+        <div class="field"><label>Email</label><input class="input" type="email" placeholder="admin@artistcamp.dev" required /></div>
+        <div class="field"><label>Password</label><input class="input" type="password" placeholder="••••••••" required /></div>
+        <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" /> Remember me</label>
+        <button class="btn btn-primary" type="submit" style="width:100%;">Sign In to Dashboard</button>
+      </form>
+    </div>
+  </div>
+  <script src="../js/icons.js"></script>
+  <script src="../js/app.js"></script>
+  <script>document.getElementById("admin-lock").innerHTML = ICONS.lock;</script>
+</body>
+</html>

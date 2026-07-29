@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Upload Track — ArtistCamp Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header"><div><h1 style="font-size:22px;">Upload Track</h1><p>Add a new track to the ArtistCamp catalog.</p></div>
+          <a class="btn btn-secondary" href="tracks.html">Back to Tracks</a>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <div class="icon-wrap" id="dz-icon"></div>
+          <p style="font-weight:600;margin-bottom:4px;">Drop audio files here or browse</p>
+          <p class="text-tertiary" style="font-size:12.5px;">Supports MP3, WAV, FLAC, M4A — up to 200MB per file</p>
+          <input type="file" id="file-input" accept="audio/*" multiple style="display:none;" />
+        </div>
+
+        <div id="upload-queue" style="margin-top:20px;max-width:640px;"></div>
+
+        <div id="metadata-form" style="display:none;margin-top:36px;max-width:760px;">
+          <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Track Details</h2></div>
+          <div class="grid grid-2">
+            <div class="field"><label>Track title</label><input class="input" placeholder="e.g. Golden Hymn" /></div>
+            <div class="field"><label>Artist</label><select class="select" id="meta-artist"></select></div>
+            <div class="field"><label>Album</label><input class="input" placeholder="Optional — leave blank for singles" /></div>
+            <div class="field"><label>Track number</label><input class="input" type="number" placeholder="1" /></div>
+            <div class="field"><label>Disc number</label><input class="input" type="number" placeholder="1" /></div>
+            <div class="field"><label>Genre</label><select class="select" id="meta-genre"></select></div>
+            <div class="field"><label>Release date</label><input class="input" type="date" /></div>
+            <div class="field"><label>Language</label><input class="input" placeholder="English" /></div>
+          </div>
+
+          <div class="field"><label>Track description</label><textarea class="textarea" placeholder="Short description shown on the track page"></textarea></div>
+          <div class="field"><label>Lyrics</label><textarea class="textarea" placeholder="Optional lyrics"></textarea></div>
+
+          <div class="grid grid-2">
+            <div class="field"><label>Composer</label><input class="input" /></div>
+            <div class="field"><label>Producer</label><input class="input" /></div>
+            <div class="field"><label>Record label</label><input class="input" placeholder="ArtistCamp Records" /></div>
+            <div class="field"><label>ISRC</label><input class="input" placeholder="e.g. US-ABC-25-00001" /></div>
+          </div>
+
+          <div class="field"><label>Cover artwork</label><div class="dropzone" style="padding:24px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;" id="dz-icon-2"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
+
+          <div class="flex gap-16 mt-24" style="margin-bottom:8px;">
+            <div class="settings-row" style="border:none;padding:0;flex:1;"><div><div class="label">Explicit content</div></div><button class="switch" data-switch></button></div>
+            <div class="settings-row" style="border:none;padding:0;flex:1;"><div><div class="label">Allow downloads</div></div><button class="switch on" data-switch></button></div>
+            <div class="settings-row" style="border:none;padding:0;flex:1;"><div><div class="label">Featured</div></div><button class="switch" data-switch></button></div>
+          </div>
+
+          <div class="field"><label>Copyright information</label><input class="input" placeholder="© 2026 Artist Name, under exclusive license" /></div>
+
+          <div class="flex gap-12" style="margin-top:20px;">
+            <button class="btn btn-secondary" onclick="toast('Draft saved')">Save Draft</button>
+            <button class="btn btn-primary" onclick="toast('Track published','success')">Publish Track</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('metadata-form').style.display='none';document.getElementById('upload-queue').innerHTML='';">Cancel</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    initAdminPage("tracks", "Upload Track");
+    document.getElementById("dz-icon").innerHTML = ICONS.upload;
+    document.getElementById("dz-icon-2").innerHTML = ICONS.upload;
+    document.getElementById("meta-artist").innerHTML = ARTISTS.map(a => `<option>${a.name}</option>`).join("");
+    document.getElementById("meta-genre").innerHTML = GENRES.map(g => `<option>${g.name}</option>`).join("");
+
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("file-input");
+    dropzone.addEventListener("click", () => fileInput.click());
+    ["dragenter","dragover"].forEach(evt => dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add("drag"); }));
+    ["dragleave","drop"].forEach(evt => dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove("drag"); }));
+    dropzone.addEventListener("drop", (e) => handleFiles(e.dataTransfer.files));
+    fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+    function handleFiles(files) {
+      if (!files.length) return;
+      const queue = document.getElementById("upload-queue");
+      Array.from(files).slice(0,5).forEach((f, i) => {
+        const id = "up-" + Date.now() + i;
+        const sizeMb = (f.size / (1024*1024)).toFixed(1);
+        queue.insertAdjacentHTML("beforeend", `
+          <div class="upload-item" id="${id}">
+            <span class="icon-btn" style="background:var(--surface-2);">${ICONS.file}</span>
+            <div class="meta">
+              <div class="flex" style="justify-content:space-between;"><span style="font-size:13px;font-weight:600;">${f.name}</span><span class="text-tertiary" style="font-size:11.5px;">${sizeMb} MB</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:0%;"></div></div>
+            </div>
+            <button class="icon-btn" style="width:26px;height:26px;" onclick="document.getElementById('${id}').remove()">${ICONS.x}</button>
+          </div>`);
+        animateUpload(id);
+      });
+    }
+    function animateUpload(id) {
+      let pct = 0;
+      const fill = document.querySelector(`#${id} .progress-fill`);
+      const interval = setInterval(() => {
+        pct += Math.random() * 22;
+        if (pct >= 100) { pct = 100; clearInterval(interval); toast("Upload complete", "success"); document.getElementById("metadata-form").style.display = "block"; }
+        if (fill) fill.style.width = pct + "%";
+      }, 260);
+    }
+    document.querySelectorAll("[data-switch]").forEach(sw => sw.addEventListener("click", () => sw.classList.toggle("on")));
+  </script>
+</body>
+</html>

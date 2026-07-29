@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Discover — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="page-header">
+          <div><h1>Discover Music</h1><p>Find your next favorite sound.</p></div>
+        </div>
+
+        <div class="chip-row" id="genre-chips" style="margin-bottom:18px;"></div>
+
+        <div class="section-header" style="margin-top:8px;"><h2>Set a Mood</h2></div>
+        <div class="chip-row" id="mood-chips" style="margin-bottom:8px;"></div>
+
+        <section id="trending"><div class="section-header"><h2>Trending Artists</h2></div><div class="rail" id="trending-artists"></div></section>
+        <section><div class="section-header"><h2>Recommended for You</h2></div><div class="grid grid-6" id="recommended"></div></section>
+        <section><div class="section-header"><h2>Rising Artists</h2></div><div class="rail" id="rising-artists"></div></section>
+        <section id="new"><div class="section-header"><h2>New This Week</h2></div><div class="grid grid-6" id="new-week"></div></section>
+        <section><div class="section-header"><h2>Hidden Gems</h2></div><div class="rail" id="hidden-gems"></div></section>
+        <section><div class="section-header"><h2>Editor's Choice</h2></div><div class="grid grid-3" id="editor-choice"></div></section>
+        <section><div class="section-header"><h2>Most Downloaded</h2></div>
+          <table class="track-table"><thead><tr><th>#</th><th>Track</th><th>Downloads</th><th>Time</th><th></th></tr></thead><tbody id="most-downloaded"></tbody></table>
+        </section>
+        <section><div class="section-header"><h2>Most Discussed Tracks</h2></div>
+          <table class="track-table"><thead><tr><th>#</th><th>Track</th><th>Comments</th><th>Time</th><th></th></tr></thead><tbody id="most-discussed"></tbody></table>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("discover");
+
+    const genreChips = document.getElementById("genre-chips");
+    genreChips.innerHTML = ["All", ...GENRES.map(g => g.name)].map((g, i) => `<button class="chip ${i===0?"active":""}">${g}</button>`).join("");
+    wireChips(genreChips);
+
+    const moodChips = document.getElementById("mood-chips");
+    moodChips.innerHTML = ["Chill","Focus","Energy","Love","Party","Worship","Sleep","Workout","Travel"].map(m => `<button class="chip">${m}</button>`).join("");
+    wireChips(moodChips);
+
+    document.getElementById("trending-artists").innerHTML = ARTISTS.slice(0, 10).map(a => cardHTML(a, "artist")).join("");
+    document.getElementById("recommended").innerHTML = ALBUMS.slice(0, 6).map(a => cardHTML(a, "album")).join("");
+    document.getElementById("rising-artists").innerHTML = [...ARTISTS].reverse().slice(0, 8).map(a => cardHTML(a, "artist")).join("");
+    document.getElementById("new-week").innerHTML = ALBUMS.slice(6, 12).map(a => cardHTML(a, "album")).join("");
+    document.getElementById("hidden-gems").innerHTML = ARTISTS.filter(a => !a.verified).map(a => cardHTML(a, "artist")).join("");
+    document.getElementById("editor-choice").innerHTML = ALBUMS.slice(12, 15).map(a => `
+      <a class="card" href="album.html?id=${a.id}" style="display:flex;gap:14px;align-items:center;padding:14px;">
+        <img src="${a.art}" style="width:74px;height:74px;border-radius:8px;object-fit:cover;flex-shrink:0;" />
+        <div><div class="eyebrow" style="margin-bottom:4px;">Editor's Choice</div><div class="card-title">${a.title}</div><div class="card-sub">${a.artist}</div></div>
+      </a>`).join("");
+
+    document.getElementById("most-downloaded").innerHTML = [...TRACKS].sort((a,b)=>b.downloads-a.downloads).slice(0,8)
+      .map((t,i)=>`<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${fmtCount(t.downloads)}</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Download started')">${ICONS.download}</button></div></td></tr>`).join("");
+
+    document.getElementById("most-discussed").innerHTML = [...TRACKS].sort((a,b)=>b.likes-a.likes).slice(0,8)
+      .map((t,i)=>`<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${(t.likes % 200)+12} comments</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><a class="icon-btn" style="width:30px;height:30px;background:none;" href="track.html?id=${t.id}">${ICONS.message}</a></div></td></tr>`).join("");
+  </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Featured Content — ArtistCamp Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header"><div><h1 style="font-size:22px;">Featured Content</h1><p>Curate what listeners see across the homepage.</p></div></div>
+
+        <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Homepage Hero</h2></div>
+        <div class="card" style="display:flex;gap:16px;align-items:center;padding:16px;max-width:520px;margin-bottom:8px;">
+          <img src="" id="hero-art" style="width:64px;height:64px;border-radius:8px;object-fit:cover;background:var(--surface-3);" />
+          <div style="flex:1;"><div style="font-weight:600;">Static Bloom</div><div class="text-secondary" style="font-size:12.5px;">Amara Ndlovu</div></div>
+          <button class="btn btn-secondary btn-sm" onclick="toast('Content selection modal opened')">Change</button>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:28px;">
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Featured Artists</h2></div>
+            <div id="feat-artists"></div>
+          </div>
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Featured Albums</h2></div>
+            <div id="feat-albums"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Editor's Picks</h2></div>
+            <div id="feat-editor"></div>
+          </div>
+          <div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Promoted Playlists</h2></div>
+            <div id="feat-playlists"></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    initAdminPage("featured", "Featured Content");
+    document.getElementById("hero-art").src = ALBUMS[0].art;
+
+    function draggableList(id, items, labelFn, subFn, imgFn) {
+      document.getElementById(id).innerHTML = items.map((it,i) => `
+        <div class="card" draggable="true" style="display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
+          <span class="text-tertiary">::</span>
+          <img src="${imgFn(it)}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" />
+          <div style="flex:1;min-width:0;"><div class="truncate" style="font-weight:600;font-size:13px;">${labelFn(it)}</div><div class="truncate text-secondary" style="font-size:11.5px;">${subFn(it)}</div></div>
+          <button class="icon-btn" style="width:26px;height:26px;" onclick="this.closest('.card').remove();toast('Removed from featured list')">${ICONS.x}</button>
+        </div>`).join("") + `<button class="btn btn-ghost btn-sm" onclick="toast('Content selection modal opened')">${ICONS.plus}<span>Add item</span></button>`;
+      const cards = document.getElementById(id);
+      let dragged;
+      cards.addEventListener("dragstart", (e) => { if (e.target.classList.contains("card")) dragged = e.target; });
+      cards.addEventListener("dragover", (e) => e.preventDefault());
+      cards.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const target = e.target.closest(".card");
+        if (target && dragged && target !== dragged) {
+          target.before(dragged);
+          toast("Order updated");
+        }
+      });
+    }
+    draggableList("feat-artists", ARTISTS.slice(0,5), a=>a.name, a=>a.genre, a=>a.img);
+    draggableList("feat-albums", ALBUMS.slice(0,5), a=>a.title, a=>a.artist, a=>a.art);
+    draggableList("feat-editor", ALBUMS.slice(5,9), a=>a.title, a=>a.artist, a=>a.art);
+    draggableList("feat-playlists", PLAYLISTS.slice(0,5), p=>p.name, p=>p.creator, p=>p.art);
+  </script>
+</body>
+</html>

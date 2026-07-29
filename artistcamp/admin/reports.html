@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reports — ArtistCamp Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header"><div><h1 style="font-size:22px;">Reports</h1><p>Content flagged by listeners for review.</p></div></div>
+
+        <table class="data-table">
+          <thead><tr><th>Type</th><th>Content</th><th>Reported By</th><th>Reason</th><th>Date</th><th>Status</th><th></th></tr></thead>
+          <tbody id="reports-table"></tbody>
+        </table>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    initAdminPage("reports", "Reports");
+    const reports = COMMENTS.filter(c => c.status === "Reported").map((c,i) => ({
+      type: "Comment", content: c.body.slice(0,42) + "…", by: ["Aisha K.","Yusuf A.","Kwame O."][i%3], reason: ["Spam","Harassment","Off-topic"][i%3], date: c.time, status: i%2===0?"Open":"Resolved",
+    }));
+    document.getElementById("reports-table").innerHTML = reports.length ? reports.map(r => `
+      <tr>
+        <td><span class="badge badge-neutral">${r.type}</span></td>
+        <td class="truncate" style="max-width:280px;">${r.content}</td>
+        <td>${r.by}</td>
+        <td>${r.reason}</td>
+        <td class="text-secondary">${r.date}</td>
+        <td><span class="badge ${r.status==='Open'?'badge-warning':'badge-success'}">${r.status}</span></td>
+        <td><div class="flex gap-8">
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" onclick="toast('Report resolved','success')">${ICONS.check}</button>
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" onclick="this.closest('tr').remove();toast('Content removed','warning')">${ICONS.trash}</button>
+        </div></td>
+      </tr>`).join("") : `<tr><td colspan="7"><div class="empty-state">${ICONS.flag}<h3>No open reports</h3><p>Flagged content will show up here for review.</p></div></td></tr>`;
+  </script>
+</body>
+</html>

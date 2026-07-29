@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Track — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content" id="content"></main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("");
+    const params = new URLSearchParams(location.search);
+    const track = TRACKS.find(t => t.id === params.get("id")) || TRACKS[0];
+    const artist = ARTISTS.find(a => a.id === track.artistId) || ARTISTS[0];
+    const trackComments = COMMENTS.filter(c => c.trackId === track.id).length ? COMMENTS.filter(c => c.trackId === track.id) : COMMENTS.slice(0,6);
+    const bars = Array.from({length:70},(_,i)=> 10 + Math.round(Math.sin(i*0.4)*18 + Math.random()*22));
+
+    document.getElementById("content").innerHTML = `
+      <div class="hero" style="grid-template-columns:280px 1fr;padding:32px;">
+        <div class="hero-art" style="box-shadow:var(--shadow-2);"><img src="${track.art}" alt="${track.title}" /></div>
+        <div>
+          <div class="eyebrow">${track.genre} ${track.explicit ? '· <span class="badge badge-explicit" style="vertical-align:1px;">E</span>' : ""}</div>
+          <h1 style="font-size:2.2rem;margin:8px 0 6px;">${track.title}</h1>
+          <div class="entity-hero-meta" style="margin-bottom:18px;">
+            <a href="artist.html?id=${artist.id}" style="color:var(--text-primary);font-weight:600;">${artist.name}</a>
+            <span>·</span><a href="album.html?id=alb-1" style="color:var(--text-secondary);">${track.album}</a>
+            <span>·</span><span>${track.year}</span>
+          </div>
+          <div class="hero-actions" style="margin-bottom:22px;">
+            <button class="btn btn-primary" onclick="toast('Playing ${track.title.replace(/'/g,"")}')">${ICONS.play}<span>Play</span></button>
+            ${track.downloadable ? `<button class="btn btn-secondary" onclick="toast('Download started','success')">${ICONS.download}<span>Download</span></button>` : `<button class="btn btn-secondary" disabled>${ICONS.download}<span>Streaming Only</span></button>`}
+            <button class="btn btn-outline" id="track-like-btn">${ICONS.heart}<span>Like</span></button>
+            <button class="icon-btn btn-icon-only" onclick="toast('Added to playlist selector')">${ICONS.plus}</button>
+            <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
+          </div>
+          <div class="flex gap-16 text-secondary" style="font-size:13px;">
+            <span>${fmtCount(track.plays)} plays</span><span>${fmtCount(track.downloads)} downloads</span><span>${fmtCount(track.likes)} likes</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wave" style="margin:28px 0;">
+        ${bars.map((h,i)=>`<span style="height:${h}px;" class="${i<26?'played':''}"></span>`).join("")}
+      </div>
+
+      <div class="tabs" id="track-tabs">
+        <button class="tab active" data-target="about">About</button>
+        <button class="tab" data-target="lyrics">Lyrics</button>
+        <button class="tab" data-target="credits">Credits</button>
+      </div>
+      <div data-tabpanel="about" style="max-width:640px;">
+        <p class="text-secondary">${track.title} is a ${track.genre.toLowerCase()} track by ${artist.name}, taken from ${track.album} (${track.year}). It has quickly become a favorite in listener-curated playlists across the platform.</p>
+      </div>
+      <div data-tabpanel="lyrics" style="display:none;max-width:640px;">
+        <div class="empty-state">${ICONS.mic}<h3>Lyrics not available</h3><p>${artist.name} hasn't added lyrics for this track yet.</p></div>
+      </div>
+      <div data-tabpanel="credits" style="display:none;max-width:480px;">
+        <div class="grid grid-2">
+          <div><div class="eyebrow">Composer</div><div>${artist.name}</div></div>
+          <div><div class="eyebrow">Producer</div><div>${artist.city} Sound Collective</div></div>
+          <div><div class="eyebrow">Label</div><div>ArtistCamp Records</div></div>
+          <div><div class="eyebrow">Release Date</div><div>${track.year}</div></div>
+        </div>
+      </div>
+
+      <div class="section-header"><h2>Comments</h2></div>
+      <div class="chip-row" style="margin-bottom:16px;">
+        <button class="chip active">Top Comments</button>
+        <button class="chip">Newest</button>
+        <button class="chip">Oldest</button>
+      </div>
+      <div class="field" style="max-width:640px;">
+        <textarea class="textarea" placeholder="Share your thoughts about this track..."></textarea>
+        <button class="btn btn-primary" style="align-self:flex-end;" onclick="toast('Comment posted','success')">Post Comment</button>
+      </div>
+      <div style="max-width:640px;">
+        ${trackComments.map(c=>`
+        <div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border-subtle);">
+          <img class="avatar" src="${c.avatar}" width="38" height="38" />
+          <div style="flex:1;">
+            <div style="display:flex;gap:8px;align-items:center;"><strong style="font-size:13.5px;">${c.user}</strong><span class="text-tertiary" style="font-size:12px;">${c.time}</span>${c.status!=="Approved"?`<span class="badge badge-warning">${c.status}</span>`:""}</div>
+            <p style="font-size:13.5px;margin:4px 0 8px;">${c.body}</p>
+            <div class="flex gap-16" style="font-size:12px;color:var(--text-secondary);">
+              <button class="flex items-center gap-8" onclick="toast('Liked comment')">${ICONS.heart} ${c.likes}</button>
+              <button onclick="toast('Reply box opened')">Reply</button>
+              <button onclick="toast('Comment reported','warning')">Report</button>
+            </div>
+          </div>
+        </div>`).join("")}
+      </div>
+    `;
+    wireTabs(document.getElementById("track-tabs"));
+    document.getElementById("track-like-btn").addEventListener("click", function(){
+      const liked = this.classList.toggle("liked");
+      this.innerHTML = liked ? `${ICONS.heartFill}<span>Liked</span>` : `${ICONS.heart}<span>Like</span>`;
+      this.style.color = liked ? "var(--accent)" : "";
+      this.style.borderColor = liked ? "var(--accent)" : "";
+      toast(liked ? "Added to Liked Songs" : "Removed from Liked Songs", "success");
+    });
+  </script>
+</body>
+</html>

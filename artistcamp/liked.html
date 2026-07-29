@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Liked Songs — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="entity-hero">
+          <div class="entity-hero-body" style="margin-top:0;">
+            <div class="entity-hero-art" style="background:linear-gradient(155deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="#fff" width="64" height="64"><path d="M12 20s-7-4.4-9.5-8.8C.7 7.9 2.5 4 6.2 4c2 0 3.5 1.1 4.3 2.6l1.5 2.7 1.5-2.7C14.3 5.1 15.8 4 17.8 4c3.7 0 5.5 3.9 3.7 7.2C19 15.6 12 20 12 20Z"/></svg>
+            </div>
+            <div class="entity-hero-info">
+              <div class="kind">Playlist</div>
+              <h1>Liked Songs</h1>
+              <div class="entity-hero-meta"><span id="liked-count">32 songs</span></div>
+            </div>
+          </div>
+          <div class="entity-hero-actions">
+            <button class="btn btn-primary" onclick="toast('Playing Liked Songs')">Play</button>
+            <button class="btn btn-secondary" onclick="toast('Shuffling Liked Songs')">Shuffle</button>
+            <button class="btn btn-outline" onclick="toast('Downloading all liked songs','success')">Download All</button>
+          </div>
+        </div>
+
+        <table class="track-table" style="margin-top:24px;">
+          <thead><tr><th>#</th><th>Track</th><th>Album</th><th>Time</th><th></th></tr></thead>
+          <tbody id="liked-body"></tbody>
+        </table>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("liked");
+    const likedTracks = TRACKS.slice(0, 20);
+    document.getElementById("liked-count").textContent = likedTracks.length + " songs";
+    document.getElementById("liked-body").innerHTML = likedTracks.map((t,i)=>`
+      <tr class="track-row" data-id="${t.id}">
+        <td class="t-num"><span class="num">${i+1}</span><button class="icon-btn play-ico" style="background:none;width:18px;height:18px;">${ICONS.play}</button></td>
+        <td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td>
+        <td class="t-meta truncate">${t.album}</td>
+        <td class="t-meta">${fmtDuration(t.duration)}</td>
+        <td><div class="t-actions">
+          <button class="icon-btn" style="width:30px;height:30px;background:none;color:var(--accent);" title="Unlike" onclick="this.closest('tr').remove();toast('Removed from Liked Songs')">${ICONS.heartFill}</button>
+          <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Track options opened')">${ICONS.more}</button>
+        </div></td>
+      </tr>`).join("");
+  </script>
+</body>
+</html>

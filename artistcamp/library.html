@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your Library — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content">
+
+        <div class="page-header">
+          <div><h1>Your Library</h1><p>Everything you've saved, followed, and downloaded.</p></div>
+          <div class="flex gap-8">
+            <select class="select" style="width:auto;">
+              <option>Recently Added</option><option>Recently Played</option><option>Alphabetical</option><option>Creator</option>
+            </select>
+            <button class="icon-btn" id="view-grid" title="Grid view"></button>
+            <button class="icon-btn" id="view-list" title="List view"></button>
+          </div>
+        </div>
+
+        <div class="tabs" id="lib-tabs">
+          <button class="tab active" data-target="overview">Overview</button>
+          <button class="tab" data-target="playlists">Playlists</button>
+          <button class="tab" data-target="albums">Albums</button>
+          <button class="tab" data-target="artists">Artists</button>
+          <button class="tab" data-target="liked">Liked Songs</button>
+          <button class="tab" data-target="downloads">Downloads</button>
+        </div>
+
+        <div data-tabpanel="overview">
+          <div class="section-header" style="margin-top:0;"><h2>Playlists</h2></div>
+          <div class="grid grid-6" id="lib-playlists"></div>
+          <div class="section-header"><h2>Albums</h2></div>
+          <div class="grid grid-6" id="lib-albums"></div>
+          <div class="section-header"><h2>Artists You Follow</h2></div>
+          <div class="grid grid-6" id="lib-artists"></div>
+        </div>
+
+        <div data-tabpanel="playlists" style="display:none;">
+          <div class="grid grid-6" id="lib-playlists-2"></div>
+        </div>
+        <div data-tabpanel="albums" style="display:none;">
+          <div class="grid grid-6" id="lib-albums-2"></div>
+        </div>
+        <div data-tabpanel="artists" style="display:none;">
+          <div class="grid grid-6" id="lib-artists-2"></div>
+        </div>
+        <div data-tabpanel="liked" style="display:none;">
+          <table class="track-table"><tbody id="lib-liked"></tbody></table>
+        </div>
+        <div data-tabpanel="downloads" style="display:none;">
+          <table class="track-table"><tbody id="lib-downloads"></tbody></table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("library");
+    document.getElementById("view-grid").innerHTML = ICONS.grid;
+    document.getElementById("view-list").innerHTML = ICONS.library;
+
+    wireTabs(document.getElementById("lib-tabs"));
+    if (location.hash) {
+      const id = location.hash.slice(1);
+      const tab = document.querySelector(`.tab[data-target="${id}"]`);
+      tab?.click();
+    }
+
+    document.getElementById("lib-playlists").innerHTML = PLAYLISTS.slice(0,6).map(p=>cardHTML(p,"playlist")).join("");
+    document.getElementById("lib-playlists-2").innerHTML = PLAYLISTS.map(p=>cardHTML(p,"playlist")).join("");
+    document.getElementById("lib-albums").innerHTML = ALBUMS.slice(0,6).map(a=>cardHTML(a,"album")).join("");
+    document.getElementById("lib-albums-2").innerHTML = ALBUMS.map(a=>cardHTML(a,"album")).join("");
+    document.getElementById("lib-artists").innerHTML = ARTISTS.slice(0,6).map(a=>cardHTML(a,"artist")).join("");
+    document.getElementById("lib-artists-2").innerHTML = ARTISTS.map(a=>cardHTML(a,"artist")).join("");
+    document.getElementById("lib-liked").innerHTML = TRACKS.slice(0,10).map((t,i)=>trackRowHTML(t,i,{album:true})).join("");
+    document.getElementById("lib-downloads").innerHTML = TRACKS.filter(t=>t.downloadable).slice(0,10).map((t,i)=>trackRowHTML(t,i,{album:true})).join("");
+  </script>
+</body>
+</html>

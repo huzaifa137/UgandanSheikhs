@@ -1,0 +1,91 @@
+:root{
+  /* ===== Surfaces ===== */
+  --bg-base:#0B0B0D;
+  --bg-canvas:#101014;
+  --bg-raised:#151519;
+  --surface-1:#19191F;
+  --surface-2:#202027;
+  --surface-3:#26262E;
+  --border-subtle:rgba(255,255,255,0.08);
+  --border-strong:rgba(255,255,255,0.16);
+
+  /* ===== Text ===== */
+  --text-primary:#F7F7F8;
+  --text-secondary:#A7A7B2;
+  --text-tertiary:#6E6E78;
+  --text-on-accent:#1A0805;
+
+  /* ===== Accent ===== */
+  --accent:#FF5A4E;
+  --accent-hover:#FF7266;
+  --accent-active:#E64438;
+  --accent-soft:rgba(255,90,78,0.14);
+  --accent-2:#F6B73C;
+  --accent-2-soft:rgba(246,183,60,0.14);
+
+  /* ===== Semantic ===== */
+  --success:#32C48D;
+  --success-soft:rgba(50,196,141,0.14);
+  --warning:#F4B740;
+  --warning-soft:rgba(244,183,64,0.14);
+  --error:#EF5350;
+  --error-soft:rgba(239,83,80,0.14);
+  --info:#5AA9FF;
+  --info-soft:rgba(90,169,255,0.14);
+
+  /* ===== Type ===== */
+  --font-display:"Fraunces","Georgia",serif;
+  --font-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+
+  --fs-display:clamp(2.5rem,4vw + 1rem,4.5rem);
+  --fs-page:clamp(1.75rem,2vw + 1rem,2.5rem);
+  --fs-section:1.5rem;
+  --fs-card:1rem;
+  --fs-body:0.9375rem;
+  --fs-meta:0.8125rem;
+  --fs-micro:0.6875rem;
+
+  --lh-tight:1.1;
+  --lh-snug:1.3;
+  --lh-normal:1.55;
+
+  /* ===== Layout ===== */
+  --sidebar-w:248px;
+  --sidebar-w-collapsed:76px;
+  --topbar-h:64px;
+  --player-h:92px;
+  --player-h-mobile:64px;
+  --mobilenav-h:60px;
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:16px;
+  --radius-pill:999px;
+  --shadow-1:0 2px 8px rgba(0,0,0,0.35);
+  --shadow-2:0 8px 28px rgba(0,0,0,0.45);
+  --shadow-3:0 20px 60px rgba(0,0,0,0.55);
+
+  /* ===== Motion ===== */
+  --ease:cubic-bezier(.4,0,.2,1);
+  --dur-fast:150ms;
+  --dur-base:220ms;
+  --dur-slow:300ms;
+
+  --z-player:60;
+  --z-sidebar:50;
+  --z-topbar:55;
+  --z-mobilenav:60;
+  --z-modal:200;
+  --z-drawer:190;
+  --z-toast:250;
+  --z-menu:180;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}

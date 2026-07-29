@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — ArtistCamp Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+<style>
+  .settings-layout{display:grid;grid-template-columns:200px 1fr;gap:36px;align-items:start;}
+  .settings-nav a{display:block;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--text-secondary);}
+  .settings-nav a:hover{background:var(--surface-1);color:var(--text-primary);}
+  .settings-nav a.active{background:var(--accent-soft);color:var(--accent);}
+  .settings-section{display:none;max-width:600px;}
+  .settings-section.active{display:block;}
+  .settings-section h2{font-size:18px;margin-bottom:6px;}
+  .settings-section>p.desc{color:var(--text-secondary);font-size:13.5px;margin-bottom:22px;}
+</style>
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header"><div><h1 style="font-size:22px;">Platform Settings</h1><p>Global configuration for ArtistCamp.</p></div></div>
+
+        <div class="settings-layout">
+          <nav class="settings-nav" id="settings-nav">
+            <a data-target="general" class="active">General</a>
+            <a data-target="uploads">Uploads</a>
+            <a data-target="moderation">Moderation</a>
+            <a data-target="notifications">Notifications</a>
+            <a data-target="admins">Admin Accounts</a>
+          </nav>
+          <div>
+            <section class="settings-section active" data-section="general">
+              <h2>General</h2><p class="desc">Basic information about your ArtistCamp instance.</p>
+              <div class="field"><label>Platform name</label><input class="input" value="ArtistCamp" /></div>
+              <div class="field"><label>Support email</label><input class="input" value="support@artistcamp.dev" /></div>
+              <div class="field"><label>Default streaming quality</label><select class="select"><option>Normal</option><option>High</option></select></div>
+              <button class="btn btn-primary" onclick="toast('Settings saved','success')">Save Changes</button>
+            </section>
+            <section class="settings-section" data-section="uploads">
+              <h2>Uploads</h2><p class="desc">Control what artists and admins can upload.</p>
+              <div class="settings-row"><div><div class="label">Max file size</div><div class="desc">Largest audio file accepted per track.</div></div><input class="input" style="width:100px;" value="200 MB" /></div>
+              <div class="settings-row"><div><div class="label">Allowed formats</div><div class="desc">MP3, WAV, FLAC, M4A</div></div><button class="btn btn-secondary btn-sm" onclick="toast('Format list opened')">Edit</button></div>
+              <div class="settings-row"><div><div class="label">Require review before publish</div></div><button class="switch on" data-switch></button></div>
+            </section>
+            <section class="settings-section" data-section="moderation">
+              <h2>Moderation</h2><p class="desc">Automatic and manual moderation rules.</p>
+              <div class="settings-row"><div><div class="label">Auto-hide reported comments</div><div class="desc">Hide after 5 or more reports.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Profanity filter</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Require verification for artist accounts</div></div><button class="switch" data-switch></button></div>
+            </section>
+            <section class="settings-section" data-section="notifications">
+              <h2>Notifications</h2><p class="desc">Platform-wide notification defaults.</p>
+              <div class="settings-row"><div><div class="label">Send weekly digest emails</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Notify admins of new reports</div></div><button class="switch on" data-switch></button></div>
+            </section>
+            <section class="settings-section" data-section="admins">
+              <h2>Admin Accounts</h2><p class="desc">People with access to this dashboard.</p>
+              <table class="data-table">
+                <thead><tr><th>Name</th><th>Role</th><th>Last Active</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td>Sena Okafor</td><td><span class="badge badge-accent">Owner</span></td><td class="text-secondary">Just now</td><td></td></tr>
+                  <tr><td>Kwame O.</td><td><span class="badge badge-neutral">Editor</span></td><td class="text-secondary">2h ago</td><td><button class="icon-btn admin-remove-btn" style="width:28px;height:28px;" onclick="toast('Admin removed','warning')"></button></td></tr>
+                </tbody>
+              </table>
+              <button class="btn btn-secondary btn-sm mt-24" onclick="toast('Invite admin form opened')">Invite Admin</button>
+            </section>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    initAdminPage("settings", "Settings");
+    document.querySelectorAll("[data-switch]").forEach(sw => sw.addEventListener("click", () => { sw.classList.toggle("on"); toast(sw.classList.contains("on") ? "Setting enabled" : "Setting disabled"); }));
+    document.querySelectorAll("#settings-nav a").forEach(link => {
+      link.addEventListener("click", () => {
+        document.querySelectorAll("#settings-nav a").forEach(l => l.classList.remove("active"));
+        link.classList.add("active");
+        document.querySelectorAll(".settings-section").forEach(s => s.classList.toggle("active", s.dataset.section === link.dataset.target));
+      });
+    });
+    document.querySelector(".admin-remove-btn").innerHTML = ICONS.trash;
+  </script>
+</body>
+</html>

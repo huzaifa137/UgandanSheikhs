@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Create Account — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <img src="https://picsum.photos/seed/auth-visual-2/1200/1600" alt="" />
+      <p class="quote">"Fifteen artists deep into my Discover feed and I still haven't hit a skip."</p>
+    </div>
+    <div class="auth-form-wrap">
+      <div class="auth-form">
+        <a href="index.html" style="display:inline-flex;align-items:center;gap:9px;margin-bottom:36px;">
+          <span class="mark" style="width:30px;height:30px;border-radius:8px;background:linear-gradient(155deg,var(--accent),var(--accent-active));display:flex;align-items:center;justify-content:center;"></span>
+          <span style="font-family:var(--font-display);font-weight:600;font-size:18px;">ArtistCamp</span>
+        </a>
+        <h1>Create your account</h1>
+        <p>Join a community built around independent music.</p>
+
+        <form onsubmit="event.preventDefault();toast('Account created — check your email to verify','success');setTimeout(()=>location.href='verify-email.html',700);">
+          <div class="field"><label>Full name</label><input class="input" type="text" placeholder="Jane Doe" required /></div>
+          <div class="field"><label>Username</label><input class="input" type="text" placeholder="janedoe" required /></div>
+          <div class="field"><label>Email</label><input class="input" type="email" placeholder="you@example.com" required /></div>
+          <div class="field"><label>Password</label><input class="input" type="password" placeholder="••••••••" required /></div>
+          <div class="field"><label>Confirm password</label><input class="input" type="password" placeholder="••••••••" required /></div>
+          <label class="checkbox-row" style="margin-bottom:22px;"><input type="checkbox" required /> I agree to the Terms of Service and Privacy Policy</label>
+          <button class="btn btn-primary" type="submit" style="width:100%;">Create Account</button>
+        </form>
+
+        <p style="text-align:center;font-size:13px;color:var(--text-secondary);margin-top:26px;">Already have an account? <a href="login.html" style="color:var(--accent);font-weight:600;">Sign in</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

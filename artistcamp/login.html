@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In — ArtistCamp</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <img src="https://picsum.photos/seed/auth-visual/1200/1600" alt="" />
+      <p class="quote">"ArtistCamp is where I found half the artists on my Sunday playlist."</p>
+    </div>
+    <div class="auth-form-wrap">
+      <div class="auth-form">
+        <a href="index.html" style="display:inline-flex;align-items:center;gap:9px;margin-bottom:36px;">
+          <span class="mark" style="width:30px;height:30px;border-radius:8px;background:linear-gradient(155deg,var(--accent),var(--accent-active));display:flex;align-items:center;justify-content:center;"></span>
+          <span style="font-family:var(--font-display);font-weight:600;font-size:18px;">ArtistCamp</span>
+        </a>
+        <h1>Welcome back</h1>
+        <p>Sign in to keep discovering new music.</p>
+
+        <form onsubmit="event.preventDefault();toast('Signed in — redirecting…','success');setTimeout(()=>location.href='index.html',700);">
+          <div class="field"><label>Email or username</label><input class="input" type="text" placeholder="you@example.com" required /></div>
+          <div class="field">
+            <label>Password</label>
+            <input class="input" type="password" placeholder="••••••••" required />
+          </div>
+          <div class="flex" style="justify-content:space-between;align-items:center;margin-bottom:22px;">
+            <label class="checkbox-row"><input type="checkbox" checked /> Remember me</label>
+            <a href="forgot-password.html" style="font-size:12.5px;color:var(--accent);font-weight:600;">Forgot password?</a>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%;">Sign In</button>
+        </form>
+
+        <div class="auth-divider">or continue with</div>
+        <div class="social-row">
+          <button class="btn btn-secondary" onclick="toast('Google sign-in placeholder')">Google</button>
+          <button class="btn btn-secondary" onclick="toast('Apple sign-in placeholder')">Apple</button>
+        </div>
+
+        <p style="text-align:center;font-size:13px;color:var(--text-secondary);margin-top:26px;">Don't have an account? <a href="register.html" style="color:var(--accent);font-weight:600;">Create one</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
