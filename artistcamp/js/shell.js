@@ -5,6 +5,19 @@
    Pages declare data-active="discover" etc. on <body> to set nav state.
    ===================================================================== */
 
+/* ---- Theme (dark default / light). Persisted; applied as early as this file loads. ---- */
+(function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem("ac-theme"); } catch (e) {}
+  document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "dark");
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-theme-toggle]")) return;
+    const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("ac-theme", next); } catch (err) {}
+  });
+})();
+
 const NAV_PRIMARY = [
   { id: "home", label: "Home", href: "index.html", icon: "home" },
   { id: "discover", label: "Discover", href: "discover.html", icon: "compass" },
@@ -68,6 +81,7 @@ function renderTopbar() {
       <div class="menu" id="search-autocomplete" style="left:0;right:0;top:44px;"></div>
     </div>
     <div class="topbar-right">
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle light / dark theme">${ICONS.moon}${ICONS.sun}</button>
       <span class="status-pill ${STATE.online ? "online" : "offline"}" id="status-pill">
         <span class="status-dot"></span>${STATE.online ? "Online" : "Offline Mode"}
       </span>

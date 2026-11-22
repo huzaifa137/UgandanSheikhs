@@ -1,52 +1,67 @@
+/* =====================================================================
+   Design tokens — emerald & gold theme (dark default + light)
+   Every colour used by main.css comes from here, so re-skinning the whole
+   app (e.g. to match exact brand colours) only means editing this file.
+   Switch themes with <html data-theme="light|dark"> (see js/shell.js).
+   ===================================================================== */
 :root{
+  color-scheme:dark;
+
   /* ===== Surfaces ===== */
-  --bg-base:#0B0B0D;
-  --bg-canvas:#101014;
-  --bg-raised:#151519;
-  --surface-1:#19191F;
-  --surface-2:#202027;
-  --surface-3:#26262E;
-  --border-subtle:rgba(255,255,255,0.08);
-  --border-strong:rgba(255,255,255,0.16);
+  --bg-base:#08120F;
+  --bg-canvas:#0C1914;
+  --bg-raised:#10201A;
+  --surface-1:#14271F;
+  --surface-2:#1A3128;
+  --surface-3:#223D32;
+  --border-subtle:rgba(214,236,226,0.09);
+  --border-strong:rgba(214,236,226,0.18);
 
   /* ===== Text ===== */
-  --text-primary:#F7F7F8;
-  --text-secondary:#A7A7B2;
-  --text-tertiary:#6E6E78;
-  --text-on-accent:#1A0805;
+  --text-primary:#F2F7F4;
+  --text-secondary:#A5B8AF;
+  --text-tertiary:#73897F;
+  --text-on-accent:#04150E;
 
-  /* ===== Accent ===== */
-  --accent:#FF5A4E;
-  --accent-hover:#FF7266;
-  --accent-active:#E64438;
-  --accent-soft:rgba(255,90,78,0.14);
-  --accent-2:#F6B73C;
-  --accent-2-soft:rgba(246,183,60,0.14);
+  /* ===== Accent (emerald) + secondary (gold) ===== */
+  --accent:#1FB87A;
+  --accent-hover:#3DCB8D;
+  --accent-active:#159A65;
+  --accent-soft:rgba(31,184,122,0.15);
+  --accent-2:#D9B26A;
+  --accent-2-soft:rgba(217,178,106,0.15);
 
   /* ===== Semantic ===== */
   --success:#32C48D;
-  --success-soft:rgba(50,196,141,0.14);
+  --success-soft:rgba(50,196,141,0.15);
   --warning:#F4B740;
-  --warning-soft:rgba(244,183,64,0.14);
-  --error:#EF5350;
-  --error-soft:rgba(239,83,80,0.14);
+  --warning-soft:rgba(244,183,64,0.15);
+  --error:#EF6B66;
+  --error-soft:rgba(239,107,102,0.15);
   --info:#5AA9FF;
-  --info-soft:rgba(90,169,255,0.14);
+  --info-soft:rgba(90,169,255,0.15);
+
+  /* ===== Chrome (things that were hard-coded before) ===== */
+  --topbar-bg:rgba(12,25,20,0.86);
+  --overlay-bg:rgba(3,9,7,0.72);
+  --hero-fade:rgba(8,18,15,0.1);
+  --pattern-opacity:0.10;
 
   /* ===== Type ===== */
-  --font-display:"Fraunces","Georgia",serif;
+  --font-display:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --font-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --font-arabic:"Amiri","Scheherazade New","Noto Naskh Arabic","Traditional Arabic",serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
 
-  --fs-display:clamp(2.5rem,4vw + 1rem,4.5rem);
+  --fs-display:clamp(2.25rem,3.4vw + 1rem,4rem);
   --fs-page:clamp(1.75rem,2vw + 1rem,2.5rem);
-  --fs-section:1.5rem;
+  --fs-section:1.4rem;
   --fs-card:1rem;
   --fs-body:0.9375rem;
   --fs-meta:0.8125rem;
   --fs-micro:0.6875rem;
 
-  --lh-tight:1.1;
+  --lh-tight:1.15;
   --lh-snug:1.3;
   --lh-normal:1.55;
 
@@ -57,9 +72,9 @@
   --player-h:92px;
   --player-h-mobile:64px;
   --mobilenav-h:60px;
-  --radius-sm:6px;
-  --radius-md:10px;
-  --radius-lg:16px;
+  --radius-sm:8px;
+  --radius-md:14px;
+  --radius-lg:22px;
   --radius-pill:999px;
   --shadow-1:0 2px 8px rgba(0,0,0,0.35);
   --shadow-2:0 8px 28px rgba(0,0,0,0.45);
@@ -79,6 +94,50 @@
   --z-drawer:190;
   --z-toast:250;
   --z-menu:180;
+}
+
+/* ===== Light theme: warm ivory, white cards, deep emerald ===== */
+:root[data-theme="light"]{
+  color-scheme:light;
+
+  --bg-base:#F5F2E9;
+  --bg-canvas:#FFFFFF;
+  --bg-raised:#FFFFFF;
+  --surface-1:#FFFFFF;
+  --surface-2:#F0ECDF;
+  --surface-3:#E4DFCF;
+  --border-subtle:rgba(16,45,34,0.10);
+  --border-strong:rgba(16,45,34,0.22);
+
+  --text-primary:#10241C;
+  --text-secondary:#46605A;
+  --text-tertiary:#788C83;
+  --text-on-accent:#FFFFFF;
+
+  --accent:#0E7F5C;
+  --accent-hover:#0B6B4D;
+  --accent-active:#095A41;
+  --accent-soft:rgba(14,127,92,0.11);
+  --accent-2:#9A7418;
+  --accent-2-soft:rgba(154,116,24,0.13);
+
+  --success:#12805C;
+  --success-soft:rgba(18,128,92,0.11);
+  --warning:#A86B00;
+  --warning-soft:rgba(168,107,0,0.12);
+  --error:#C93C37;
+  --error-soft:rgba(201,60,55,0.10);
+  --info:#1F6FD1;
+  --info-soft:rgba(31,111,209,0.10);
+
+  --topbar-bg:rgba(255,255,255,0.86);
+  --overlay-bg:rgba(10,30,22,0.45);
+  --hero-fade:rgba(245,242,233,0.1);
+  --pattern-opacity:0.22;
+
+  --shadow-1:0 1px 3px rgba(16,45,34,0.10);
+  --shadow-2:0 8px 24px rgba(16,45,34,0.12);
+  --shadow-3:0 20px 50px rgba(16,45,34,0.18);
 }
 
 @media (prefers-reduced-motion: reduce){
