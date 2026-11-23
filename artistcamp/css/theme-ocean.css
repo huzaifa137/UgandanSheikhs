@@ -1,0 +1,242 @@
+/* =====================================================================
+   Ugandan Sheikhs — Ocean (Royal Blue) theme layer
+   Everything here is scoped to :root[data-theme="ocean"], so Emerald Night
+   and Ivory Light are untouched. Colour values come from tokens.css; this
+   file adds the "premium" treatment: gradient backdrop, frosted glass,
+   vivid blue header, white now-playing highlight, glowing accents.
+
+   Load AFTER main.css.
+   ===================================================================== */
+
+/* ---------- Backdrop: layered azure light + faint geometric pattern ---------- */
+:root[data-theme="ocean"] body{
+  background:
+    radial-gradient(900px 520px at 88% -8%, rgba(86,164,255,.30), transparent 62%),
+    radial-gradient(760px 520px at -8% 30%, rgba(36,104,218,.32), transparent 60%),
+    linear-gradient(180deg,#0B2A6B 0%,#08204F 38%,#061633 100%);
+  background-attachment:fixed;
+}
+:root[data-theme="ocean"] body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.045;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='1'%3E%3Crect x='18' y='18' width='36' height='36'/%3E%3Crect x='18' y='18' width='36' height='36' transform='rotate(45 36 36)'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 65%);mask-image:linear-gradient(180deg,#000 0%,transparent 65%);
+}
+:root[data-theme="ocean"] ::selection{background:rgba(78,160,255,.45);color:#fff;}
+:root[data-theme="ocean"] :focus-visible{outline-color:#9CCBFF;}
+:root[data-theme="ocean"] ::-webkit-scrollbar-thumb{background:rgba(160,200,255,.28);border-color:transparent;}
+:root[data-theme="ocean"] ::-webkit-scrollbar-thumb:hover{background:rgba(160,200,255,.45);}
+
+/* ---------- Sidebar ---------- */
+:root[data-theme="ocean"] .sidebar,
+:root[data-theme="ocean"] .admin-sidebar{
+  background:linear-gradient(180deg,rgba(13,44,108,.94),rgba(7,25,64,.97));
+  border-right:1px solid rgba(176,208,255,.12);
+  box-shadow:10px 0 40px rgba(2,10,35,.35);
+  backdrop-filter:blur(16px);
+}
+:root[data-theme="ocean"] .sidebar-logo .mark{
+  background:linear-gradient(145deg,#7BBBFF,#2468DA);
+  box-shadow:0 6px 18px rgba(46,131,234,.55),inset 0 1px 0 rgba(255,255,255,.45);
+}
+:root[data-theme="ocean"] .nav-link{border-radius:12px;}
+:root[data-theme="ocean"] .nav-link:hover{background:rgba(255,255,255,.08);}
+:root[data-theme="ocean"] .nav-link.active{
+  color:#fff;
+  background:linear-gradient(90deg,rgba(78,160,255,.32),rgba(78,160,255,.07));
+  box-shadow:inset 0 0 0 1px rgba(150,200,255,.22);
+}
+:root[data-theme="ocean"] .nav-link.active svg{color:#9CCBFF;}
+:root[data-theme="ocean"] .nav-link.active::before{
+  background:linear-gradient(180deg,#B5D8FF,#4EA0FF);box-shadow:0 0 14px rgba(78,160,255,.95);
+}
+:root[data-theme="ocean"] .sidebar-bottom{border-top-color:rgba(176,208,255,.14);}
+
+/* ---------- Topbar: the app's vivid blue header, in frosted glass ---------- */
+:root[data-theme="ocean"] .topbar{
+  background:linear-gradient(90deg,rgba(36,104,222,.86),rgba(20,67,166,.82));
+  border-bottom:1px solid rgba(200,225,255,.24);
+  box-shadow:0 10px 30px rgba(2,12,40,.35);
+  backdrop-filter:blur(18px) saturate(140%);
+}
+:root[data-theme="ocean"] .topbar .icon-btn{background:rgba(255,255,255,.15);color:#fff;}
+:root[data-theme="ocean"] .topbar .icon-btn:hover{background:rgba(255,255,255,.26);}
+:root[data-theme="ocean"] .topbar .search-field{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.24);}
+:root[data-theme="ocean"] .topbar .search-field:focus-within{
+  background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.55);box-shadow:0 0 0 4px rgba(150,200,255,.22);
+}
+:root[data-theme="ocean"] .topbar .search-field input{color:#fff;}
+:root[data-theme="ocean"] .topbar .search-field input::placeholder{color:rgba(255,255,255,.74);}
+:root[data-theme="ocean"] .topbar .search-field svg{color:rgba(255,255,255,.85);}
+:root[data-theme="ocean"] .user-chip:hover{background:rgba(255,255,255,.16);}
+:root[data-theme="ocean"] .user-chip>svg{color:rgba(255,255,255,.78);}
+:root[data-theme="ocean"] .topbar .status-pill.online{background:rgba(255,255,255,.17);color:#D5FFEC;}
+:root[data-theme="ocean"] .topbar .status-pill.offline{background:rgba(6,22,51,.45);color:#FFD98A;}
+:root[data-theme="ocean"] #notif-btn span{background:var(--accent-2)!important;box-shadow:0 0 0 2px #1D58C6;}
+
+/* ---------- Headings & eyebrow ---------- */
+:root[data-theme="ocean"] .page-header h1,
+:root[data-theme="ocean"] .section-header h2{text-shadow:0 2px 18px rgba(2,12,45,.35);}
+:root[data-theme="ocean"] .section-header .see-all{color:#9CCBFF;}
+:root[data-theme="ocean"] .section-header .see-all:hover{color:#fff;}
+
+/* ---------- Buttons ---------- */
+:root[data-theme="ocean"] .btn-primary{
+  background:var(--accent-fill);color:#fff;
+  box-shadow:0 8px 20px rgba(30,100,225,.45),inset 0 1px 0 rgba(255,255,255,.28);
+}
+:root[data-theme="ocean"] .btn-primary:hover{filter:brightness(1.1);background:var(--accent-fill);}
+:root[data-theme="ocean"] .btn-secondary{background:var(--glass);border-color:var(--glass-border);box-shadow:var(--glass-highlight);}
+:root[data-theme="ocean"] .btn-secondary:hover{background:var(--glass-hover);}
+:root[data-theme="ocean"] .btn-outline{border-color:rgba(190,220,255,.4);}
+:root[data-theme="ocean"] .btn-outline:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.08);}
+:root[data-theme="ocean"] .btn-ghost:hover{background:rgba(255,255,255,.09);}
+:root[data-theme="ocean"] .icon-btn{background:rgba(255,255,255,.09);}
+:root[data-theme="ocean"] .icon-btn:hover{background:rgba(255,255,255,.18);}
+
+/* ---------- Chips, badges, tabs ---------- */
+:root[data-theme="ocean"] .chip{background:var(--glass);border-color:var(--glass-border);box-shadow:var(--glass-highlight);}
+:root[data-theme="ocean"] .chip:hover{background:var(--glass-hover);border-color:rgba(190,220,255,.4);}
+:root[data-theme="ocean"] .chip.active{
+  background:var(--accent-fill);border-color:rgba(190,225,255,.5);color:#fff;
+  box-shadow:0 6px 16px rgba(30,100,225,.4),inset 0 1px 0 rgba(255,255,255,.25);
+}
+:root[data-theme="ocean"] .tab.active{color:#fff;border-color:#7DB8FF;box-shadow:0 8px 14px -10px #4EA0FF;}
+:root[data-theme="ocean"] .badge-accent{background:rgba(78,160,255,.22);color:#A9D2FF;}
+
+/* ---------- Cards & glass surfaces ---------- */
+:root[data-theme="ocean"] .card,
+:root[data-theme="ocean"] .stat-card,
+:root[data-theme="ocean"] .chart-placeholder,
+:root[data-theme="ocean"] .upload-item,
+:root[data-theme="ocean"] .theme-card{
+  background:var(--glass);border-color:var(--glass-border);
+  box-shadow:var(--shadow-1),var(--glass-highlight);
+}
+:root[data-theme="ocean"] .card:hover,
+:root[data-theme="ocean"] .theme-card:hover{
+  background:var(--glass-hover);border-color:rgba(190,220,255,.36);
+  box-shadow:var(--shadow-2),0 0 0 1px rgba(120,180,255,.14),var(--glass-highlight);
+}
+:root[data-theme="ocean"] .card-art{box-shadow:0 8px 20px rgba(1,8,30,.4);}
+:root[data-theme="ocean"] .card-play{background:var(--accent-fill);color:#fff;box-shadow:0 8px 20px rgba(20,90,220,.6);}
+:root[data-theme="ocean"] .genre-tile{box-shadow:0 10px 24px rgba(1,8,30,.4),inset 0 1px 0 rgba(255,255,255,.2);}
+:root[data-theme="ocean"] .data-table{background:var(--glass);border-color:var(--glass-border);}
+:root[data-theme="ocean"] .data-table thead{background:rgba(255,255,255,.08);}
+:root[data-theme="ocean"] .data-table tbody tr:hover{background:rgba(255,255,255,.06);}
+:root[data-theme="ocean"] .chart-placeholder .bar{background:linear-gradient(180deg,#7DB8FF,#2468DA);}
+:root[data-theme="ocean"] .dropzone{background:var(--glass);border-color:rgba(190,220,255,.35);}
+:root[data-theme="ocean"] .dropzone:hover,
+:root[data-theme="ocean"] .dropzone.drag{background:rgba(78,160,255,.16);border-color:#7DB8FF;}
+:root[data-theme="ocean"] .dropzone .icon-wrap,
+:root[data-theme="ocean"] .empty-state .icon-wrap{background:rgba(255,255,255,.1);}
+
+/* ---------- Hero: azure gradient banner ---------- */
+:root[data-theme="ocean"] .hero{
+  background:
+    radial-gradient(520px 320px at 88% 0%, rgba(160,210,255,.50), transparent 65%),
+    linear-gradient(135deg,#2F7BEA 0%,#1D55C0 46%,#0E2F7E 100%);
+  border-color:rgba(200,225,255,.30);
+  box-shadow:0 26px 60px rgba(3,18,70,.55),inset 0 1px 0 rgba(255,255,255,.3);
+}
+:root[data-theme="ocean"] .hero::before{
+  opacity:.18;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='1'%3E%3Crect x='18' y='18' width='36' height='36'/%3E%3Crect x='18' y='18' width='36' height='36' transform='rotate(45 36 36)'/%3E%3C/g%3E%3C/svg%3E");
+}
+:root[data-theme="ocean"] .hero .eyebrow{color:#FFE2A3;}
+:root[data-theme="ocean"] .hero-copy p{color:rgba(255,255,255,.9);}
+:root[data-theme="ocean"] .hero .btn-primary{background:#fff;color:#154FB8;box-shadow:0 10px 24px rgba(2,14,60,.4);}
+:root[data-theme="ocean"] .hero .btn-primary:hover{filter:none;background:#EAF3FF;}
+:root[data-theme="ocean"] .hero .btn-secondary,
+:root[data-theme="ocean"] .hero .btn-outline{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.4);}
+:root[data-theme="ocean"] .hero .btn-secondary:hover,
+:root[data-theme="ocean"] .hero .btn-outline:hover{background:rgba(255,255,255,.26);color:#fff;border-color:#fff;}
+:root[data-theme="ocean"] .hero-art{box-shadow:0 30px 60px rgba(2,12,50,.55),0 0 0 6px rgba(255,255,255,.14);}
+:root[data-theme="ocean"] .entity-hero-art{border-color:#0B2A6B;}
+
+/* ---------- Lecture rows: the white "current item" pill (like the prayer-time list) ---------- */
+:root[data-theme="ocean"] .track-row td:first-child{border-radius:12px 0 0 12px;}
+:root[data-theme="ocean"] .track-row td:last-child{border-radius:0 12px 12px 0;}
+:root[data-theme="ocean"] .track-row:hover{background:transparent;}
+:root[data-theme="ocean"] .track-row:hover td{background:rgba(255,255,255,.08);}
+:root[data-theme="ocean"] .track-row.playing td{background:#fff;color:var(--on-highlight);box-shadow:0 8px 24px rgba(2,14,60,.35);}
+:root[data-theme="ocean"] .track-row.playing .t-title{color:var(--on-highlight);}
+:root[data-theme="ocean"] .track-row.playing .t-artist,
+:root[data-theme="ocean"] .track-row.playing .t-meta,
+:root[data-theme="ocean"] .track-row.playing .t-num{color:var(--on-highlight-muted);}
+:root[data-theme="ocean"] .track-row.playing .icon-btn{background:#E6F0FF;color:#154FB8;}
+
+/* ---------- Player, mini-player, mobile nav ---------- */
+:root[data-theme="ocean"] .player{
+  background:linear-gradient(180deg,rgba(15,52,124,.88),rgba(7,26,70,.97));
+  backdrop-filter:blur(20px) saturate(140%);
+  border-top:1px solid rgba(190,220,255,.22);
+  box-shadow:0 -14px 40px rgba(2,10,40,.45);
+}
+:root[data-theme="ocean"] .play-toggle{background:#fff;color:#1B56C4;box-shadow:0 6px 20px rgba(120,180,255,.45);}
+:root[data-theme="ocean"] .play-toggle:hover{transform:scale(1.08);}
+:root[data-theme="ocean"] .player-controls .icon-btn{background:transparent;}
+:root[data-theme="ocean"] .player-controls .icon-btn.on{color:#9CCBFF;}
+:root[data-theme="ocean"] .progress-track{background:rgba(255,255,255,.17);}
+:root[data-theme="ocean"] .progress-fill{background:linear-gradient(90deg,#4EA0FF,#A9D2FF);}
+:root[data-theme="ocean"] .progress-track:hover .progress-fill{background:linear-gradient(90deg,#74B6FF,#fff);}
+:root[data-theme="ocean"] .storage-bar{background:rgba(255,255,255,.12);}
+:root[data-theme="ocean"] .storage-bar .fill{background:linear-gradient(90deg,#4EA0FF,#F0C877);}
+:root[data-theme="ocean"] .wave span{background:rgba(255,255,255,.2);}
+:root[data-theme="ocean"] .wave span.played{background:#7DB8FF;}
+
+:root[data-theme="ocean"] .mini-player{
+  background:linear-gradient(135deg,rgba(36,104,222,.96),rgba(14,48,130,.96));
+  border-color:rgba(200,225,255,.28);backdrop-filter:blur(16px);
+  box-shadow:0 14px 34px rgba(2,12,50,.55);
+}
+:root[data-theme="ocean"] .mini-player .artist{color:rgba(255,255,255,.82);}
+
+:root[data-theme="ocean"] .mobile-nav{
+  background:linear-gradient(180deg,rgba(11,41,102,.93),rgba(6,22,56,.98));
+  backdrop-filter:blur(18px);border-top:1px solid rgba(190,220,255,.2);
+}
+:root[data-theme="ocean"] .mobile-nav a{position:relative;color:#8FB0E0;}
+:root[data-theme="ocean"] .mobile-nav a.active{color:#fff;}
+:root[data-theme="ocean"] .mobile-nav a.active::before{
+  content:"";position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:30px;height:3px;border-radius:0 0 4px 4px;
+  background:#9CCBFF;box-shadow:0 0 14px #4EA0FF;
+}
+
+/* ---------- Forms & switches ---------- */
+:root[data-theme="ocean"] .input,
+:root[data-theme="ocean"] .textarea,
+:root[data-theme="ocean"] .select{background:rgba(255,255,255,.07);border-color:rgba(190,220,255,.2);}
+:root[data-theme="ocean"] .input:focus,
+:root[data-theme="ocean"] .textarea:focus,
+:root[data-theme="ocean"] .select:focus{border-color:#7DB8FF;box-shadow:0 0 0 4px rgba(78,160,255,.2);}
+:root[data-theme="ocean"] .select option{background:#0C2A66;color:#F4F8FF;}
+:root[data-theme="ocean"] .switch{background:rgba(255,255,255,.2);}
+:root[data-theme="ocean"] .switch.on{background:var(--accent-fill);box-shadow:0 0 12px rgba(78,160,255,.5);}
+
+/* ---------- Menus, modals, drawers, toasts ---------- */
+:root[data-theme="ocean"] .menu{
+  background:rgba(16,50,118,.96);backdrop-filter:blur(18px);border-color:rgba(190,220,255,.26);
+}
+:root[data-theme="ocean"] .menu-item:hover{background:rgba(255,255,255,.12);}
+:root[data-theme="ocean"] .modal{background:linear-gradient(160deg,#17408A,#0C2A66);border-color:rgba(190,220,255,.3);}
+:root[data-theme="ocean"] .drawer{background:linear-gradient(180deg,#0C2A66,#071A44);}
+:root[data-theme="ocean"] .overlay{backdrop-filter:blur(6px);}
+:root[data-theme="ocean"] .toast{background:rgba(16,50,118,.97);backdrop-filter:blur(14px);}
+
+/* ---------- Auth & error pages ---------- */
+:root[data-theme="ocean"] .auth-visual{background:linear-gradient(160deg,#2F7BEA 0%,#1546A8 55%,#0A2152 100%);}
+:root[data-theme="ocean"] .auth-visual img{opacity:.32;mix-blend-mode:luminosity;}
+:root[data-theme="ocean"] .auth-visual::after{background:linear-gradient(180deg,transparent 25%,rgba(6,22,51,.92) 98%);}
+:root[data-theme="ocean"] .error-page .code{
+  background:linear-gradient(180deg,#B5D8FF,#2468DA);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+}
+
+/* ---------- Respect users who prefer less transparency / motion ---------- */
+@media (prefers-reduced-transparency: reduce){
+  :root[data-theme="ocean"] .topbar,
+  :root[data-theme="ocean"] .player,
+  :root[data-theme="ocean"] .mobile-nav,
+  :root[data-theme="ocean"] .menu,
+  :root[data-theme="ocean"] .sidebar{backdrop-filter:none;}
+}

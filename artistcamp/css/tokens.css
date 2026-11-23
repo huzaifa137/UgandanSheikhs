@@ -1,8 +1,9 @@
 /* =====================================================================
-   Design tokens — emerald & gold theme (dark default + light)
+   Design tokens — three themes: Emerald Night (dark, default),
+   Royal Blue (ocean) and Ivory Light
    Every colour used by main.css comes from here, so re-skinning the whole
    app (e.g. to match exact brand colours) only means editing this file.
-   Switch themes with <html data-theme="light|dark"> (see js/shell.js).
+   Switch themes with <html data-theme="dark|ocean|light"> (see js/theme.js).
    ===================================================================== */
 :root{
   color-scheme:dark;
@@ -138,6 +139,66 @@
   --shadow-1:0 1px 3px rgba(16,45,34,0.10);
   --shadow-2:0 8px 24px rgba(16,45,34,0.12);
   --shadow-3:0 20px 50px rgba(16,45,34,0.18);
+}
+
+/* ===== Ocean theme: royal blue, glass surfaces, soft gold =====
+   Inspired by modern Quran/prayer apps: azure gradients, deep navy,
+   frosted-glass cards and a white "current item" highlight.
+   Component-level polish for this theme lives in css/theme-ocean.css. */
+:root[data-theme="ocean"]{
+  color-scheme:dark;
+
+  --bg-base:#061633;
+  --bg-canvas:#0A2152;
+  --bg-raised:#0C2A66;
+  --surface-1:#12336F;
+  --surface-2:#1A428A;
+  --surface-3:#2352A5;
+  --border-subtle:rgba(176,208,255,0.14);
+  --border-strong:rgba(176,208,255,0.30);
+
+  --text-primary:#F4F8FF;
+  --text-secondary:#BCD0F0;
+  --text-tertiary:#86A3D0;
+  --text-on-accent:#FFFFFF;
+
+  --accent:#4EA0FF;
+  --accent-hover:#74B6FF;
+  --accent-active:#2E83EA;
+  --accent-soft:rgba(78,160,255,0.20);
+  --accent-2:#F0C877;
+  --accent-2-soft:rgba(240,200,119,0.16);
+
+  --success:#3FD4A0;
+  --success-soft:rgba(63,212,160,0.16);
+  --warning:#F6C04F;
+  --warning-soft:rgba(246,192,79,0.16);
+  --error:#FF7B76;
+  --error-soft:rgba(255,123,118,0.16);
+  --info:#7DC0FF;
+  --info-soft:rgba(125,192,255,0.16);
+
+  --topbar-bg:rgba(10,38,96,0.78);
+  --overlay-bg:rgba(2,9,28,0.72);
+  --hero-fade:rgba(6,22,51,0.1);
+  --pattern-opacity:0.16;
+
+  /* Ocean-only extras (used by css/theme-ocean.css) */
+  --accent-fill:linear-gradient(180deg,#2A74E0 0%,#1B56C4 100%);   /* filled buttons: white text >= 4.5:1 */
+  --glass:linear-gradient(160deg,rgba(255,255,255,0.11),rgba(255,255,255,0.04));
+  --glass-hover:linear-gradient(160deg,rgba(255,255,255,0.18),rgba(255,255,255,0.07));
+  --glass-border:rgba(190,220,255,0.18);
+  --glass-highlight:inset 0 1px 0 rgba(255,255,255,0.12);
+  --on-highlight:#0A2A66;            /* text on the white "now playing" pill */
+  --on-highlight-muted:#47689F;
+
+  --radius-sm:10px;
+  --radius-md:16px;
+  --radius-lg:26px;
+
+  --shadow-1:0 4px 14px rgba(1,8,30,0.35);
+  --shadow-2:0 12px 32px rgba(1,8,30,0.45);
+  --shadow-3:0 24px 64px rgba(1,8,30,0.6);
 }
 
 @media (prefers-reduced-motion: reduce){

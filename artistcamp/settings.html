@@ -6,6 +6,8 @@
 <title>Settings — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/theme-ocean.css" />
+<script src="js/theme.js"></script>
 <style>
   .settings-layout{display:grid;grid-template-columns:220px 1fr;gap:40px;align-items:start;}
   .settings-nav a{display:block;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--text-secondary);}
@@ -51,7 +53,27 @@
             <section class="settings-section" data-section="appearance">
               <h2>Appearance</h2><p class="desc">Choose how Ugandan Sheikhs looks on this device.</p>
               <div class="field"><label>Theme</label>
-                <select class="select"><option>Dark (recommended)</option><option disabled>Light — coming soon</option><option>Match system</option></select>
+              <div class="theme-picker" role="group" aria-label="Theme">
+                <button type="button" class="theme-card" data-theme-set="dark" aria-pressed="false">
+                  <span class="theme-preview tp-dark"><i class="tp-side"></i><i class="tp-dot"></i><i class="tp-line l1"></i><i class="tp-line l2"></i><i class="tp-line l3"></i><i class="tp-bar"></i><i class="tp-hero"></i><i class="tp-card c1"></i><i class="tp-card c2"></i><i class="tp-card c3"></i></span>
+                  <span class="theme-name">Emerald Night<small>Deep green, easy on the eyes</small></span>
+                  <span class="theme-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
+                <button type="button" class="theme-card" data-theme-set="ocean" aria-pressed="false">
+                  <span class="theme-preview tp-ocean"><i class="tp-side"></i><i class="tp-dot"></i><i class="tp-line l1"></i><i class="tp-line l2"></i><i class="tp-line l3"></i><i class="tp-bar"></i><i class="tp-hero"></i><i class="tp-card c1"></i><i class="tp-card c2"></i><i class="tp-card c3"></i></span>
+                  <span class="theme-name">Royal Blue<small>Azure glass, calm and modern</small></span>
+                  <span class="theme-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
+                <button type="button" class="theme-card" data-theme-set="light" aria-pressed="false">
+                  <span class="theme-preview tp-light"><i class="tp-side"></i><i class="tp-dot"></i><i class="tp-line l1"></i><i class="tp-line l2"></i><i class="tp-line l3"></i><i class="tp-bar"></i><i class="tp-hero"></i><i class="tp-card c1"></i><i class="tp-card c2"></i><i class="tp-card c3"></i></span>
+                  <span class="theme-name">Ivory Light<small>Warm white, bright and clear</small></span>
+                  <span class="theme-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
+              </div>
+              </div>
+              <div class="settings-row" style="border-bottom:none;padding-top:0;">
+                <div><div class="label">Match system</div><div class="desc">Switch between Emerald Night and Ivory Light with your device.</div></div>
+                <button type="button" class="switch" id="theme-system-switch" aria-label="Match system theme" onclick="Theme.set(Theme.get()==='system' ? document.documentElement.getAttribute('data-theme') : 'system')"></button>
               </div>
               <div class="field"><label>Accent color</label>
                 <div class="flex gap-12">

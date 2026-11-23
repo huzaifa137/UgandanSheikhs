@@ -521,9 +521,50 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 }
 
 /* ===================== THEME TOGGLE ===================== */
-.theme-toggle .i-sun{display:none;}
+.theme-toggle svg{display:none;}
+:root[data-theme="dark"] .theme-toggle .i-moon,
+:root[data-theme="ocean"] .theme-toggle .i-ocean,
 :root[data-theme="light"] .theme-toggle .i-sun{display:block;}
-:root[data-theme="light"] .theme-toggle .i-moon{display:none;}
+
+/* Settings → Appearance: theme picker (previews use fixed colours so each card always shows its own theme) */
+.theme-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.theme-card{
+  display:flex;flex-direction:column;gap:12px;text-align:left;padding:10px;border-radius:var(--radius-md);
+  background:var(--surface-1);border:1.5px solid var(--border-subtle);position:relative;
+  transition:border-color var(--dur-fast) var(--ease),transform var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease);
+}
+.theme-card:hover{border-color:var(--border-strong);transform:translateY(-2px);}
+.theme-card.selected{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.theme-name{font-weight:700;font-size:14px;padding:0 4px 4px;display:block;}
+.theme-name small{display:block;font-weight:500;font-size:12px;color:var(--text-secondary);margin-top:2px;}
+.theme-check{
+  position:absolute;top:18px;right:18px;width:22px;height:22px;border-radius:50%;
+  background:var(--accent);color:var(--text-on-accent);display:none;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+.theme-check svg{width:12px;height:12px;}
+.theme-card.selected .theme-check{display:flex;}
+.theme-preview{
+  position:relative;display:block;height:104px;border-radius:10px;overflow:hidden;
+  background:var(--p-bg);border:1px solid rgba(128,128,128,.22);
+}
+.theme-preview i{position:absolute;display:block;border-radius:5px;}
+.theme-preview .tp-side{left:0;top:0;bottom:0;width:22%;border-radius:0;background:var(--p-side);}
+.theme-preview .tp-bar{left:26%;right:5%;top:8px;height:11px;border-radius:99px;background:var(--p-bar);}
+.theme-preview .tp-hero{left:26%;right:5%;top:26px;height:30px;background:var(--p-hero);}
+.theme-preview .tp-card{top:62px;height:30px;width:19%;background:var(--p-card);}
+.theme-preview .tp-card.c1{left:26%;}
+.theme-preview .tp-card.c2{left:48%;}
+.theme-preview .tp-card.c3{left:70%;width:25%;}
+.theme-preview .tp-dot{left:5%;top:12px;width:12px;height:12px;border-radius:50%;background:var(--p-acc);}
+.theme-preview .tp-line{left:5%;width:12%;height:5px;background:var(--p-line);}
+.theme-preview .tp-line.l1{top:34px;}
+.theme-preview .tp-line.l2{top:46px;width:10%;}
+.theme-preview .tp-line.l3{top:58px;}
+.tp-dark{--p-bg:#08120F;--p-side:#0C1914;--p-bar:#1A3128;--p-hero:linear-gradient(120deg,#14271F,#0E6B52);--p-card:#1A3128;--p-acc:#1FB87A;--p-line:#2C4A3D;}
+.tp-ocean{--p-bg:linear-gradient(180deg,#0B2A6B,#061633);--p-side:#0A2152;--p-bar:#2468DA;--p-hero:linear-gradient(120deg,#2F7BEA,#0E2F7E);--p-card:#1A428A;--p-acc:#4EA0FF;--p-line:#2352A5;}
+.tp-light{--p-bg:#F5F2E9;--p-side:#FFFFFF;--p-bar:#E4DFCF;--p-hero:linear-gradient(120deg,#CFE9DE,#0E7F5C);--p-card:#FFFFFF;--p-acc:#0E7F5C;--p-line:#E4DFCF;}
+@media (max-width:720px){.theme-picker{grid-template-columns:1fr;}.theme-preview{height:88px;}}
 
 /* Sheikh photos: keep faces in frame when cropped square/round */
 .card.artist .card-art img,.hero-art img,.entity-hero-art,.t-title-cell img,.avatar{object-position:center 18%;}
