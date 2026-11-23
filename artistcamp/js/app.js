@@ -1,5 +1,5 @@
 /* =====================================================================
-   ArtistCamp — App Interactions
+   Ugandan Sheikhs — App Interactions
    Mock frontend logic. Every function here stands in for a future
    Laravel/JS service call — see README "JavaScript Service Architecture".
    ===================================================================== */
@@ -125,7 +125,7 @@ const Player = {
       const liked = likeBtn.innerHTML === ICONS.heartFill;
       likeBtn.innerHTML = liked ? ICONS.heart : ICONS.heartFill;
       likeBtn.style.color = liked ? "" : "var(--accent)";
-      toast(liked ? "Removed from Liked Songs" : "Added to Liked Songs", "success");
+      toast(liked ? "Removed from Liked Lectures" : "Added to Liked Lectures", "success");
     });
 
     track?.addEventListener("click", (e) => {
@@ -143,7 +143,7 @@ const Player = {
 
     document.getElementById("p-queue")?.addEventListener("click", () => openDrawer("queue-drawer"));
     document.getElementById("p-download")?.addEventListener("click", () => toast("Downloaded for offline listening", "success"));
-    document.getElementById("player-more")?.addEventListener("click", () => toast("Track options opened"));
+    document.getElementById("player-more")?.addEventListener("click", () => toast("Lecture options opened"));
   },
 };
 
@@ -160,9 +160,9 @@ function wireGlobalSearch() {
     const albums = ALBUMS.filter((a) => a.title.toLowerCase().includes(q)).slice(0, 2);
     if (!artists.length && !tracks.length && !albums.length) { box.classList.remove("open"); return; }
     box.innerHTML = [
-      artists.length ? `<div class="nav-group-label">Artists</div>${artists.map((a) => `<a class="menu-item" href="artist.html?id=${a.id}">${ICONS.users}${a.name}</a>`).join("")}` : "",
-      tracks.length ? `<div class="nav-group-label">Tracks</div>${tracks.map((t) => `<a class="menu-item" href="track.html?id=${t.id}">${ICONS.disc}${t.title}</a>`).join("")}` : "",
-      albums.length ? `<div class="nav-group-label">Albums</div>${albums.map((a) => `<a class="menu-item" href="album.html?id=${a.id}">${ICONS.disc}${a.title}</a>`).join("")}` : "",
+      artists.length ? `<div class="nav-group-label">Sheikhs</div>${artists.map((a) => `<a class="menu-item" href="artist.html?id=${a.id}">${ICONS.users}${a.name}</a>`).join("")}` : "",
+      tracks.length ? `<div class="nav-group-label">Lectures</div>${tracks.map((t) => `<a class="menu-item" href="track.html?id=${t.id}">${ICONS.disc}${t.title}</a>`).join("")}` : "",
+      albums.length ? `<div class="nav-group-label">Series</div>${albums.map((a) => `<a class="menu-item" href="album.html?id=${a.id}">${ICONS.disc}${a.title}</a>`).join("")}` : "",
     ].join("");
     box.classList.add("open");
   });
@@ -178,11 +178,11 @@ function wireConnectivityToggle(btnId) {
     wireGlobalSearch();
     wireMenu("user-menu-btn", "user-menu");
     wireMenu("notif-btn", "notif-drawer-btn");
-    toast(STATE.online ? "Back online — syncing library" : "You're offline. Showing downloaded music.", STATE.online ? "success" : "warning");
+    toast(STATE.online ? "Back online — syncing library" : "You're offline. Showing downloaded lectures.", STATE.online ? "success" : "warning");
   });
 }
 
-/* ---------- Track row / card builders (shared markup) ---------- */
+/* ---------- Lecture row / card builders (shared markup) ---------- */
 function trackRowHTML(t, i, opts = {}) {
   return `
   <tr class="track-row" data-id="${t.id}">
@@ -201,9 +201,9 @@ function trackRowHTML(t, i, opts = {}) {
     <td class="t-meta">${fmtDuration(t.duration)}</td>
     <td>
       <div class="t-actions">
-        <button class="icon-btn" style="width:30px;height:30px;background:none;" title="Like" onclick="toast('Added to Liked Songs','success')">${ICONS.heart}</button>
+        <button class="icon-btn" style="width:30px;height:30px;background:none;" title="Like" onclick="toast('Added to Liked Lectures','success')">${ICONS.heart}</button>
         ${t.downloadable ? `<button class="icon-btn" style="width:30px;height:30px;background:none;" title="Download" onclick="toast('Download started')">${ICONS.download}</button>` : ""}
-        <button class="icon-btn" style="width:30px;height:30px;background:none;" title="More" onclick="toast('Track options opened')">${ICONS.more}</button>
+        <button class="icon-btn" style="width:30px;height:30px;background:none;" title="More" onclick="toast('Lecture options opened')">${ICONS.more}</button>
       </div>
     </td>
   </tr>`;
@@ -233,5 +233,5 @@ function initAppPage(active) {
   wireMenu("notif-btn", "notif-drawer-btn");
   document.getElementById("notif-btn")?.addEventListener("click", () => { ensureOverlay(); openDrawer("notif-drawer"); });
   document.getElementById("create-playlist-btn")?.addEventListener("click", () => { ensureOverlay(); openModal("create-playlist-modal"); });
-  document.getElementById("status-pill")?.addEventListener("click", () => { STATE.online = !STATE.online; renderTopbar(); wireGlobalSearch(); wireMenu("user-menu-btn", "user-menu"); wireMenu("notif-btn", "notif-drawer-btn"); document.getElementById("notif-btn")?.addEventListener("click", () => { ensureOverlay(); openDrawer("notif-drawer"); }); toast(STATE.online ? "Back online — syncing library" : "You're offline. Showing downloaded music.", STATE.online ? "success" : "warning"); });
+  document.getElementById("status-pill")?.addEventListener("click", () => { STATE.online = !STATE.online; renderTopbar(); wireGlobalSearch(); wireMenu("user-menu-btn", "user-menu"); wireMenu("notif-btn", "notif-drawer-btn"); document.getElementById("notif-btn")?.addEventListener("click", () => { ensureOverlay(); openDrawer("notif-drawer"); }); toast(STATE.online ? "Back online — syncing library" : "You're offline. Showing downloaded lectures.", STATE.online ? "success" : "warning"); });
 }

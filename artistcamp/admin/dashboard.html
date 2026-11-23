@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard — ArtistCamp Admin</title>
+<title>Dashboard — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 </head>
@@ -33,14 +33,14 @@
             <div class="chart-placeholder" id="chart-users"></div>
           </div>
           <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Genres</h2></div>
+            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Topics</h2></div>
             <div class="chart-placeholder" id="chart-genres"></div>
           </div>
         </div>
 
-        <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Tracks</h2></div>
+        <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Lectures</h2></div>
         <table class="data-table" style="margin-bottom:28px;">
-          <thead><tr><th>Track</th><th>Artist</th><th>Plays</th><th>Downloads</th></tr></thead>
+          <thead><tr><th>Lecture</th><th>Sheikh</th><th>Plays</th><th>Downloads</th></tr></thead>
           <tbody id="top-tracks-table"></tbody>
         </table>
 
@@ -70,9 +70,9 @@
     initAdminPage("dashboard", "Dashboard");
 
     const stats = [
-      { label: "Total Artists", value: ARTISTS.length, delta: "+3 this month", up: true },
-      { label: "Total Albums", value: ALBUMS.length, delta: "+5 this month", up: true },
-      { label: "Total Tracks", value: TRACKS.length, delta: "+12 this month", up: true },
+      { label: "Total Sheikhs", value: ARTISTS.length, delta: "+3 this month", up: true },
+      { label: "Total Series", value: ALBUMS.length, delta: "+5 this month", up: true },
+      { label: "Total Lectures", value: TRACKS.length, delta: "+12 this month", up: true },
       { label: "Total Users", value: ADMIN_USERS.length * 214, delta: "+8.2%", up: true },
       { label: "Total Streams", value: fmtCount(TRACKS.reduce((s,t)=>s+t.plays,0)), delta: "+14.1%", up: true },
       { label: "Total Downloads", value: fmtCount(TRACKS.reduce((s,t)=>s+t.downloads,0)), delta: "+6.4%", up: true },
@@ -107,11 +107,11 @@
       <tr><td>${c.user}</td><td class="truncate" style="max-width:220px;">${c.body}</td></tr>`).join("");
 
     const activityItems = [
-      "Nnamdi Eze uploaded a new single, \"Golden Hymn\"",
+      "Hamza Kayiira published a new lecture, \"Sincerity in Worship\"",
       "Admin approved 4 pending comments",
       "New user Tendai M. registered",
-      "Album \"Static Bloom\" was featured on the homepage",
-      "Track \"Blue Gravity\" flagged for review",
+      "Series \"Foundations of Tawheed\" was featured on the homepage",
+      "Lecture \"Patience in Hardship\" flagged for review",
     ];
     document.getElementById("activity-feed").innerHTML = activityItems.map((a,i) => `
       <div class="flex gap-12" style="padding:11px 0;border-bottom:1px solid var(--border-subtle);align-items:center;">

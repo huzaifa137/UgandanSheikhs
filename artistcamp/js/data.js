@@ -1,66 +1,157 @@
 /* =====================================================================
-   ArtistCamp — Mock Data Layer
+   Ugandan Sheikhs — Mock Data Layer
    This file simulates what will eventually come from Laravel API
-   endpoints (see README "Future API Integration Points"). Nothing here
-   touches a network — it's an in-memory fixture set used by every page.
+   endpoints. Nothing here touches a network — it is an in-memory
+   fixture set used by every page.
+
+   >>> SAMPLE DATA <<<  Names come from the supplied photo set. Lecture
+   titles, series, bios, follower/listener counts and comments are
+   PLACEHOLDERS for the prototype and are NOT real statements by or
+   about any person. Replace them with real content before launch.
+
+   Field names (id, artistId, genre, album, plays …) are kept from the
+   original prototype on purpose so every page keeps working; in the UI
+   they now mean: artist = Sheikh, album = Series, track = Lecture,
+   playlist = Collection, genre = Topic.
    ===================================================================== */
 
-const ART = (seed, w = 500, h = 500) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+/* Folder that holds /img, resolved from this script's own URL so images load
+   from root pages AND from /admin pages. */
+const ASSET_BASE = (document.currentScript && document.currentScript.src)
+  ? new URL("../", document.currentScript.src).href : "";
 
+/* Locally generated artwork (no external requests, works offline).
+   Deterministic: the same seed always gives the same emerald/gold tile. */
+const ART_PALETTES = [
+  ["#0E6B52", "#0A2F26"], ["#0B5D6B", "#082F3A"], ["#1D5FA8", "#0F2F57"], ["#7A5A14", "#3A2A08"],
+  ["#6B2E4A", "#331526"], ["#2F6B3A", "#14301A"], ["#4B3F8F", "#201A47"], ["#8A4B2B", "#3D2012"],
+];
+const ART = (seed, w = 500, h = 500) => {
+  let hsh = 5381;
+  for (const ch of String(seed)) hsh = ((hsh << 5) + hsh + ch.charCodeAt(0)) >>> 0;
+  const [a, b] = ART_PALETTES[hsh % ART_PALETTES.length];
+  const rot = (hsh >> 3) % 45;
+  const s = 120 + ((hsh >> 5) % 60);
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 500 500' preserveAspectRatio='xMidYMid slice'>` +
+    `<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${a}'/><stop offset='1' stop-color='${b}'/></linearGradient>` +
+    `<pattern id='p' width='60' height='60' patternUnits='userSpaceOnUse'><g fill='none' stroke='#D9B26A' stroke-opacity='.16' stroke-width='1'>` +
+    `<rect x='15' y='15' width='30' height='30'/><rect x='15' y='15' width='30' height='30' transform='rotate(45 30 30)'/></g></pattern></defs>` +
+    `<rect width='500' height='500' fill='url(#g)'/><rect width='500' height='500' fill='url(#p)'/>` +
+    `<g transform='rotate(${rot} 250 250)' fill='none' stroke='#D9B26A' stroke-opacity='.75' stroke-width='3'>` +
+    `<rect x='${250 - s / 2}' y='${250 - s / 2}' width='${s}' height='${s}'/>` +
+    `<rect x='${250 - s / 2}' y='${250 - s / 2}' width='${s}' height='${s}' transform='rotate(45 250 250)'/></g></svg>`;
+  return svgUri(svg);
+};
+/* encodeURIComponent leaves ' ( ) unescaped, which breaks CSS url('...') — escape them too. */
+function svgUri(svg) {
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg).replace(/'/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29");
+}
+/* Initials avatar (emerald gradient) for people without a photo */
+const AVATAR = (name, size = 100) => {
+  const ini = String(name).replace(/[^A-Za-z ]/g, "").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 100 100'>` +
+    `<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#1FB87A'/><stop offset='1' stop-color='#0A5C44'/></linearGradient></defs>` +
+    `<rect width='100' height='100' fill='url(#g)'/><text x='50' y='50' text-anchor='middle' dominant-baseline='central' ` +
+    `font-family='Inter,Arial,sans-serif' font-weight='700' font-size='38' fill='#fff'>${ini}</text></svg>`;
+  return svgUri(svg);
+};
+
+/* Topics (was "genres") */
 const GENRES = [
-  { slug: "afrobeats", name: "Afrobeats", color: "#FF5A4E" },
-  { slug: "hip-hop", name: "Hip Hop", color: "#5AA9FF" },
-  { slug: "gospel", name: "Gospel", color: "#F6B73C" },
-  { slug: "rnb", name: "R&B", color: "#C86BE0" },
-  { slug: "jazz", name: "Jazz", color: "#32C48D" },
-  { slug: "acoustic", name: "Acoustic", color: "#E0A96B" },
-  { slug: "electronic", name: "Electronic", color: "#5A5FE0" },
-  { slug: "reggae", name: "Reggae", color: "#6BC26B" },
-  { slug: "dancehall", name: "Dancehall", color: "#E06B8F" },
-  { slug: "traditional", name: "Traditional", color: "#C2955A" },
+  { slug: "tafsir", name: "Qur'an & Tafsir", color: "#0E7F5C" },
+  { slug: "aqeedah", name: "Aqeedah", color: "#1D5FA8" },
+  { slug: "fiqh", name: "Fiqh", color: "#9A7418" },
+  { slug: "hadith", name: "Hadith", color: "#7B3F9E" },
+  { slug: "seerah", name: "Seerah", color: "#0B7A75" },
+  { slug: "tazkiyah", name: "Tazkiyah", color: "#B04A2E" },
+  { slug: "khutbah", name: "Khutbah", color: "#3F4FB0" },
+  { slug: "family", name: "Family & Marriage", color: "#A63D6B" },
+  { slug: "youth", name: "Youth", color: "#2F7D32" },
+  { slug: "ramadan", name: "Ramadan", color: "#6B5A2E" },
 ];
 
-const ARTISTS = [
-  { id: "amara-ndlovu", name: "Amara Ndlovu", genre: "Afrobeats", country: "Nigeria", city: "Lagos", listeners: "2.4M", followers: "812K", verified: true, img: ART("amara", 600, 600), cover: ART("amara-cover", 1600, 500), bio: "Amara Ndlovu writes basslines before she writes words. Raised between Lagos and London, her sound folds Afrobeats percussion into airy, melodic hooks that have made her one of the genre's most streamed new voices." },
-  { id: "kofi-asante", name: "Kofi Asante", genre: "Hip Hop", country: "Ghana", city: "Accra", listeners: "1.1M", followers: "398K", verified: true, img: ART("kofi", 600, 600), cover: ART("kofi-cover", 1600, 500), bio: "Kofi Asante raps in three languages over production built from highlife samples and 808s, chronicling Accra's rise as a creative capital." },
-  { id: "thandiwe-moyo", name: "Thandiwe Moyo", genre: "Gospel", country: "Zimbabwe", city: "Harare", listeners: "640K", followers: "205K", verified: true, img: ART("thandiwe", 600, 600), cover: ART("thandiwe-cover", 1600, 500), bio: "A choir director's daughter, Thandiwe Moyo brings full-voiced Southern African gospel to contemporary arrangements." },
-  { id: "zola-khumalo", name: "Zola Khumalo", genre: "R&B", country: "South Africa", city: "Johannesburg", listeners: "980K", followers: "310K", verified: true, img: ART("zola", 600, 600), cover: ART("zola-cover", 1600, 500), bio: "Zola Khumalo's whisper-close vocals and late-night production have earned comparisons to the greats of slow-burning R&B." },
-  { id: "the-nile-collective", name: "The Nile Collective", genre: "Jazz", country: "Egypt", city: "Cairo", listeners: "410K", followers: "142K", verified: false, img: ART("nile", 600, 600), cover: ART("nile-cover", 1600, 500), bio: "A rotating ensemble of Cairo session players reinterpreting modal jazz through instruments pulled from the Nile Valley's own tradition." },
-  { id: "juma-otieno", name: "Juma Otieno", genre: "Acoustic", country: "Kenya", city: "Nairobi", listeners: "295K", followers: "88K", verified: false, img: ART("juma", 600, 600), cover: ART("juma-cover", 1600, 500), bio: "Juma Otieno's single guitar and unguarded voice have made him a fixture of Nairobi's small-room circuit." },
-  { id: "lumen-drift", name: "Lumen Drift", genre: "Electronic", country: "South Africa", city: "Cape Town", listeners: "525K", followers: "176K", verified: true, img: ART("lumen", 600, 600), cover: ART("lumen-cover", 1600, 500), bio: "Lumen Drift builds slow-moving electronic soundscapes out of field recordings taken across the Cape." },
-  { id: "isaac-marley-jr", name: "Isaac Marley Jr.", genre: "Reggae", country: "Jamaica", city: "Kingston", listeners: "760K", followers: "260K", verified: true, img: ART("isaac", 600, 600), cover: ART("isaac-cover", 1600, 500), bio: "Carrying his family's name into a new decade, Isaac Marley Jr. writes roots reggae for a generation raised on both vinyl and streaming." },
-  { id: "ama-serwaa", name: "Ama Serwaa", genre: "Dancehall", country: "Ghana", city: "Kumasi", listeners: "355K", followers: "121K", verified: false, img: ART("ama", 600, 600), cover: ART("ama-cover", 1600, 500), bio: "Ama Serwaa turns Kumasi street slang into dancehall hooks built for the club and the timeline alike." },
-  { id: "griot-echoes", name: "Griot Echoes", genre: "Traditional", country: "Mali", city: "Bamako", listeners: "180K", followers: "64K", verified: false, img: ART("griot", 600, 600), cover: ART("griot-cover", 1600, 500), bio: "A kora-and-voice duo preserving Mande oral tradition while scoring it for modern ears." },
-  { id: "nnamdi-eze", name: "Nnamdi Eze", genre: "Afrobeats", country: "Nigeria", city: "Enugu", listeners: "1.6M", followers: "540K", verified: true, img: ART("nnamdi", 600, 600), cover: ART("nnamdi-cover", 1600, 500), bio: "Nnamdi Eze's log-drum-driven productions have soundtracked two consecutive festival seasons across West Africa." },
-  { id: "efe-obasi", name: "Efe Obasi", genre: "R&B", country: "Nigeria", city: "Port Harcourt", listeners: "512K", followers: "190K", verified: false, img: ART("efe", 600, 600), cover: ART("efe-cover", 1600, 500), bio: "Efe Obasi's debut EP was recorded almost entirely in a converted shipping container studio." },
-  { id: "north-star-radio", name: "North Star Radio", genre: "Electronic", country: "Ethiopia", city: "Addis Ababa", listeners: "230K", followers: "77K", verified: false, img: ART("northstar", 600, 600), cover: ART("northstar-cover", 1600, 500), bio: "A three-piece live electronic act blending Ethio-jazz scales with modular synthesis." },
-  { id: "sipho-dlamini", name: "Sipho Dlamini", genre: "Hip Hop", country: "South Africa", city: "Durban", listeners: "690K", followers: "224K", verified: true, img: ART("sipho", 600, 600), cover: ART("sipho-cover", 1600, 500), bio: "Sipho Dlamini raps in isiZulu and English over amapiano-adjacent low end, chronicling Durban nightlife." },
-  { id: "wanjiru-kamau", name: "Wanjiru Kamau", genre: "Gospel", country: "Kenya", city: "Nairobi", listeners: "445K", followers: "160K", verified: true, img: ART("wanjiru", 600, 600), cover: ART("wanjiru-cover", 1600, 500), bio: "Wanjiru Kamau's Sunday-morning sound has quietly become one of East Africa's most-streamed gospel catalogs." },
-  { id: "bongani-radebe", name: "Bongani Radebe", genre: "Jazz", country: "South Africa", city: "Cape Town", listeners: "298K", followers: "99K", verified: false, img: ART("bongani", 600, 600), cover: ART("bongani-cover", 1600, 500), bio: "Bongani Radebe's upright bass anchors a jazz quartet steeped in Cape Town's District Six history." },
+/* Sheikhs (was "artists"). Names follow the supplied photo filenames —
+   please confirm spellings and honorifics. */
+const SHEIKH_SEED = [
+  { id: "hamza-kayiira", name: "Hamza Kayiira", followers: "18K", listeners: "42K" },
+  { id: "imaam-kyeyune", name: "Imaam Kyeyune", followers: "15K", listeners: "37K" },
+  { id: "mazinga", name: "Mazinga", followers: "12K", listeners: "29K" },
+  { id: "mugendera", name: "Mugendera", followers: "11K", listeners: "26K" },
+  { id: "salim-bbosa", name: "Salim Bbosa", followers: "14K", listeners: "33K" },
+  { id: "sheikh-swiddiq-nasir", name: "Sheikh Swiddiq Nasir", followers: "16K", listeners: "38K" },
+  { id: "ssenjala", name: "Ssenjala", followers: "9.4K", listeners: "21K" },
+  { id: "swiddiq-nasir", name: "Swiddiq Nasir", followers: "13K", listeners: "31K" },
+  { id: "twantwawi", name: "Twantwawi", followers: "8.8K", listeners: "19K" },
+  { id: "kitti", name: "Kitti", followers: "10K", listeners: "24K" },
 ];
+const ARTISTS = SHEIKH_SEED.map((s) => ({
+  ...s,
+  genre: "Islamic Studies",
+  country: "Uganda",
+  city: "Kampala",
+  verified: false,
+  img: `${ASSET_BASE}img/sheikhs/${s.id}.jpg`,
+  cover: `${ASSET_BASE}img/pattern-cover.svg`,
+  bio: `Lectures and reminders by ${s.name} on Islamic knowledge, available to stream and download on Ugandan Sheikhs.`,
+}));
+
+/* Lectures (was "tracks") */
+const LECTURE_TITLES = [
+  "The Meaning of La ilaha illa Allah", "Sincerity in Worship", "Patience in Hardship", "Gratitude and Contentment",
+  "The Importance of Salah", "Honoring Parents", "Seeking Knowledge", "Brotherhood in Islam",
+  "Repentance and Forgiveness", "Trust in Allah (Tawakkul)", "Good Character", "Fasting and Its Virtues",
+  "The Day of Judgment", "Remembrance of Allah", "Rights of Neighbors", "Honesty in Trade",
+  "Lessons from the Seerah", "Dua and Its Etiquette", "The Virtues of Friday", "Unity of the Ummah",
+];
+
+/* Series (was "albums"): title + topic */
+const SERIES = [
+  { title: "Foundations of Tawheed", topic: "Aqeedah" },
+  { title: "Stories of the Prophets", topic: "Seerah" },
+  { title: "Tafsir of Juz Amma", topic: "Qur'an & Tafsir" },
+  { title: "The Forty Hadith", topic: "Hadith" },
+  { title: "Fiqh of Salah", topic: "Fiqh" },
+  { title: "Purification of the Heart", topic: "Tazkiyah" },
+  { title: "Friday Khutbah Highlights", topic: "Khutbah" },
+  { title: "Building a Muslim Home", topic: "Family & Marriage" },
+  { title: "Guidance for Muslim Youth", topic: "Youth" },
+  { title: "Ramadan Reminders", topic: "Ramadan" },
+  { title: "Lives of the Companions", topic: "Seerah" },
+  { title: "Understanding Surah Al-Kahf", topic: "Qur'an & Tafsir" },
+  { title: "Fiqh of Zakah", topic: "Fiqh" },
+  { title: "Names and Attributes of Allah", topic: "Aqeedah" },
+  { title: "Selected Hadith on Character", topic: "Hadith" },
+  { title: "Manners of the Muslim", topic: "Tazkiyah" },
+  { title: "Rights of Parents and Spouses", topic: "Family & Marriage" },
+  { title: "Fiqh of Fasting", topic: "Ramadan" },
+  { title: "Lessons from Surah Yusuf", topic: "Qur'an & Tafsir" },
+  { title: "Faith in a Modern World", topic: "Youth" },
+];
+const seriesForTopic = (topic) => (SERIES.find((s) => s.topic === topic) || SERIES[0]).title;
 
 function makeTracks(count, artistPool) {
-  const adjectives = ["Midnight", "Golden", "Late", "Slow", "Wild", "Quiet", "Electric", "Blue", "Open", "Distant", "Warm", "Lost", "Home", "Bright", "Coastal", "Second", "First", "Last", "Dry", "Salt"];
-  const nouns = ["Lights", "Road", "Rain", "River", "Fire", "Skyline", "Harbour", "Static", "Echo", "Bloom", "Signal", "Season", "Horizon", "Streets", "Tide", "Dust", "Gravity", "Glow", "Border", "Hymn"];
   const tracks = [];
   for (let i = 0; i < count; i++) {
     const artist = artistPool[i % artistPool.length];
-    const title = `${adjectives[i % adjectives.length]} ${nouns[(i * 3) % nouns.length]}`;
+    const topic = GENRES[(i * 3) % GENRES.length].name;
+    const part = Math.floor(i / LECTURE_TITLES.length);
+    const title = LECTURE_TITLES[i % LECTURE_TITLES.length] + (part ? ` — Part ${part + 1}` : "");
     tracks.push({
       id: `trk-${i + 1}`,
       title,
       artistId: artist.id,
       artist: artist.name,
-      album: `${nouns[(i * 5) % nouns.length]} Sessions`,
-      genre: artist.genre,
-      duration: 120 + ((i * 37) % 180),
-      plays: (5000 + i * 4231) % 980000,
-      downloads: (200 + i * 91) % 40000,
-      likes: (100 + i * 53) % 22000,
-      explicit: i % 7 === 0,
+      album: seriesForTopic(topic),
+      genre: topic,
+      duration: 1200 + ((i * 137) % 2400), // 20–60 min lectures
+      plays: (5000 + i * 4231) % 98000,
+      downloads: (200 + i * 91) % 9000,
+      likes: (100 + i * 53) % 5200,
+      explicit: false,
       downloadable: i % 4 !== 0,
-      art: ART(`track-${i}`, 500, 500),
-      year: 2022 + (i % 4),
+      art: ART(`lecture-${i}`, 500, 500),
+      year: 2022 + (i % 5),
     });
   }
   return tracks;
@@ -78,72 +169,68 @@ function fmtCount(n) {
   return String(n);
 }
 
-const ALBUM_TITLES = [
-  "Harbour Lights", "Second Skyline", "Static Bloom", "Golden Hymn", "Salt & Signal",
-  "Distant Season", "Quiet Fire", "Coastal Dust", "Open Horizon", "Blue Gravity",
-  "Wild Tide", "Home Static", "Bright Border", "Slow River", "Midnight Echo",
-  "Warm Rain", "Lost Glow", "First Streets", "Electric Road", "Last Harbour",
-];
-const ALBUMS = ALBUM_TITLES.map((title, i) => {
+const ALBUM_TITLES = SERIES.map((s) => s.title);
+const ALBUMS = SERIES.map((ser, i) => {
   const artist = ARTISTS[i % ARTISTS.length];
-  const type = i % 6 === 0 ? "EP" : i % 9 === 0 ? "Single" : "Album";
-  const albumTracks = TRACKS.filter((t) => t.artistId === artist.id).slice(0, type === "Single" ? 1 : type === "EP" ? 5 : 10);
+  const type = i % 6 === 0 ? "Short Series" : i % 9 === 0 ? "Single Lecture" : "Series";
+  const albumTracks = TRACKS.filter((t) => t.artistId === artist.id).slice(0, type === "Single Lecture" ? 1 : type === "Short Series" ? 5 : 10);
   return {
     id: `alb-${i + 1}`,
-    title,
+    title: ser.title,
     artistId: artist.id,
     artist: artist.name,
     type,
-    genre: artist.genre,
-    year: 2021 + (i % 5),
-    art: ART(`album-${i}`, 700, 700),
+    genre: ser.topic,
+    year: 2021 + (i % 6),
+    art: ART(`series-${i}`, 700, 700),
     tracks: albumTracks.length ? albumTracks : TRACKS.slice(i, i + 6),
-    description: `${title} finds ${artist.name} pushing further into ${artist.genre.toLowerCase()} territory, recorded largely in ${artist.city} across a single rainy season.`,
-    label: i % 3 === 0 ? "ArtistCamp Records" : "Independent",
-    copyright: `© ${2021 + (i % 5)} ${artist.name}, under exclusive license`,
+    description: `${ser.title} is a lecture series on ${ser.topic} by ${artist.name}, available to stream and download.`,
+    label: i % 3 === 0 ? "Ugandan Sheikhs" : "Independent",
+    copyright: `© ${2021 + (i % 6)} ${artist.name}`,
   };
 });
 
+/* Collections (was "playlists") */
 const PLAYLIST_NAMES = [
-  { name: "Late Night Kampala", desc: "Slow tempo, low light — the drive home playlist." },
-  { name: "Afro Discovery", desc: "Fresh Afrobeats voices you haven't heard yet." },
-  { name: "Sunday Acoustic", desc: "Guitars, hymns, and quiet mornings." },
-  { name: "Road Trip", desc: "Windows down from Lagos to Accra." },
-  { name: "Chill Sessions", desc: "Low-key beats for focus and unwinding." },
-  { name: "Daily Discovery", desc: "New tracks picked for your taste, refreshed daily." },
-  { name: "ArtistCamp Mix", desc: "The editorial team's rotating favorites." },
-  { name: "Afro Pulse", desc: "High-energy Afrobeats and dancehall." },
-  { name: "Acoustic Evenings", desc: "Stripped-back sets for wind-down hours." },
-  { name: "Fresh East Africa", desc: "The best new releases out of Nairobi, Kampala and Addis." },
+  { name: "Morning Reminders", desc: "Short reminders to start the day with focus." },
+  { name: "Understanding the Qur'an", desc: "Tafsir lectures to deepen your reading." },
+  { name: "Friday Khutbah Highlights", desc: "Sermons worth hearing again." },
+  { name: "Ramadan Preparation", desc: "Get ready for the blessed month." },
+  { name: "Learning Fiqh Basics", desc: "Clear, practical lessons on everyday rulings." },
+  { name: "Daily Reminders", desc: "New lectures picked for you, refreshed daily." },
+  { name: "Editor's Selection", desc: "The editorial team's rotating favorites." },
+  { name: "Stories of the Prophets", desc: "Lessons from the lives of the Prophets." },
+  { name: "Youth & Identity", desc: "Talks for young Muslims on faith and daily life." },
+  { name: "Fresh from Uganda", desc: "The latest lectures from sheikhs across Uganda." },
 ];
 const PLAYLISTS = PLAYLIST_NAMES.map((p, i) => ({
   id: `pl-${i + 1}`,
   name: p.name,
   description: p.desc,
-  creator: i < 5 ? "You" : "ArtistCamp Editorial",
-  art: ART(`playlist-${i}`, 700, 700),
+  creator: i < 5 ? "You" : "Ugandan Sheikhs Editorial",
+  art: ART(`collection-${i}`, 700, 700),
   tracks: TRACKS.slice(i * 4, i * 4 + 12).length ? TRACKS.slice((i * 3) % TRACKS.length, (i * 3) % TRACKS.length + 10) : TRACKS.slice(0, 10),
   updated: `${(i % 20) + 1} days ago`,
   privacy: i % 4 === 0 ? "Private" : "Public",
 }));
 
 const COMMENT_BODIES = [
-  "This one's been on repeat since it dropped, the bridge alone is worth the download.",
-  "The production on this is insane, whoever mixed it deserves a raise.",
-  "Been following since the first EP, this is a whole new level.",
-  "Downloaded this for offline before my flight, no regrets.",
-  "The way this builds in the last minute gives me chills every time.",
-  "This deserves way more plays than it's getting right now.",
-  "Playing this at every gathering from now on, no exceptions.",
-  "The vocal layering in the chorus is criminally underrated.",
-  "First listen and I already know this is going on my Sunday playlist.",
-  "The bassline alone could carry this track, but the whole thing just works.",
+  "Jazakallahu khayran, this reminder came at exactly the right time.",
+  "Very clear explanation, I understood this much better now.",
+  "I have been following this series from the start, it keeps getting better.",
+  "Downloaded this for offline listening on my commute, so beneficial.",
+  "May Allah reward the speaker and everyone who made this available.",
+  "I shared this with my family and we discussed it after Maghrib.",
+  "Please make more lectures on this topic, insha'Allah.",
+  "The examples used here made the lesson easy to remember.",
+  "First time listening and I already added it to my Friday collection.",
+  "Barakallahu feekum, this is a lecture worth listening to twice.",
 ];
-const COMMENT_NAMES = ["Tendai M.", "Aisha K.", "Kwame O.", "Naledi P.", "Yusuf A.", "Chidinma R.", "Baraka S.", "Fatima N.", "Emeka J.", "Zanele T.", "Kojo B.", "Rahel D."];
+const COMMENT_NAMES = ["Aisha N.", "Yusuf K.", "Fatuma S.", "Ibrahim M.", "Mariam B.", "Hassan T.", "Zainab A.", "Umar L.", "Khadija R.", "Abdul S.", "Halima O.", "Ismail W."];
 const COMMENTS = Array.from({ length: 20 }, (_, i) => ({
   id: `cmt-${i + 1}`,
   user: COMMENT_NAMES[i % COMMENT_NAMES.length],
-  avatar: ART(`user-${i}`, 100, 100),
+  avatar: AVATAR(COMMENT_NAMES[i % COMMENT_NAMES.length]),
   body: COMMENT_BODIES[i % COMMENT_BODIES.length],
   time: `${(i % 12) + 1}${i % 2 === 0 ? "h" : "d"} ago`,
   likes: (i * 13) % 340,
@@ -152,23 +239,23 @@ const COMMENTS = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 const NOTIFICATIONS = [
-  { id: 1, type: "follower", text: "Zola Khumalo started following you", time: "2h ago", unread: true },
-  { id: 2, type: "release", text: "Nnamdi Eze released a new single, \"Golden Hymn\"", time: "5h ago", unread: true },
-  { id: 3, type: "playlist", text: "Your playlist \"Afro Discovery\" was added to 12 libraries", time: "1d ago", unread: true },
-  { id: 4, type: "reply", text: "Kwame O. replied to your comment on \"Blue Gravity\"", time: "1d ago", unread: false },
-  { id: 5, type: "download", text: "\"Harbour Lights\" finished downloading", time: "2d ago", unread: false },
-  { id: 6, type: "system", text: "ArtistCamp: scheduled maintenance completed", time: "3d ago", unread: false },
-  { id: 7, type: "follower", text: "Juma Otieno started following you", time: "4d ago", unread: false },
-  { id: 8, type: "release", text: "Amara Ndlovu released a new album, \"Static Bloom\"", time: "5d ago", unread: false },
-  { id: 9, type: "playlist", text: "5 new tracks added to \"Daily Discovery\"", time: "6d ago", unread: false },
-  { id: 10, type: "reply", text: "Fatima N. replied to your comment on \"Slow River\"", time: "1w ago", unread: false },
+  { id: 1, type: "follower", text: `${COMMENT_NAMES[2]} started following you`, time: "2h ago", unread: true },
+  { id: 2, type: "release", text: `${ARTISTS[0].name} published a new lecture, "${LECTURE_TITLES[0]}"`, time: "5h ago", unread: true },
+  { id: 3, type: "playlist", text: `Your collection "Understanding the Qur'an" was added to 12 libraries`, time: "1d ago", unread: true },
+  { id: 4, type: "reply", text: `${COMMENT_NAMES[1]} replied to your comment on "${LECTURE_TITLES[2]}"`, time: "1d ago", unread: false },
+  { id: 5, type: "download", text: `"${SERIES[0].title}" finished downloading`, time: "2d ago", unread: false },
+  { id: 6, type: "system", text: "Ugandan Sheikhs: scheduled maintenance completed", time: "3d ago", unread: false },
+  { id: 7, type: "follower", text: `${COMMENT_NAMES[3]} started following you`, time: "4d ago", unread: false },
+  { id: 8, type: "release", text: `${ARTISTS[1].name} published a new series, "${SERIES[1].title}"`, time: "5d ago", unread: false },
+  { id: 9, type: "playlist", text: `5 new lectures added to "Daily Reminders"`, time: "6d ago", unread: false },
+  { id: 10, type: "reply", text: `${COMMENT_NAMES[4]} replied to your comment on "${LECTURE_TITLES[5]}"`, time: "1w ago", unread: false },
 ];
 
 const ADMIN_USERS = Array.from({ length: 10 }, (_, i) => ({
   id: `usr-${i + 1}`,
   name: COMMENT_NAMES[i % COMMENT_NAMES.length],
   email: `${COMMENT_NAMES[i % COMMENT_NAMES.length].toLowerCase().replace(/[^a-z]/g, "")}@mail.com`,
-  avatar: ART(`user-${i}`, 100, 100),
+  avatar: AVATAR(COMMENT_NAMES[i % COMMENT_NAMES.length]),
   playlists: (i * 2) % 14,
   downloads: (i * 37) % 260,
   comments: (i * 5) % 40,
@@ -177,11 +264,11 @@ const ADMIN_USERS = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 const CURRENT_USER = {
-  name: "Sena Okafor",
-  username: "senaokafor",
-  email: "sena@artistcamp.dev",
-  avatar: ART("current-user", 200, 200),
-  bio: "Collecting basslines from Lagos to Nairobi. Always looking for the next Sunday morning record.",
+  name: "Amina Nakato",
+  username: "aminanakato",
+  email: "amina@ugandansheikhs.dev",
+  avatar: AVATAR("Amina Nakato", 200),
+  bio: "Student of knowledge. Always looking for the next reminder to carry through the week.",
   followers: 128,
   following: 340,
 };

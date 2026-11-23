@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Recently Played — ArtistCamp</title>
+<title>Recently Played — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -15,7 +15,7 @@
       <main class="content">
 
         <div class="page-header">
-          <div><h1>Recently Played</h1><p>Your listening history across ArtistCamp.</p></div>
+          <div><h1>Recently Played</h1><p>Your listening history across Ugandan Sheikhs.</p></div>
           <button class="btn btn-secondary" onclick="document.getElementById('history-body').innerHTML='';document.getElementById('history-empty').style.display='flex';toast('Listening history cleared')">Clear History</button>
         </div>
 
@@ -23,7 +23,7 @@
         <div class="empty-state" id="history-empty" style="display:none;">
           <div class="icon-wrap"></div>
           <h3>No listening history</h3>
-          <p>Tracks you play will show up here, grouped by when you played them.</p>
+          <p>Lectures you play will show up here, grouped by when you played them.</p>
         </div>
 
       </main>
@@ -50,7 +50,7 @@
         <span class="text-tertiary truncate" style="font-size:12px;width:120px;">${t.album}</span>
         <span class="text-secondary" style="font-size:12px;">${time}</span>
         <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Playing ${t.title.replace(/'/g,"")}')">${ICONS.play}</button>
-        <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Track options opened')">${ICONS.more}</button>
+        <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Lecture options opened')">${ICONS.more}</button>
       </div>`;
     }
 

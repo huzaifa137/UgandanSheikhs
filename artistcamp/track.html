@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Track — ArtistCamp</title>
+<title>Lecture — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -63,21 +63,21 @@
 
       <div class="tabs" id="track-tabs">
         <button class="tab active" data-target="about">About</button>
-        <button class="tab" data-target="lyrics">Lyrics</button>
-        <button class="tab" data-target="credits">Credits</button>
+        <button class="tab" data-target="lyrics">Transcript</button>
+        <button class="tab" data-target="credits">Details</button>
       </div>
       <div data-tabpanel="about" style="max-width:640px;">
-        <p class="text-secondary">${track.title} is a ${track.genre.toLowerCase()} track by ${artist.name}, taken from ${track.album} (${track.year}). It has quickly become a favorite in listener-curated playlists across the platform.</p>
+        <p class="text-secondary">${track.title} is a lecture on ${track.genre} by ${artist.name}, taken from ${track.album} (${track.year}). It has quickly become a favorite in listener-curated collections across the platform.</p>
       </div>
       <div data-tabpanel="lyrics" style="display:none;max-width:640px;">
-        <div class="empty-state">${ICONS.mic}<h3>Lyrics not available</h3><p>${artist.name} hasn't added lyrics for this track yet.</p></div>
+        <div class="empty-state">${ICONS.mic}<h3>Transcript not available</h3><p>${artist.name} hasn't added a transcript for this lecture yet.</p></div>
       </div>
       <div data-tabpanel="credits" style="display:none;max-width:480px;">
         <div class="grid grid-2">
-          <div><div class="eyebrow">Composer</div><div>${artist.name}</div></div>
-          <div><div class="eyebrow">Producer</div><div>${artist.city} Sound Collective</div></div>
-          <div><div class="eyebrow">Label</div><div>ArtistCamp Records</div></div>
-          <div><div class="eyebrow">Release Date</div><div>${track.year}</div></div>
+          <div><div class="eyebrow">Speaker</div><div>${artist.name}</div></div>
+          <div><div class="eyebrow">Topic</div><div>${track.genre}</div></div>
+          <div><div class="eyebrow">Publisher</div><div>Ugandan Sheikhs</div></div>
+          <div><div class="eyebrow">Published</div><div>${track.year}</div></div>
         </div>
       </div>
 
@@ -88,7 +88,7 @@
         <button class="chip">Oldest</button>
       </div>
       <div class="field" style="max-width:640px;">
-        <textarea class="textarea" placeholder="Share your thoughts about this track..."></textarea>
+        <textarea class="textarea" placeholder="Share your thoughts about this lecture..."></textarea>
         <button class="btn btn-primary" style="align-self:flex-end;" onclick="toast('Comment posted','success')">Post Comment</button>
       </div>
       <div style="max-width:640px;">
@@ -113,7 +113,7 @@
       this.innerHTML = liked ? `${ICONS.heartFill}<span>Liked</span>` : `${ICONS.heart}<span>Like</span>`;
       this.style.color = liked ? "var(--accent)" : "";
       this.style.borderColor = liked ? "var(--accent)" : "";
-      toast(liked ? "Added to Liked Songs" : "Removed from Liked Songs", "success");
+      toast(liked ? "Added to Liked Lectures" : "Removed from Liked Lectures", "success");
     });
   </script>
 </body>

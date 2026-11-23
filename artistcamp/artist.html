@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Artist — ArtistCamp</title>
+<title>Sheikh — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -39,10 +39,9 @@
         <div class="entity-hero-body">
           <img class="entity-hero-art round" src="${artist.img}" alt="${artist.name}" />
           <div class="entity-hero-info">
-            <div class="kind">${artist.verified ? ICONS.check + ' Verified Artist' : 'Artist'}</div>
+            <div class="kind">${artist.verified ? ICONS.check + ' Verified Sheikh' : 'Sheikh'}</div>
             <h1>${artist.name}</h1>
             <div class="entity-hero-meta">
-              <span>${fmtCount(parseFloat(artist.listeners)*1000000/parseFloat(artist.listeners.slice(0,-1)))}</span>
               <span>${artist.listeners} monthly listeners</span>·<span>${artist.followers} followers</span>·<span>${artist.genre}</span>·<span>${artist.city}, ${artist.country}</span>
             </div>
           </div>
@@ -57,36 +56,36 @@
 
       <div class="tabs" id="artist-tabs">
         <button class="tab active" data-target="overview">Overview</button>
-        <button class="tab" data-target="music">Music</button>
-        <button class="tab" data-target="albums">Albums</button>
-        <button class="tab" data-target="singles">Singles</button>
-        <button class="tab" data-target="playlists">Playlists</button>
+        <button class="tab" data-target="music">Lectures</button>
+        <button class="tab" data-target="albums">Series</button>
+        <button class="tab" data-target="singles">Single Lectures</button>
+        <button class="tab" data-target="playlists">Collections</button>
         <button class="tab" data-target="about">About</button>
       </div>
 
       <div data-tabpanel="overview">
-        <div class="section-header" style="margin-top:0;"><h2>Popular Tracks</h2></div>
-        <table class="track-table"><thead><tr><th>#</th><th>Track</th><th>Album</th><th>Plays</th><th>Time</th><th></th></tr></thead>
+        <div class="section-header" style="margin-top:0;"><h2>Popular Lectures</h2></div>
+        <table class="track-table"><thead><tr><th>#</th><th>Lecture</th><th>Series</th><th>Plays</th><th>Time</th><th></th></tr></thead>
           <tbody>${artistTracks.slice(0,5).map((t,i)=>trackRowHTML(t,i,{album:true})).join("")}</tbody></table>
 
         <div class="section-header"><h2>Discography</h2></div>
         <div class="grid grid-6">${artistAlbums.map(a=>cardHTML(a,"album")).join("")}</div>
 
-        <div class="section-header"><h2>Similar Artists</h2></div>
+        <div class="section-header"><h2>Similar Sheikhs</h2></div>
         <div class="rail">${similar.map(a=>cardHTML(a,"artist")).join("")}</div>
       </div>
 
       <div data-tabpanel="music" style="display:none;">
-        <table class="track-table"><thead><tr><th>#</th><th>Track</th><th>Album</th><th>Plays</th><th>Time</th><th></th></tr></thead>
+        <table class="track-table"><thead><tr><th>#</th><th>Lecture</th><th>Series</th><th>Plays</th><th>Time</th><th></th></tr></thead>
           <tbody>${artistTracks.map((t,i)=>trackRowHTML(t,i,{album:true})).join("")}</tbody></table>
       </div>
 
       <div data-tabpanel="albums" style="display:none;">
-        <div class="grid grid-6">${artistAlbums.filter(a=>a.type==="Album").length?artistAlbums.filter(a=>a.type==="Album").map(a=>cardHTML(a,"album")).join(""):artistAlbums.map(a=>cardHTML(a,"album")).join("")}</div>
+        <div class="grid grid-6">${artistAlbums.filter(a=>a.type==="Series").length?artistAlbums.filter(a=>a.type==="Series").map(a=>cardHTML(a,"album")).join(""):artistAlbums.map(a=>cardHTML(a,"album")).join("")}</div>
       </div>
 
       <div data-tabpanel="singles" style="display:none;">
-        <div class="empty-state">${ICONS.disc}<h3>No singles yet</h3><p>${artist.name} hasn't released any singles or EPs on ArtistCamp.</p></div>
+        <div class="empty-state">${ICONS.disc}<h3>No single lectures yet</h3><p>${artist.name} hasn't published any single lectures on Ugandan Sheikhs.</p></div>
       </div>
 
       <div data-tabpanel="playlists" style="display:none;">
@@ -97,7 +96,7 @@
         <h3 style="margin-bottom:14px;">About ${artist.name}</h3>
         <p class="text-secondary" style="margin-bottom:20px;">${artist.bio}</p>
         <div class="grid grid-2" style="max-width:480px;">
-          <div><div class="eyebrow">Genre</div><div>${artist.genre}</div></div>
+          <div><div class="eyebrow">Topic</div><div>${artist.genre}</div></div>
           <div><div class="eyebrow">Location</div><div>${artist.city}, ${artist.country}</div></div>
           <div><div class="eyebrow">Followers</div><div>${artist.followers}</div></div>
           <div><div class="eyebrow">Total Plays</div><div>${fmtCount(artistTracks.reduce((s,t)=>s+t.plays,0))}</div></div>

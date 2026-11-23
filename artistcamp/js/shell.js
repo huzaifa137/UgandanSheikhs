@@ -1,5 +1,5 @@
 /* =====================================================================
-   ArtistCamp — App Shell
+   Ugandan Sheikhs — App Shell
    Renders the persistent sidebar / topbar / player / mobile nav into
    placeholder elements so every listener page shares one implementation.
    Pages declare data-active="discover" etc. on <body> to set nav state.
@@ -22,18 +22,18 @@ const NAV_PRIMARY = [
   { id: "home", label: "Home", href: "index.html", icon: "home" },
   { id: "discover", label: "Discover", href: "discover.html", icon: "compass" },
   { id: "browse", label: "Browse", href: "search.html", icon: "grid" },
-  { id: "new-releases", label: "New Releases", href: "discover.html#new", icon: "sparkle" },
+  { id: "new-releases", label: "New Lectures", href: "discover.html#new", icon: "sparkle" },
   { id: "trending", label: "Trending", href: "discover.html#trending", icon: "trendingUp" },
-  { id: "genres", label: "Genres", href: "discover.html#genres", icon: "tag" },
+  { id: "genres", label: "Topics", href: "discover.html#genres", icon: "tag" },
 ];
 const NAV_LIBRARY = [
   { id: "library", label: "My Library", href: "library.html", icon: "library" },
-  { id: "liked", label: "Liked Songs", href: "liked.html", icon: "heart" },
-  { id: "albums", label: "Albums", href: "library.html#albums", icon: "disc" },
+  { id: "liked", label: "Liked Lectures", href: "liked.html", icon: "heart" },
+  { id: "albums", label: "Series", href: "library.html#albums", icon: "disc" },
   { id: "following", label: "Following", href: "following.html", icon: "userPlus" },
-  { id: "playlists", label: "Playlists", href: "library.html#playlists", icon: "layers" },
+  { id: "playlists", label: "Collections", href: "library.html#playlists", icon: "layers" },
   { id: "downloads", label: "Downloads", href: "downloads.html", icon: "download" },
-  { id: "offline", label: "Offline Music", href: "offline.html", icon: "cloudOff" },
+  { id: "offline", label: "Offline Lectures", href: "offline.html", icon: "cloudOff" },
   { id: "history", label: "Recently Played", href: "history.html", icon: "clock" },
 ];
 
@@ -44,7 +44,7 @@ function renderSidebar(active) {
   el.innerHTML = `
     <a class="sidebar-logo" href="index.html">
       <span class="mark">${ICONS.logo}</span>
-      <span class="word">ArtistCamp</span>
+      <span class="word">Ugandan Sheikhs</span>
     </a>
     <nav class="nav-group">
       ${NAV_PRIMARY.map(navItem).join("")}
@@ -54,10 +54,10 @@ function renderSidebar(active) {
       ${NAV_LIBRARY.map(navItem).join("")}
     </div>
     <div class="nav-group">
-      <div class="nav-group-label">Playlists</div>
+      <div class="nav-group-label">Collections</div>
       <div class="playlist-nav">
         ${PLAYLISTS.slice(0, 5).map((p) => `<a class="nav-link" href="playlist.html?id=${p.id}"><span style="width:18px;height:18px;border-radius:4px;background:var(--surface-3);flex-shrink:0;background-image:url('${p.art}');background-size:cover;"></span><span class="truncate">${p.name}</span></a>`).join("")}
-        <button class="nav-link" id="create-playlist-btn" style="width:100%;">${ICONS.plus}<span>Create Playlist</span></button>
+        <button class="nav-link" id="create-playlist-btn" style="width:100%;">${ICONS.plus}<span>Create Collection</span></button>
       </div>
     </div>
     <div class="sidebar-bottom">
@@ -77,7 +77,7 @@ function renderTopbar() {
     </div>
     <div class="search-field">
       ${ICONS.search}
-      <input id="global-search" type="text" placeholder="Search artists, albums, tracks and playlists" autocomplete="off" />
+      <input id="global-search" type="text" placeholder="Search sheikhs, series, lectures and collections" autocomplete="off" />
       <div class="menu" id="search-autocomplete" style="left:0;right:0;top:44px;"></div>
     </div>
     <div class="topbar-right">
@@ -138,7 +138,7 @@ function renderPlayer() {
     </div>
     <div class="player-right">
       <button class="icon-btn" id="p-queue" aria-label="Queue">${ICONS.queue}</button>
-      <button class="icon-btn" id="p-lyrics" aria-label="Lyrics">${ICONS.mic}</button>
+      <button class="icon-btn" id="p-lyrics" aria-label="Transcript">${ICONS.mic}</button>
       <button class="icon-btn" id="p-cast" aria-label="Devices">${ICONS.cast}</button>
       <button class="icon-btn" id="p-download" aria-label="Download status">${ICONS.download}</button>
       <div class="volume-wrap">
@@ -188,7 +188,7 @@ function renderGlobalOverlays() {
       </div>
       <div class="tabs" style="margin:14px 20px 0;">
         <button class="tab active">All</button>
-        <button class="tab">Music</button>
+        <button class="tab">Lectures</button>
         <button class="tab">Social</button>
         <button class="tab">System</button>
       </div>
@@ -229,15 +229,15 @@ function renderGlobalOverlays() {
     </div>
 
     <div class="modal" id="create-playlist-modal">
-      <div class="modal-head"><h3>Create Playlist</h3><button class="icon-btn" onclick="closeModals()">${ICONS.x}</button></div>
-      <div class="field"><label>Playlist name</label><input class="input" placeholder="e.g. Sunday Acoustic" /></div>
-      <div class="field"><label>Description</label><textarea class="textarea" placeholder="What's this playlist about?"></textarea></div>
+      <div class="modal-head"><h3>Create Collection</h3><button class="icon-btn" onclick="closeModals()">${ICONS.x}</button></div>
+      <div class="field"><label>Collection name</label><input class="input" placeholder="e.g. Friday Reminders" /></div>
+      <div class="field"><label>Description</label><textarea class="textarea" placeholder="What's this collection about?"></textarea></div>
       <div class="field"><label>Privacy</label>
         <select class="select"><option>Public</option><option>Private</option><option>Unlisted</option></select>
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-        <button class="btn btn-primary" onclick="closeModals();toast('Playlist created','success')">Create Playlist</button>
+        <button class="btn btn-primary" onclick="closeModals();toast('Collection created','success')">Create Collection</button>
       </div>
     </div>
   `;
@@ -257,11 +257,11 @@ function renderShell(active) {
    ===================================================================== */
 const ADMIN_NAV = [
   { id: "dashboard", label: "Dashboard", href: "dashboard.html", icon: "grid" },
-  { id: "artists", label: "Artists", href: "artists.html", icon: "users" },
-  { id: "albums", label: "Albums", href: "albums.html", icon: "disc" },
-  { id: "tracks", label: "Tracks", href: "tracks.html", icon: "layers" },
-  { id: "genres", label: "Genres", href: "genres.html", icon: "tag" },
-  { id: "playlists", label: "Playlists", href: "playlists.html", icon: "library" },
+  { id: "artists", label: "Sheikhs", href: "artists.html", icon: "users" },
+  { id: "albums", label: "Series", href: "albums.html", icon: "disc" },
+  { id: "tracks", label: "Lectures", href: "tracks.html", icon: "layers" },
+  { id: "genres", label: "Topics", href: "genres.html", icon: "tag" },
+  { id: "playlists", label: "Collections", href: "playlists.html", icon: "library" },
   { id: "users", label: "Users", href: "users.html", icon: "users" },
   { id: "comments", label: "Comments", href: "comments.html", icon: "message" },
   { id: "downloads", label: "Downloads", href: "downloads.html", icon: "download" },
@@ -276,7 +276,7 @@ function renderAdminSidebar(active) {
   el.innerHTML = `
     <a class="sidebar-logo" href="dashboard.html">
       <span class="mark">${ICONS.logo}</span>
-      <span class="word">ArtistCamp</span>
+      <span class="word">Ugandan Sheikhs</span>
       <span class="badge badge-neutral" style="margin-left:auto;">Admin</span>
     </a>
     <nav class="nav-group" style="flex:1;overflow-y:auto;">

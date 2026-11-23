@@ -524,3 +524,6 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 .theme-toggle .i-sun{display:none;}
 :root[data-theme="light"] .theme-toggle .i-sun{display:block;}
 :root[data-theme="light"] .theme-toggle .i-moon{display:none;}
+
+/* Sheikh photos: keep faces in frame when cropped square/round */
+.card.artist .card-art img,.hero-art img,.entity-hero-art,.t-title-cell img,.avatar{object-position:center 18%;}

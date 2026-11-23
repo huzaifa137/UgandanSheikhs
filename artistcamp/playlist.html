@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Playlist — ArtistCamp</title>
+<title>Collection — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -37,12 +37,12 @@
         <div class="entity-hero-body" style="margin-top:0;">
           <img class="entity-hero-art" src="${playlist.art}" alt="${playlist.name}" />
           <div class="entity-hero-info">
-            <div class="kind">${playlist.privacy} Playlist</div>
+            <div class="kind">${playlist.privacy} Collection</div>
             <h1>${playlist.name}</h1>
             <p class="text-secondary" style="margin:6px 0 10px;max-width:52ch;">${playlist.description}</p>
             <div class="entity-hero-meta">
               <strong style="color:var(--text-primary);">${playlist.creator}</strong><span>·</span>
-              <span>${playlist.tracks.length} songs, ${Math.round(totalSecs/60)} min</span><span>·</span>
+              <span>${playlist.tracks.length} lectures, ${Math.round(totalSecs/60)} min</span><span>·</span>
               <span>Updated ${playlist.updated}</span>
             </div>
           </div>
@@ -50,7 +50,7 @@
         <div class="entity-hero-actions">
           <button class="btn btn-primary" onclick="toast('Playing ${playlist.name.replace(/'/g,"")}')">${ICONS.play}<span>Play</span></button>
           <button class="btn btn-secondary" onclick="toast('Shuffling playlist')">${ICONS.shuffle}<span>Shuffle</span></button>
-          <button class="btn btn-outline" onclick="toast('Playlist download started','success')">${ICONS.download}<span>Download Playlist</span></button>
+          <button class="btn btn-outline" onclick="toast('Collection download started','success')">${ICONS.download}<span>Download Collection</span></button>
           <button class="icon-btn btn-icon-only" onclick="toast('Saved to library','success')">${ICONS.heart}</button>
           <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
           ${isOwner ? `<button class="icon-btn btn-icon-only" id="edit-playlist-btn">${ICONS.edit}</button>` : ""}
@@ -58,7 +58,7 @@
       </div>
 
       <table class="track-table" style="margin-top:24px;">
-        <thead><tr><th>#</th><th>Track</th><th>Album</th><th>Time</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Lecture</th><th>Series</th><th>Time</th><th></th></tr></thead>
         <tbody>
           ${playlist.tracks.map((t,i)=>`
           <tr class="track-row">
@@ -68,15 +68,15 @@
             <td class="t-meta">${fmtDuration(t.duration)}</td>
             <td><div class="t-actions">
               ${isOwner ? `<button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Removed from playlist')">${ICONS.x}</button>` : ""}
-              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Track options opened')">${ICONS.more}</button>
+              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Lecture options opened')">${ICONS.more}</button>
             </div></td>
           </tr>`).join("")}
         </tbody>
       </table>
 
       <div class="modal" id="edit-playlist-modal">
-        <div class="modal-head"><h3>Edit Playlist</h3><button class="icon-btn" onclick="closeModals()">${ICONS.x}</button></div>
-        <div class="field"><label>Playlist name</label><input class="input" value="${playlist.name}" /></div>
+        <div class="modal-head"><h3>Edit Collection</h3><button class="icon-btn" onclick="closeModals()">${ICONS.x}</button></div>
+        <div class="field"><label>Collection name</label><input class="input" value="${playlist.name}" /></div>
         <div class="field"><label>Description</label><textarea class="textarea">${playlist.description}</textarea></div>
         <div class="field"><label>Privacy</label>
           <select class="select">
@@ -88,7 +88,7 @@
         <div class="field"><label>Cover image</label><div class="dropzone" style="padding:24px;"><div class="icon-wrap" style="margin:0 auto 10px;width:40px;height:40px;">${ICONS.upload}</div><p style="font-size:13px;">Drop an image or browse</p></div></div>
         <div class="modal-actions">
           <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-          <button class="btn btn-primary" onclick="closeModals();toast('Playlist updated','success')">Save Changes</button>
+          <button class="btn btn-primary" onclick="closeModals();toast('Collection updated','success')">Save Changes</button>
         </div>
       </div>
     `;

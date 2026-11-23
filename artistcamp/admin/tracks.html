@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tracks — ArtistCamp Admin</title>
+<title>Lectures — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 </head>
@@ -15,18 +15,18 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Tracks</h1><p>Manage every track in the ArtistCamp catalog.</p></div>
+          <div><h1 style="font-size:22px;">Lectures</h1><p>Manage every lecture in the Ugandan Sheikhs catalog.</p></div>
           <a class="btn btn-primary" href="tracks-upload.html" id="upload-cta"></a>
         </div>
 
         <div class="table-toolbar">
-          <div class="search-field" style="max-width:280px;" id="track-search-wrap"><input id="track-search" placeholder="Search tracks…" /></div>
-          <select class="select" style="width:auto;" id="genre-filter"><option value="">All Genres</option></select>
+          <div class="search-field" style="max-width:280px;" id="track-search-wrap"><input id="track-search" placeholder="Search lectures…" /></div>
+          <select class="select" style="width:auto;" id="genre-filter"><option value="">All Topics</option></select>
           <select class="select" style="width:auto;"><option>All Status</option><option>Published</option><option>Draft</option></select>
         </div>
 
         <table class="data-table">
-          <thead><tr><th>Track</th><th>Artist</th><th>Album</th><th>Genre</th><th>Duration</th><th>Plays</th><th>Downloads</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Lecture</th><th>Sheikh</th><th>Series</th><th>Topic</th><th>Duration</th><th>Plays</th><th>Downloads</th><th>Status</th><th></th></tr></thead>
           <tbody id="tracks-table"></tbody>
         </table>
 
@@ -39,8 +39,8 @@
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
   <script>
-    initAdminPage("tracks", "Tracks");
-    document.getElementById("upload-cta").innerHTML = ICONS.upload + "<span>Upload Track</span>";
+    initAdminPage("tracks", "Lectures");
+    document.getElementById("upload-cta").innerHTML = ICONS.upload + "<span>Upload Lecture</span>";
     document.getElementById("track-search-wrap").insertAdjacentHTML("afterbegin", ICONS.search);
     document.getElementById("genre-filter").innerHTML += GENRES.map(g => `<option>${g.name}</option>`).join("");
 
@@ -56,7 +56,7 @@
         <td><span class="badge badge-success">Published</span></td>
         <td><div class="flex gap-8">
           <button class="icon-btn" style="width:30px;height:30px;" title="Edit" onclick="toast('Edit track form opened')">${ICONS.edit}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Track deleted','warning')">${ICONS.trash}</button>
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Lecture deleted','warning')">${ICONS.trash}</button>
         </div></td>
       </tr>`;
     }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ArtistCamp — Discover Independent Music</title>
+<title>Ugandan Sheikhs — Lectures from Sheikhs Across Uganda</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -16,17 +16,17 @@
 
         <section class="hero">
           <div class="hero-copy">
-            <span class="eyebrow">Featured Album</span>
-            <h1>Static Bloom</h1>
-            <p style="font-family:var(--font-display);font-size:19px;color:var(--text-primary);margin-bottom:6px;">Amara Ndlovu</p>
-            <p>Recorded over a single rainy season in Lagos, <em>Static Bloom</em> folds Afrobeats percussion into airy, melodic hooks — Amara Ndlovu's most confident record yet.</p>
+            <span class="eyebrow">Featured Series</span>
+            <h1 id="hero-title"></h1>
+            <p id="hero-sheikh" style="font-size:19px;font-weight:600;color:var(--text-primary);margin-bottom:6px;"></p>
+            <p id="hero-desc"></p>
             <div class="hero-actions">
-              <button class="btn btn-primary" onclick="toast('Playing Static Bloom')">Play Now</button>
-              <a class="btn btn-secondary" href="album.html?id=alb-1">View Album</a>
+              <button class="btn btn-primary" id="hero-play">Play Now</button>
+              <a class="btn btn-secondary" id="hero-view" href="#">View Series</a>
               <button class="btn btn-outline" onclick="toast('Download started','success')">Download</button>
             </div>
           </div>
-          <div class="hero-art"><img src="https://picsum.photos/seed/amara-cover/900/900" alt="Static Bloom album art" /></div>
+          <div class="hero-art"><img id="hero-img" src="" alt="" /></div>
         </section>
 
         <section>
@@ -42,23 +42,23 @@
         <section>
           <div class="section-header"><h2>Trending Now</h2><a class="see-all" href="discover.html#trending">See all</a></div>
           <table class="track-table">
-            <thead><tr><th>#</th><th>Track</th><th>Album</th><th>Plays</th><th>Time</th><th></th></tr></thead>
+            <thead><tr><th>#</th><th>Lecture</th><th>Series</th><th>Plays</th><th>Time</th><th></th></tr></thead>
             <tbody id="trending-body"></tbody>
           </table>
         </section>
 
         <section>
-          <div class="section-header"><h2>New Releases</h2><a class="see-all" href="discover.html#new">See all</a></div>
+          <div class="section-header"><h2>New Lectures</h2><a class="see-all" href="discover.html#new">See all</a></div>
           <div class="grid grid-6" id="new-releases-grid"></div>
         </section>
 
         <section>
-          <div class="section-header"><h2>Featured Artists</h2><a class="see-all" href="discover.html">See all</a></div>
+          <div class="section-header"><h2>Featured Sheikhs</h2><a class="see-all" href="discover.html">See all</a></div>
           <div class="rail" id="featured-artists-rail"></div>
         </section>
 
         <section>
-          <div class="section-header"><h2>Genres &amp; Moods</h2></div>
+          <div class="section-header"><h2>Topics</h2></div>
           <div class="grid grid-6" id="genre-grid"></div>
         </section>
 
@@ -68,7 +68,7 @@
         </section>
 
         <section>
-          <div class="section-header"><h2>Popular Playlists</h2></div>
+          <div class="section-header"><h2>Popular Collections</h2></div>
           <div class="grid grid-5" id="popular-playlists-grid"></div>
         </section>
 
@@ -87,6 +87,17 @@
   <script src="js/app.js"></script>
   <script>
     initAppPage("home");
+
+    (function fillHero() {
+      const f = ALBUMS[0], sh = ARTISTS.find((a) => a.id === f.artistId) || ARTISTS[0];
+      document.getElementById("hero-title").textContent = f.title;
+      document.getElementById("hero-sheikh").textContent = sh.name;
+      document.getElementById("hero-desc").textContent = f.description;
+      document.getElementById("hero-view").href = "album.html?id=" + f.id;
+      document.getElementById("hero-play").addEventListener("click", () => toast("Playing " + f.title));
+      const img = document.getElementById("hero-img");
+      img.src = sh.img; img.alt = sh.name;
+    })();
 
     document.getElementById("continue-rail").innerHTML = TRACKS.slice(0, 8).map((t) => `
       <div class="card card-w" onclick="toast('Resuming ${t.title.replace(/'/g,"")}')" style="cursor:pointer;">
@@ -122,7 +133,7 @@
         <div>
           <div class="eyebrow" style="margin-bottom:4px;">Editor's Pick</div>
           <div class="card-title">${a.title}</div>
-          <div class="card-sub">${a.artist} — a standout ${a.genre.toLowerCase()} record for ${a.year}.</div>
+          <div class="card-sub">${a.artist} — ${a.genre} series from ${a.year}.</div>
         </div>
       </a>`).join("");
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Search — ArtistCamp</title>
+<title>Search — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -16,7 +16,7 @@
 
         <div class="search-field" style="max-width:640px;margin-bottom:20px;">
           <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input id="page-search" type="text" placeholder="Search artists, albums, tracks and playlists" autocomplete="off" />
+          <input id="page-search" type="text" placeholder="Search sheikhs, series, lectures and collections" autocomplete="off" />
         </div>
 
         <div class="chip-row" id="filter-chips" style="margin-bottom:24px;"></div>
@@ -28,19 +28,19 @@
           <div class="section-header"><h2>Trending Searches</h2></div>
           <div class="chip-row" id="trending-searches"></div>
 
-          <div class="section-header"><h2>Browse Genres</h2></div>
+          <div class="section-header"><h2>Browse Topics</h2></div>
           <div class="grid grid-6" id="genre-grid"></div>
         </div>
 
         <div id="results" style="display:none;">
           <div id="top-result"></div>
-          <div class="section-header"><h2>Songs</h2></div>
+          <div class="section-header"><h2>Lectures</h2></div>
           <table class="track-table"><tbody id="result-songs"></tbody></table>
-          <div class="section-header"><h2>Artists</h2></div>
+          <div class="section-header"><h2>Sheikhs</h2></div>
           <div class="grid grid-6" id="result-artists"></div>
-          <div class="section-header"><h2>Albums</h2></div>
+          <div class="section-header"><h2>Series</h2></div>
           <div class="grid grid-6" id="result-albums"></div>
-          <div class="section-header"><h2>Playlists</h2></div>
+          <div class="section-header"><h2>Collections</h2></div>
           <div class="grid grid-5" id="result-playlists"></div>
         </div>
 
@@ -61,11 +61,11 @@
     initAppPage("search");
 
     const filterChips = document.getElementById("filter-chips");
-    filterChips.innerHTML = ["All","Songs","Artists","Albums","Playlists"].map((f,i)=>`<button class="chip ${i===0?"active":""}">${f}</button>`).join("");
+    filterChips.innerHTML = ["All","Lectures","Sheikhs","Series","Collections"].map((f,i)=>`<button class="chip ${i===0?"active":""}">${f}</button>`).join("");
     wireChips(filterChips);
 
-    document.getElementById("recent-list").innerHTML = ["Amara Ndlovu","Golden Hymn","Afro Discovery","Kofi Asante"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.clock}${q}</button>`).join("");
-    document.getElementById("trending-searches").innerHTML = ["Afrobeats 2026","Nnamdi Eze","Sunday Acoustic","Static Bloom","gospel playlists"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.trendingUp}${q}</button>`).join("");
+    document.getElementById("recent-list").innerHTML = ["Hamza Kayiira","Sincerity in Worship","Daily Reminders","Imaam Kyeyune"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.clock}${q}</button>`).join("");
+    document.getElementById("trending-searches").innerHTML = ["Tafsir of Juz Amma","Salim Bbosa","Friday Khutbah","Foundations of Tawheed","Ramadan collections"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.trendingUp}${q}</button>`).join("");
     document.getElementById("genre-grid").innerHTML = GENRES.map(g => `<a class="genre-tile" href="discover.html?genre=${g.slug}" style="background:${g.color};"><span style="color:#fff;">${g.name}</span></a>`).join("");
 
     function runSearch(q) {
@@ -92,7 +92,7 @@
         <div class="section-header" style="margin-top:0;"><h2>Top Result</h2></div>
         <a class="card" href="${artists[0] ? 'artist.html?id='+artists[0].id : albums[0] ? 'album.html?id='+albums[0].id : 'track.html?id='+tracks[0].id}" style="display:flex;gap:18px;align-items:center;padding:20px;max-width:420px;">
           <img src="${artists[0]?.img || albums[0]?.art || tracks[0]?.art}" style="width:88px;height:88px;border-radius:${artists[0]?'50%':'10px'};object-fit:cover;" />
-          <div><div class="card-title" style="font-size:19px;">${artists[0]?.name || albums[0]?.title || tracks[0]?.title}</div><div class="card-sub">${artists[0]?'Artist':albums[0]?'Album':'Song'}</div></div>
+          <div><div class="card-title" style="font-size:19px;">${artists[0]?.name || albums[0]?.title || tracks[0]?.title}</div><div class="card-sub">${artists[0]?'Sheikh':albums[0]?'Series':'Lecture'}</div></div>
         </a>` : "";
 
       document.getElementById("result-songs").innerHTML = tracks.slice(0,6).map((t,i)=>trackRowHTML(t,i,{album:true})).join("");

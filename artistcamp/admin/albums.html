@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Albums — ArtistCamp Admin</title>
+<title>Series — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 </head>
@@ -15,42 +15,42 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Albums</h1><p>Manage albums, EPs, singles and compilations.</p></div>
+          <div><h1 style="font-size:22px;">Series</h1><p>Manage series, short series and single lectures.</p></div>
           <button class="btn btn-primary" id="add-album-btn" onclick="ensureOverlay();openModal('add-album-modal')"></button>
         </div>
 
         <div class="table-toolbar">
-          <div class="search-field" style="max-width:280px;" id="album-search-wrap"><input id="album-search" placeholder="Search albums…" /></div>
-          <select class="select" style="width:auto;"><option>All Types</option><option>Album</option><option>EP</option><option>Single</option><option>Compilation</option></select>
+          <div class="search-field" style="max-width:280px;" id="album-search-wrap"><input id="album-search" placeholder="Search series…" /></div>
+          <select class="select" style="width:auto;"><option>All Types</option><option>Series</option><option>Short Series</option><option>Single Lecture</option><option>Compilation</option></select>
         </div>
 
         <table class="data-table">
-          <thead><tr><th>Artwork</th><th>Album</th><th>Artist</th><th>Type</th><th>Tracks</th><th>Release Date</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Artwork</th><th>Series</th><th>Sheikh</th><th>Type</th><th>Lectures</th><th>Published</th><th>Status</th><th></th></tr></thead>
           <tbody id="albums-table"></tbody>
         </table>
 
         <div class="modal" id="add-album-modal" style="width:min(560px,92vw);">
-          <div class="modal-head"><h3>Add Album</h3><button class="icon-btn" id="add-album-close" onclick="closeModals()"></button></div>
-          <div class="field"><label>Album title</label><input class="input" placeholder="e.g. Static Bloom" /></div>
-          <div class="field"><label>Artist</label><select class="select" id="album-artist-select"></select></div>
-          <div class="field"><label>Album artwork</label><div class="dropzone" style="padding:22px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;" id="album-dz-icon"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
+          <div class="modal-head"><h3>Add Series</h3><button class="icon-btn" id="add-album-close" onclick="closeModals()"></button></div>
+          <div class="field"><label>Series title</label><input class="input" placeholder="e.g. Foundations of Tawheed" /></div>
+          <div class="field"><label>Sheikh</label><select class="select" id="album-artist-select"></select></div>
+          <div class="field"><label>Series artwork</label><div class="dropzone" style="padding:22px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;" id="album-dz-icon"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
           <div class="grid grid-2">
-            <div class="field"><label>Album type</label><select class="select"><option>Album</option><option>EP</option><option>Single</option><option>Compilation</option></select></div>
-            <div class="field"><label>Genre</label><select class="select" id="album-genre-select"></select></div>
+            <div class="field"><label>Series type</label><select class="select"><option>Series</option><option>Short Series</option><option>Single Lecture</option><option>Compilation</option></select></div>
+            <div class="field"><label>Topic</label><select class="select" id="album-genre-select"></select></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Release date</label><input class="input" type="date" /></div>
-            <div class="field"><label>Record label</label><input class="input" placeholder="ArtistCamp Records" /></div>
+            <div class="field"><label>Published date</label><input class="input" type="date" /></div>
+            <div class="field"><label>Publisher</label><input class="input" placeholder="Ugandan Sheikhs" /></div>
           </div>
           <div class="field"><label>Description</label><textarea class="textarea"></textarea></div>
-          <div class="field"><label>Copyright</label><input class="input" placeholder="© 2026 Artist Name" /></div>
+          <div class="field"><label>Copyright</label><input class="input" placeholder="© 2026 Sheikh Name" /></div>
           <div class="flex gap-16" style="margin-bottom:8px;">
             <label class="checkbox-row"><input type="checkbox" /> Featured</label>
             <label class="checkbox-row"><input type="checkbox" checked /> Published</label>
           </div>
           <div class="modal-actions">
             <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-            <button class="btn btn-primary" onclick="closeModals();toast('Album created','success')">Create Album</button>
+            <button class="btn btn-primary" onclick="closeModals();toast('Series created','success')">Create Series</button>
           </div>
         </div>
 
@@ -63,8 +63,8 @@
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
   <script>
-    initAdminPage("albums", "Albums");
-    document.getElementById("add-album-btn").innerHTML = ICONS.plus + "<span>Add Album</span>";
+    initAdminPage("albums", "Series");
+    document.getElementById("add-album-btn").innerHTML = ICONS.plus + "<span>Add Series</span>";
     document.getElementById("add-album-close").innerHTML = ICONS.x;
     document.getElementById("album-dz-icon").innerHTML = ICONS.upload;
     document.getElementById("album-search-wrap").insertAdjacentHTML("afterbegin", ICONS.search);
@@ -83,7 +83,7 @@
         <td><div class="flex gap-8">
           <a class="icon-btn" style="width:30px;height:30px;" href="../album.html?id=${a.id}" title="View">${ICONS.eye}</a>
           <button class="icon-btn" style="width:30px;height:30px;" title="Edit" onclick="toast('Edit album form opened')">${ICONS.edit}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Album deleted','warning')">${ICONS.trash}</button>
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Series deleted','warning')">${ICONS.trash}</button>
         </div></td>
       </tr>`;
     }

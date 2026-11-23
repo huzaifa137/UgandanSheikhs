@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Upload Track — ArtistCamp Admin</title>
+<title>Upload Lecture — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 </head>
@@ -14,8 +14,8 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Upload Track</h1><p>Add a new track to the ArtistCamp catalog.</p></div>
-          <a class="btn btn-secondary" href="tracks.html">Back to Tracks</a>
+        <div class="page-header"><div><h1 style="font-size:22px;">Upload Lecture</h1><p>Add a new lecture to the Ugandan Sheikhs catalog.</p></div>
+          <a class="btn btn-secondary" href="tracks.html">Back to Lectures</a>
         </div>
 
         <div class="dropzone" id="dropzone">
@@ -28,41 +28,41 @@
         <div id="upload-queue" style="margin-top:20px;max-width:640px;"></div>
 
         <div id="metadata-form" style="display:none;margin-top:36px;max-width:760px;">
-          <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Track Details</h2></div>
+          <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Lecture Details</h2></div>
           <div class="grid grid-2">
-            <div class="field"><label>Track title</label><input class="input" placeholder="e.g. Golden Hymn" /></div>
-            <div class="field"><label>Artist</label><select class="select" id="meta-artist"></select></div>
-            <div class="field"><label>Album</label><input class="input" placeholder="Optional — leave blank for singles" /></div>
-            <div class="field"><label>Track number</label><input class="input" type="number" placeholder="1" /></div>
+            <div class="field"><label>Lecture title</label><input class="input" placeholder="e.g. Sincerity in Worship" /></div>
+            <div class="field"><label>Sheikh</label><select class="select" id="meta-artist"></select></div>
+            <div class="field"><label>Series</label><input class="input" placeholder="Optional — leave blank for single lectures" /></div>
+            <div class="field"><label>Lecture number</label><input class="input" type="number" placeholder="1" /></div>
             <div class="field"><label>Disc number</label><input class="input" type="number" placeholder="1" /></div>
-            <div class="field"><label>Genre</label><select class="select" id="meta-genre"></select></div>
-            <div class="field"><label>Release date</label><input class="input" type="date" /></div>
+            <div class="field"><label>Topic</label><select class="select" id="meta-genre"></select></div>
+            <div class="field"><label>Published date</label><input class="input" type="date" /></div>
             <div class="field"><label>Language</label><input class="input" placeholder="English" /></div>
           </div>
 
-          <div class="field"><label>Track description</label><textarea class="textarea" placeholder="Short description shown on the track page"></textarea></div>
-          <div class="field"><label>Lyrics</label><textarea class="textarea" placeholder="Optional lyrics"></textarea></div>
+          <div class="field"><label>Lecture description</label><textarea class="textarea" placeholder="Short description shown on the lecture page"></textarea></div>
+          <div class="field"><label>Transcript</label><textarea class="textarea" placeholder="Optional transcript"></textarea></div>
 
           <div class="grid grid-2">
             <div class="field"><label>Composer</label><input class="input" /></div>
             <div class="field"><label>Producer</label><input class="input" /></div>
-            <div class="field"><label>Record label</label><input class="input" placeholder="ArtistCamp Records" /></div>
+            <div class="field"><label>Publisher</label><input class="input" placeholder="Ugandan Sheikhs" /></div>
             <div class="field"><label>ISRC</label><input class="input" placeholder="e.g. US-ABC-25-00001" /></div>
           </div>
 
           <div class="field"><label>Cover artwork</label><div class="dropzone" style="padding:24px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;" id="dz-icon-2"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
 
           <div class="flex gap-16 mt-24" style="margin-bottom:8px;">
-            <div class="settings-row" style="border:none;padding:0;flex:1;"><div><div class="label">Explicit content</div></div><button class="switch" data-switch></button></div>
+            <div class="settings-row" style="border:none;padding:0;flex:1;"><div><div class="label">Mature content</div></div><button class="switch" data-switch></button></div>
             <div class="settings-row" style="border:none;padding:0;flex:1;"><div><div class="label">Allow downloads</div></div><button class="switch on" data-switch></button></div>
             <div class="settings-row" style="border:none;padding:0;flex:1;"><div><div class="label">Featured</div></div><button class="switch" data-switch></button></div>
           </div>
 
-          <div class="field"><label>Copyright information</label><input class="input" placeholder="© 2026 Artist Name, under exclusive license" /></div>
+          <div class="field"><label>Copyright information</label><input class="input" placeholder="© 2026 Sheikh Name, under exclusive license" /></div>
 
           <div class="flex gap-12" style="margin-top:20px;">
             <button class="btn btn-secondary" onclick="toast('Draft saved')">Save Draft</button>
-            <button class="btn btn-primary" onclick="toast('Track published','success')">Publish Track</button>
+            <button class="btn btn-primary" onclick="toast('Lecture published','success')">Publish Lecture</button>
             <button class="btn btn-ghost" onclick="document.getElementById('metadata-form').style.display='none';document.getElementById('upload-queue').innerHTML='';">Cancel</button>
           </div>
         </div>
@@ -76,7 +76,7 @@
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
   <script>
-    initAdminPage("tracks", "Upload Track");
+    initAdminPage("tracks", "Upload Lecture");
     document.getElementById("dz-icon").innerHTML = ICONS.upload;
     document.getElementById("dz-icon-2").innerHTML = ICONS.upload;
     document.getElementById("meta-artist").innerHTML = ARTISTS.map(a => `<option>${a.name}</option>`).join("");

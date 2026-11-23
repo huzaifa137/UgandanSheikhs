@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Settings — ArtistCamp</title>
+<title>Settings — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 <style>
@@ -41,15 +41,15 @@
           <div>
             <section class="settings-section active" data-section="account">
               <h2>Account</h2><p class="desc">Update your profile information and password.</p>
-              <div class="field"><label>Display name</label><input class="input" value="Sena Okafor" /></div>
+              <div class="field"><label>Display name</label><input class="input" value="Amina Nakato" /></div>
               <div class="field"><label>Username</label><input class="input" value="senaokafor" /></div>
-              <div class="field"><label>Email</label><input class="input" value="sena@artistcamp.dev" /></div>
+              <div class="field"><label>Email</label><input class="input" value="amina@ugandansheikhs.dev" /></div>
               <div class="field"><label>Password</label><input class="input" type="password" value="••••••••••" /></div>
               <button class="btn btn-primary" onclick="toast('Account details saved','success')">Save Changes</button>
             </section>
 
             <section class="settings-section" data-section="appearance">
-              <h2>Appearance</h2><p class="desc">Choose how ArtistCamp looks on this device.</p>
+              <h2>Appearance</h2><p class="desc">Choose how Ugandan Sheikhs looks on this device.</p>
               <div class="field"><label>Theme</label>
                 <select class="select"><option>Dark (recommended)</option><option disabled>Light — coming soon</option><option>Match system</option></select>
               </div>
@@ -70,26 +70,26 @@
             </section>
 
             <section class="settings-section" data-section="downloads">
-              <h2>Downloads</h2><p class="desc">Control how and where ArtistCamp saves music.</p>
+              <h2>Downloads</h2><p class="desc">Control how and where Ugandan Sheikhs saves lectures.</p>
               <div class="settings-row"><div><div class="label">Download over Wi-Fi only</div><div class="desc">Avoid using mobile data for downloads.</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Auto-download liked songs</div><div class="desc">Save songs you like automatically.</div></div><button class="switch" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Download location</div><div class="desc">/storage/ArtistCamp/downloads</div></div><button class="btn btn-secondary btn-sm" onclick="toast('Change location dialog opened')">Change</button></div>
+              <div class="settings-row"><div><div class="label">Auto-download liked lectures</div><div class="desc">Save lectures you like automatically.</div></div><button class="switch" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Download location</div><div class="desc">/storage/Ugandan Sheikhs/downloads</div></div><button class="btn btn-secondary btn-sm" onclick="toast('Change location dialog opened')">Change</button></div>
               <div class="settings-row"><div><div class="label">Storage management</div><div class="desc">3.8 GB used of 16 GB available.</div></div><a class="btn btn-secondary btn-sm" href="downloads.html">Manage</a></div>
             </section>
 
             <section class="settings-section" data-section="playback">
-              <h2>Playback</h2><p class="desc">Fine-tune how music plays across ArtistCamp.</p>
-              <div class="settings-row"><div><div class="label">Autoplay</div><div class="desc">Keep music playing when your queue ends.</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Crossfade</div><div class="desc">Blend the end of one track into the next.</div></div><button class="switch" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Normalize volume</div><div class="desc">Keep loudness consistent between tracks.</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Explicit content</div><div class="desc">Allow explicit tracks to play.</div></div><button class="switch on" data-switch></button></div>
+              <h2>Playback</h2><p class="desc">Fine-tune how lectures play across Ugandan Sheikhs.</p>
+              <div class="settings-row"><div><div class="label">Autoplay</div><div class="desc">Keep lectures playing when your queue ends.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Crossfade</div><div class="desc">Blend the end of one lecture into the next.</div></div><button class="switch" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Normalize volume</div><div class="desc">Keep loudness consistent between lectures.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Mature content</div><div class="desc">Allow lectures marked for mature audiences.</div></div><button class="switch on" data-switch></button></div>
             </section>
 
             <section class="settings-section" data-section="notifications">
-              <h2>Notifications</h2><p class="desc">Choose what ArtistCamp should notify you about.</p>
-              <div class="settings-row"><div><div class="label">New releases</div><div class="desc">Artists you follow drop new music.</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Artist updates</div><div class="desc">News and announcements from artists.</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Playlist updates</div><div class="desc">Changes to playlists you follow.</div></div><button class="switch" data-switch></button></div>
+              <h2>Notifications</h2><p class="desc">Choose what Ugandan Sheikhs should notify you about.</p>
+              <div class="settings-row"><div><div class="label">New lectures</div><div class="desc">Sheikhs you follow publish new lectures.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Sheikh updates</div><div class="desc">News and announcements from sheikhs.</div></div><button class="switch on" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Collection updates</div><div class="desc">Changes to collections you follow.</div></div><button class="switch" data-switch></button></div>
               <div class="settings-row"><div><div class="label">Comment replies</div><div class="desc">Someone replies to your comment.</div></div><button class="switch on" data-switch></button></div>
             </section>
 
@@ -97,7 +97,7 @@
               <h2>Privacy</h2><p class="desc">Control what other listeners can see.</p>
               <div class="field"><label>Profile visibility</label><select class="select"><option>Public</option><option>Followers only</option><option>Private</option></select></div>
               <div class="settings-row"><div><div class="label">Show listening activity</div><div class="desc">Let others see what you're playing.</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Public playlists by default</div><div class="desc">New playlists are visible to everyone.</div></div><button class="switch" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Public collections by default</div><div class="desc">New collections are visible to everyone.</div></div><button class="switch" data-switch></button></div>
             </section>
 
             <section class="settings-section" data-section="offline">
@@ -106,7 +106,7 @@
                 <div class="flex" style="justify-content:space-between;font-size:13px;font-weight:600;"><span>3.8 GB cached</span><span class="text-secondary">of 16 GB free</span></div>
                 <div class="storage-bar"><div class="fill" style="width:24%;"></div></div>
               </div>
-              <div class="settings-row"><div><div class="label">Clear cached music</div><div class="desc">Frees space but keeps your download list.</div></div><button class="btn btn-danger btn-sm" onclick="toast('Cached music cleared','warning')">Clear Cache</button></div>
+              <div class="settings-row"><div><div class="label">Clear cached lectures</div><div class="desc">Frees space but keeps your download list.</div></div><button class="btn btn-danger btn-sm" onclick="toast('Cached music cleared','warning')">Clear Cache</button></div>
               <div class="settings-row"><div><div class="label">Manage offline content</div><div class="desc">Review everything saved to this device.</div></div><a class="btn btn-secondary btn-sm" href="offline.html">Open</a></div>
             </section>
           </div>

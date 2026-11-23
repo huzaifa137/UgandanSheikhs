@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Settings — ArtistCamp Admin</title>
+<title>Settings — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <style>
@@ -24,7 +24,7 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Platform Settings</h1><p>Global configuration for ArtistCamp.</p></div></div>
+        <div class="page-header"><div><h1 style="font-size:22px;">Platform Settings</h1><p>Global configuration for Ugandan Sheikhs.</p></div></div>
 
         <div class="settings-layout">
           <nav class="settings-nav" id="settings-nav">
@@ -36,15 +36,15 @@
           </nav>
           <div>
             <section class="settings-section active" data-section="general">
-              <h2>General</h2><p class="desc">Basic information about your ArtistCamp instance.</p>
-              <div class="field"><label>Platform name</label><input class="input" value="ArtistCamp" /></div>
+              <h2>General</h2><p class="desc">Basic information about your Ugandan Sheikhs instance.</p>
+              <div class="field"><label>Platform name</label><input class="input" value="Ugandan Sheikhs" /></div>
               <div class="field"><label>Support email</label><input class="input" value="support@artistcamp.dev" /></div>
               <div class="field"><label>Default streaming quality</label><select class="select"><option>Normal</option><option>High</option></select></div>
               <button class="btn btn-primary" onclick="toast('Settings saved','success')">Save Changes</button>
             </section>
             <section class="settings-section" data-section="uploads">
-              <h2>Uploads</h2><p class="desc">Control what artists and admins can upload.</p>
-              <div class="settings-row"><div><div class="label">Max file size</div><div class="desc">Largest audio file accepted per track.</div></div><input class="input" style="width:100px;" value="200 MB" /></div>
+              <h2>Uploads</h2><p class="desc">Control what sheikhs and admins can upload.</p>
+              <div class="settings-row"><div><div class="label">Max file size</div><div class="desc">Largest audio file accepted per lecture.</div></div><input class="input" style="width:100px;" value="200 MB" /></div>
               <div class="settings-row"><div><div class="label">Allowed formats</div><div class="desc">MP3, WAV, FLAC, M4A</div></div><button class="btn btn-secondary btn-sm" onclick="toast('Format list opened')">Edit</button></div>
               <div class="settings-row"><div><div class="label">Require review before publish</div></div><button class="switch on" data-switch></button></div>
             </section>
@@ -52,7 +52,7 @@
               <h2>Moderation</h2><p class="desc">Automatic and manual moderation rules.</p>
               <div class="settings-row"><div><div class="label">Auto-hide reported comments</div><div class="desc">Hide after 5 or more reports.</div></div><button class="switch on" data-switch></button></div>
               <div class="settings-row"><div><div class="label">Profanity filter</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Require verification for artist accounts</div></div><button class="switch" data-switch></button></div>
+              <div class="settings-row"><div><div class="label">Require verification for sheikh accounts</div></div><button class="switch" data-switch></button></div>
             </section>
             <section class="settings-section" data-section="notifications">
               <h2>Notifications</h2><p class="desc">Platform-wide notification defaults.</p>
@@ -64,7 +64,7 @@
               <table class="data-table">
                 <thead><tr><th>Name</th><th>Role</th><th>Last Active</th><th></th></tr></thead>
                 <tbody>
-                  <tr><td>Sena Okafor</td><td><span class="badge badge-accent">Owner</span></td><td class="text-secondary">Just now</td><td></td></tr>
+                  <tr><td>Amina Nakato</td><td><span class="badge badge-accent">Owner</span></td><td class="text-secondary">Just now</td><td></td></tr>
                   <tr><td>Kwame O.</td><td><span class="badge badge-neutral">Editor</span></td><td class="text-secondary">2h ago</td><td><button class="icon-btn admin-remove-btn" style="width:28px;height:28px;" onclick="toast('Admin removed','warning')"></button></td></tr>
                 </tbody>
               </table>

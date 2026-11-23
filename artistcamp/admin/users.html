@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Users — ArtistCamp Admin</title>
+<title>Users — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 </head>
@@ -14,7 +14,7 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Users</h1><p>View and manage ArtistCamp listener accounts.</p></div></div>
+        <div class="page-header"><div><h1 style="font-size:22px;">Users</h1><p>View and manage Ugandan Sheikhs listener accounts.</p></div></div>
 
         <div class="table-toolbar">
           <div class="search-field" style="max-width:280px;" id="user-search-wrap"><input id="user-search" placeholder="Search users…" /></div>
@@ -22,7 +22,7 @@
         </div>
 
         <table class="data-table">
-          <thead><tr><th>User</th><th>Email</th><th>Playlists</th><th>Downloads</th><th>Comments</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+          <thead><tr><th>User</th><th>Email</th><th>Collections</th><th>Downloads</th><th>Comments</th><th>Status</th><th>Joined</th><th></th></tr></thead>
           <tbody id="users-table"></tbody>
         </table>
 
@@ -74,7 +74,7 @@
           <div class="text-secondary" style="font-size:13px;">${u.email}</div>
         </div>
         <div class="grid grid-2" style="margin-bottom:20px;">
-          <div class="stat-card"><div class="label">Playlists</div><div class="value" style="font-size:20px;">${u.playlists}</div></div>
+          <div class="stat-card"><div class="label">Collections</div><div class="value" style="font-size:20px;">${u.playlists}</div></div>
           <div class="stat-card"><div class="label">Downloads</div><div class="value" style="font-size:20px;">${u.downloads}</div></div>
           <div class="stat-card"><div class="label">Comments</div><div class="value" style="font-size:20px;">${u.comments}</div></div>
           <div class="stat-card"><div class="label">Joined</div><div class="value" style="font-size:16px;">${u.joined}</div></div>

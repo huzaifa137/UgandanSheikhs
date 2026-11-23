@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Artists — ArtistCamp Admin</title>
+<title>Sheikhs — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 </head>
@@ -15,41 +15,41 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Artists</h1><p>Manage every artist profile on ArtistCamp.</p></div>
-          <button class="btn btn-primary" onclick="ensureOverlay();openModal('add-artist-modal')">${''}<span>Add Artist</span></button>
+          <div><h1 style="font-size:22px;">Sheikhs</h1><p>Manage every sheikh profile on Ugandan Sheikhs.</p></div>
+          <button class="btn btn-primary" onclick="ensureOverlay();openModal('add-artist-modal')"><span>Add Sheikh</span></button>
         </div>
 
         <div class="table-toolbar">
-          <div class="search-field" style="max-width:280px;">${''}<input id="artist-search" placeholder="Search artists…" /></div>
-          <select class="select" style="width:auto;" id="genre-filter"><option value="">All Genres</option></select>
+          <div class="search-field" style="max-width:280px;"><input id="artist-search" placeholder="Search sheikhs…" /></div>
+          <select class="select" style="width:auto;" id="genre-filter"><option value="">All Topics</option></select>
           <select class="select" style="width:auto;"><option>All Status</option><option>Active</option><option>Inactive</option></select>
           <select class="select" style="width:auto;"><option>All Countries</option></select>
         </div>
 
         <table class="data-table">
-          <thead><tr><th>Artist</th><th>Genre</th><th>Albums</th><th>Tracks</th><th>Followers</th><th>Status</th><th>Created</th><th></th></tr></thead>
+          <thead><tr><th>Sheikh</th><th>Topic</th><th>Series</th><th>Lectures</th><th>Followers</th><th>Status</th><th>Created</th><th></th></tr></thead>
           <tbody id="artists-table"></tbody>
         </table>
 
         <div class="modal" id="add-artist-modal" style="width:min(620px,92vw);">
-          <div class="modal-head"><h3>Add Artist</h3><button class="icon-btn" onclick="closeModals()">${''}</button></div>
+          <div class="modal-head"><h3>Add Sheikh</h3><button class="icon-btn" onclick="closeModals()"></button></div>
           <div class="grid grid-2">
-            <div class="field"><label>Artist name</label><input class="input" placeholder="e.g. Amara Ndlovu" /></div>
+            <div class="field"><label>Sheikh name</label><input class="input" placeholder="e.g. Hamza Kayiira" /></div>
             <div class="field"><label>Slug</label><input class="input" placeholder="amara-ndlovu" /></div>
           </div>
           <div class="field"><label>Short description</label><input class="input" placeholder="One line for cards and search results" /></div>
-          <div class="field"><label>Biography</label><textarea class="textarea" placeholder="Full artist biography…"></textarea></div>
+          <div class="field"><label>Biography</label><textarea class="textarea" placeholder="Full biography…"></textarea></div>
           <div class="grid grid-2">
             <div class="field"><label>Country</label><input class="input" placeholder="Nigeria" /></div>
-            <div class="field"><label>City</label><input class="input" placeholder="Lagos" /></div>
+            <div class="field"><label>City</label><input class="input" placeholder="Kampala" /></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Genres</label><select class="select" multiple style="min-height:80px;" id="modal-genre-select"></select></div>
+            <div class="field"><label>Topics</label><select class="select" multiple style="min-height:80px;" id="modal-genre-select"></select></div>
             <div class="field"><label>Website / social links</label><input class="input" placeholder="https://" /></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Profile image</label><div class="dropzone" style="padding:20px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;">${''}</div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
-            <div class="field"><label>Cover image</label><div class="dropzone" style="padding:20px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;">${''}</div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
+            <div class="field"><label>Profile image</label><div class="dropzone" style="padding:20px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
+            <div class="field"><label>Cover image</label><div class="dropzone" style="padding:20px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
           </div>
           <div class="flex gap-16" style="margin:8px 0 4px;">
             <label class="checkbox-row"><input type="checkbox" checked /> Verified</label>
@@ -58,7 +58,7 @@
           </div>
           <div class="modal-actions">
             <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-            <button class="btn btn-primary" onclick="closeModals();toast('Artist created','success')">Create Artist</button>
+            <button class="btn btn-primary" onclick="closeModals();toast('Sheikh created','success')">Create Sheikh</button>
           </div>
         </div>
 
@@ -71,8 +71,8 @@
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
   <script>
-    initAdminPage("artists", "Artists");
-    document.querySelector('.page-header .btn-primary').innerHTML = ICONS.plus + "<span>Add Artist</span>";
+    initAdminPage("artists", "Sheikhs");
+    document.querySelector('.page-header .btn-primary').innerHTML = ICONS.plus + "<span>Add Sheikh</span>";
     document.querySelector('.search-field svg')?.remove();
     document.querySelectorAll('.search-field').forEach(f => f.insertAdjacentHTML("afterbegin", ICONS.search));
     document.querySelector('.modal-head .icon-btn').innerHTML = ICONS.x;
@@ -93,8 +93,8 @@
           <div class="flex gap-8">
             <a class="icon-btn" style="width:30px;height:30px;" href="../artist.html?id=${a.id}" title="View">${ICONS.eye}</a>
             <button class="icon-btn" style="width:30px;height:30px;" title="Edit" onclick="toast('Edit artist form opened')">${ICONS.edit}</button>
-            <button class="icon-btn" style="width:30px;height:30px;" title="Feature" onclick="toast('Artist featured on homepage','success')">${ICONS.star}</button>
-            <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Artist deleted','warning')">${ICONS.trash}</button>
+            <button class="icon-btn" style="width:30px;height:30px;" title="Feature" onclick="toast('Sheikh featured on homepage','success')">${ICONS.star}</button>
+            <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Sheikh deleted','warning')">${ICONS.trash}</button>
           </div>
         </td>
       </tr>`;

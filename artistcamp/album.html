@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Album — ArtistCamp</title>
+<title>Series — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -46,14 +46,14 @@
             <div class="entity-hero-meta">
               <a href="artist.html?id=${artist.id}" style="color:var(--text-primary);font-weight:600;">${artist.name}</a>
               <span>·</span><span>${album.year}</span><span>·</span><span>${album.genre}</span>
-              <span>·</span><span>${albumTracks.length} tracks, ${Math.round(totalSecs/60)} min</span>
+              <span>·</span><span>${albumTracks.length} lectures, ${Math.round(totalSecs/60)} min</span>
             </div>
           </div>
         </div>
         <div class="entity-hero-actions">
-          <button class="btn btn-primary" onclick="toast('Playing ${album.title.replace(/'/g,"")}')">${ICONS.play}<span>Play Album</span></button>
+          <button class="btn btn-primary" onclick="toast('Playing ${album.title.replace(/'/g,"")}')">${ICONS.play}<span>Play Series</span></button>
           <button class="btn btn-secondary" onclick="toast('Shuffling album')">${ICONS.shuffle}<span>Shuffle</span></button>
-          <button class="btn btn-outline" onclick="toast('Album download started','success')">${ICONS.download}<span>Download Album</span></button>
+          <button class="btn btn-outline" onclick="toast('Series download started','success')">${ICONS.download}<span>Download Series</span></button>
           <button class="icon-btn btn-icon-only" onclick="toast('Saved to library','success')">${ICONS.heart}</button>
           <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
           <button class="icon-btn btn-icon-only" onclick="toast('More options opened')">${ICONS.more}</button>
@@ -63,7 +63,7 @@
       <p class="text-secondary" style="max-width:640px;margin:20px 0;">${album.description}</p>
 
       <table class="track-table">
-        <thead><tr><th>#</th><th>Track</th><th>Plays</th><th></th><th>Time</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Lecture</th><th>Plays</th><th></th><th>Time</th><th></th></tr></thead>
         <tbody>
           ${albumTracks.map((t,i)=>`
           <tr class="track-row">
@@ -73,27 +73,27 @@
             <td>${t.downloadable ? '<span class="badge badge-success">Downloadable</span>' : '<span class="badge badge-neutral">Streaming Only</span>'}</td>
             <td class="t-meta">${fmtDuration(t.duration)}</td>
             <td><div class="t-actions">
-              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Added to Liked Songs','success')">${ICONS.heart}</button>
-              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Track options opened')">${ICONS.more}</button>
+              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Added to Liked Lectures','success')">${ICONS.heart}</button>
+              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Lecture options opened')">${ICONS.more}</button>
             </div></td>
           </tr>`).join("")}
         </tbody>
       </table>
 
       <div class="grid grid-2" style="max-width:640px;margin:32px 0;">
-        <div><div class="eyebrow">Record Label</div><div>${album.label}</div></div>
+        <div><div class="eyebrow">Publisher</div><div>${album.label}</div></div>
         <div><div class="eyebrow">Copyright</div><div class="text-secondary" style="font-size:13px;">${album.copyright}</div></div>
       </div>
 
       <div class="section-header" style="margin-top:8px;"><h2>More from ${artist.name}</h2></div>
       <div class="rail">${(moreFromArtist.length?moreFromArtist:ALBUMS.slice(0,6)).map(a=>cardHTML(a,"album")).join("")}</div>
 
-      <div class="section-header"><h2>Similar Albums</h2></div>
+      <div class="section-header"><h2>Similar Series</h2></div>
       <div class="rail">${(similarAlbums.length?similarAlbums:ALBUMS.slice(6,12)).map(a=>cardHTML(a,"album")).join("")}</div>
 
       <div class="section-header"><h2>Listener Discussion</h2></div>
       <div class="field" style="max-width:640px;">
-        <textarea class="textarea" placeholder="Share your thoughts about this album..."></textarea>
+        <textarea class="textarea" placeholder="Share your thoughts about this series..."></textarea>
         <button class="btn btn-primary" style="align-self:flex-end;" onclick="toast('Comment posted','success')">Post Comment</button>
       </div>
       <div style="max-width:640px;">

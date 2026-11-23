@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Genres — ArtistCamp Admin</title>
+<title>Topics — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 </head>
@@ -15,12 +15,12 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Genres</h1><p>Manage the genres used across ArtistCamp.</p></div>
+          <div><h1 style="font-size:22px;">Topics</h1><p>Manage the topics used across Ugandan Sheikhs.</p></div>
           <button class="btn btn-primary" id="add-genre-btn" onclick="toast('Add genre form opened')"></button>
         </div>
 
         <table class="data-table">
-          <thead><tr><th>Genre</th><th>Slug</th><th>Artists</th><th>Tracks</th><th>Color</th><th></th></tr></thead>
+          <thead><tr><th>Topic</th><th>Slug</th><th>Sheikhs</th><th>Lectures</th><th>Color</th><th></th></tr></thead>
           <tbody id="genres-table"></tbody>
         </table>
 
@@ -33,8 +33,8 @@
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
   <script>
-    initAdminPage("genres", "Genres");
-    document.getElementById("add-genre-btn").innerHTML = ICONS.plus + "<span>Add Genre</span>";
+    initAdminPage("genres", "Topics");
+    document.getElementById("add-genre-btn").innerHTML = ICONS.plus + "<span>Add Topic</span>";
     document.getElementById("genres-table").innerHTML = GENRES.map(g => `
       <tr>
         <td style="font-weight:600;">${g.name}</td>
@@ -44,7 +44,7 @@
         <td><span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:${g.color};vertical-align:-3px;"></span> <span class="text-secondary">${g.color}</span></td>
         <td><div class="flex gap-8">
           <button class="icon-btn" style="width:30px;height:30px;" onclick="toast('Edit genre form opened')">${ICONS.edit}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" onclick="this.closest('tr').remove();toast('Genre deleted','warning')">${ICONS.trash}</button>
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" onclick="this.closest('tr').remove();toast('Topic deleted','warning')">${ICONS.trash}</button>
         </div></td>
       </tr>`).join("");
   </script>

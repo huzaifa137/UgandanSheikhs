@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>UI States Reference — ArtistCamp</title>
+<title>UI States Reference — Ugandan Sheikhs</title>
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -14,7 +14,7 @@
       <header class="topbar" id="shell-topbar"></header>
       <main class="content">
 
-        <div class="page-header"><div><h1>UI States Reference</h1><p>Empty, loading and error states used throughout ArtistCamp — for design QA, not part of the live navigation.</p></div></div>
+        <div class="page-header"><div><h1>UI States Reference</h1><p>Empty, loading and error states used throughout Ugandan Sheikhs — for design QA, not part of the live navigation.</p></div></div>
 
         <div class="section-header" style="margin-top:0;"><h2>Empty States</h2></div>
         <div class="grid grid-3" id="empty-states-grid"></div>
@@ -46,15 +46,15 @@
       return `<div class="card"><div class="empty-state" style="padding:36px 16px;"><div class="icon-wrap">${ICONS[icon]}</div><h3 style="font-size:15px;">${title}</h3><p style="font-size:12.5px;">${body}</p>${actionLabel ? `<button class="btn btn-primary btn-sm" onclick="toast('${actionLabel} triggered')">${actionLabel}</button>` : ""}</div></div>`;
     }
     document.getElementById("empty-states-grid").innerHTML = [
-      emptyCard("library","No playlists yet","Create your first playlist to start organizing music.","Create Playlist"),
-      emptyCard("download","No downloads yet","Download tracks and albums to listen offline.","Browse Music"),
-      emptyCard("heart","No liked songs","Tap the heart on any track to save it here.",""),
+      emptyCard("library","No collections yet","Create your first collection to start organizing lectures.","Create Collection"),
+      emptyCard("download","No downloads yet","Download lectures and series to listen offline.","Browse Lectures"),
+      emptyCard("heart","No liked lectures","Tap the heart on any lecture to save it here.",""),
       emptyCard("search","No results found","Try checking your spelling or searching something else.",""),
-      emptyCard("message","No comments yet","Be the first to share your thoughts on this track.",""),
+      emptyCard("message","No comments yet","Be the first to share your thoughts on this lecture.",""),
       emptyCard("bell","You're all caught up","New notifications will appear here.",""),
-      emptyCard("cloudOff","You're offline","Showing downloaded music. Reconnect to see everything else.",""),
-      emptyCard("clock","No listening history","Tracks you play will show up here.",""),
-      emptyCard("userPlus","Not following anyone yet","Follow artists to see their updates here.","Discover Artists"),
+      emptyCard("cloudOff","You're offline","Showing downloaded lectures. Reconnect to see everything else.",""),
+      emptyCard("clock","No listening history","Lectures you play will show up here.",""),
+      emptyCard("userPlus","Not following anyone yet","Follow sheikhs to see their updates here.","Discover Sheikhs"),
     ].join("");
 
     function errorCard(icon, title, body, actionLabel) {
@@ -62,7 +62,7 @@
     }
     document.getElementById("error-states-grid").innerHTML = [
       errorCard("cloudOff","No internet connection","Check your connection and try again.","Retry"),
-      errorCard("alertTriangle","Unable to play track","This track couldn't be streamed right now.","Try Again"),
+      errorCard("alertTriangle","Unable to play lecture","This lecture couldn't be streamed right now.","Try Again"),
       errorCard("alertTriangle","Download failed","We couldn't finish this download.","Retry Download"),
     ].join("");
 
