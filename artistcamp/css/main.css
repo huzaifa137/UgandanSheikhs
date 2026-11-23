@@ -611,3 +611,71 @@ a.truncate{display:block;}
 /* Icons inside chips were unsized and rendered huge (search page) */
 .chip svg{width:14px;height:14px;flex-shrink:0;}
 .chip{display:inline-flex;align-items:center;gap:6px;}
+
+
+/* =====================================================================
+   PATCH 4: everything fits the screen — no sideways scrolling
+   ===================================================================== */
+.admin-menu-btn,.admin-scrim{display:none;}
+.admin-topbar h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.admin-content,.admin-main{min-width:0;}
+
+/* Admin: sidebar becomes a slide-in menu on tablets and phones */
+@media (max-width:1200px){
+  .admin-sidebar{display:flex;transform:translateX(-100%);transition:transform var(--dur-base) var(--ease);z-index:var(--z-drawer);width:min(280px,84vw);}
+  body.admin-nav-open .admin-sidebar{transform:none;box-shadow:var(--shadow-3);}
+  .admin-main{padding-left:0;}
+  .admin-menu-btn{display:inline-flex;flex-shrink:0;}
+  body.admin-nav-open .admin-scrim{display:block;position:fixed;inset:0;background:var(--overlay-bg);z-index:calc(var(--z-drawer) - 1);}
+  .admin-topbar{padding:0 16px;}
+}
+@media (max-width:720px){
+  .admin-topbar{gap:10px;padding:0 12px;}
+  .admin-topbar .search-field{display:none;}
+  .admin-topbar .btn span{display:none;}
+  .admin-topbar .topbar-right{margin-left:auto;gap:8px;}
+  .admin-content{padding:20px 14px 48px;}
+  .page-header{margin-bottom:20px;}
+  .table-toolbar>*{flex:1 1 100%;max-width:none !important;width:100% !important;}
+}
+
+/* Admin tables: each row becomes a labelled card on tablets/phones */
+@media (max-width:900px){
+  .data-table{display:block;background:none;border:none;border-radius:0;}
+  .data-table thead{display:none;}
+  .data-table tbody{display:block;}
+  .data-table tr{display:block;background:var(--surface-1);border:1px solid var(--border-subtle);border-radius:var(--radius-md);margin-bottom:12px;padding:4px 14px;}
+  .data-table tbody tr:hover{background:var(--surface-1);}
+  .data-table td{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid var(--border-subtle);padding:10px 0;text-align:right;min-width:0;overflow-wrap:anywhere;}
+  .data-table td:first-child{border-top:none;font-weight:600;text-align:left;justify-content:flex-start;padding:12px 0;}
+  .data-table td[data-label]::before{content:attr(data-label);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);text-align:left;flex-shrink:0;}
+  .data-table td:first-child::before{display:none;}
+  .data-table td:last-child{justify-content:flex-end;}
+  .data-table td img{max-width:100%;}
+}
+
+/* Tablets & phones: card rails become wrapping grids (no sideways scrolling) */
+@media (max-width:1024px){
+  .rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));overflow:visible;scroll-snap-type:none;gap:14px;}
+  .rail>*{width:auto;min-width:0;}
+  .rail>*:nth-child(n+9){display:none;}
+  .tabs{flex-wrap:wrap;overflow:visible;}
+}
+@media (max-width:560px){
+  .rail{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+  .rail>*:nth-child(n+7){display:none;}
+  .tab{padding:10px 12px;}
+}
+
+/* Editor's Picks style cards (image + text in a row) need the full width on phones */
+@media (max-width:560px){#editors-grid,#editor-choice{grid-template-columns:1fr;}}
+
+/* Admin tables: tighter cells on laptops so wide tables fit beside the sidebar */
+@media (max-width:1400px){.data-table th,.data-table td{padding:12px 10px;}}
+
+@media (max-width:560px){
+  .admin-content .grid-2{grid-template-columns:1fr;}
+  .data-table td.truncate{max-width:none !important;white-space:normal;overflow:visible;text-overflow:clip;}
+  .chart-placeholder{height:200px;}
+}
+@media (max-width:1200px){.admin-sidebar .user-chip .name{display:block;}}

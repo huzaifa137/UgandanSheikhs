@@ -1,137 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ugandan Sheikhs — Lectures from Sheikhs Across Uganda</title>
-<link rel="stylesheet" href="css/tokens.css" />
-<link rel="stylesheet" href="css/main.css" />
-<link rel="stylesheet" href="css/theme-ocean.css" />
-<script src="js/theme.js"></script>
-<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
-<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ugandan Sheikhs — Lectures from Sheikhs Across Uganda</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/theme-ocean.css" />
+    <script src="js/theme.js"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
 </head>
+
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" id="shell-sidebar"></aside>
-    <div class="main">
-      <header class="topbar" id="shell-topbar"></header>
-      <main class="content" id="content">
+    <div class="app-shell">
+        <aside class="sidebar" id="shell-sidebar"></aside>
+        <div class="main">
+            <header class="topbar" id="shell-topbar"></header>
+            <main class="content" id="content">
 
-        <section class="hero">
-          <div class="hero-copy">
-            <span class="eyebrow">Featured Series</span>
-            <h1 id="hero-title"></h1>
-            <p id="hero-sheikh" style="font-size:19px;font-weight:600;color:var(--text-primary);margin-bottom:6px;"></p>
-            <p id="hero-desc"></p>
-            <div class="hero-actions">
-              <button class="btn btn-primary" id="hero-play">Play Now</button>
-              <a class="btn btn-secondary" id="hero-view" href="#">View Series</a>
-              <button class="btn btn-outline" onclick="toast('Download started','success')">Download</button>
-            </div>
-          </div>
-          <div class="hero-art"><img id="hero-img" src="" alt="" /></div>
-        </section>
+                <section class="hero">
+                    <div class="hero-copy">
+                        <span class="eyebrow">Featured Series</span>
+                        <h1 id="hero-title"></h1>
+                        <p id="hero-sheikh" style="font-size:19px;font-weight:600;color:var(--text-primary);margin-bottom:6px;"></p>
+                        <p id="hero-desc"></p>
+                        <div class="hero-actions">
+                            <button class="btn btn-primary" id="hero-play">Play Now</button>
+                            <a class="btn btn-secondary" id="hero-view" href="#">View Series</a>
+                            <button class="btn btn-outline" onclick="toast('Download started','success')">Download</button>
+                        </div>
+                    </div>
+                    <div class="hero-art"><img id="hero-img" src="" alt="" /></div>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>Continue Listening</h2><a class="see-all" href="history.html">See all</a></div>
-          <div class="rail" id="continue-rail"></div>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>Continue Listening</h2><a class="see-all" href="history.html">See all</a>
+                    </div>
+                    <div class="rail" id="continue-rail"></div>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>Made For You</h2><a class="see-all" href="library.html#playlists">See all</a></div>
-          <div class="rail" id="madeforyou-rail"></div>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>Made For You</h2><a class="see-all" href="library.html#playlists">See all</a>
+                    </div>
+                    <div class="rail" id="madeforyou-rail"></div>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>Trending Now</h2><a class="see-all" href="discover.html#trending">See all</a></div>
-          <table class="track-table">
-            <thead><tr><th>#</th><th>Lecture</th><th>Series</th><th>Plays</th><th>Time</th><th></th></tr></thead>
-            <tbody id="trending-body"></tbody>
-          </table>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>Trending Now</h2><a class="see-all" href="discover.html#trending">See all</a>
+                    </div>
+                    <table class="track-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Lecture</th>
+                                <th>Series</th>
+                                <th>Plays</th>
+                                <th>Time</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="trending-body"></tbody>
+                    </table>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>New Lectures</h2><a class="see-all" href="discover.html#new">See all</a></div>
-          <div class="grid grid-6" id="new-releases-grid"></div>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>New Lectures</h2><a class="see-all" href="discover.html#new">See all</a>
+                    </div>
+                    <div class="grid grid-6" id="new-releases-grid"></div>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>Featured Sheikhs</h2><a class="see-all" href="discover.html">See all</a></div>
-          <div class="rail" id="featured-artists-rail"></div>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>Featured Sheikhs</h2><a class="see-all" href="discover.html">See all</a>
+                    </div>
+                    <div class="rail" id="featured-artists-rail"></div>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>Topics</h2></div>
-          <div class="grid grid-6" id="genre-grid"></div>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>Topics</h2>
+                    </div>
+                    <div class="grid grid-6" id="genre-grid"></div>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>Editor's Picks</h2></div>
-          <div class="grid grid-3" id="editors-grid"></div>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>Editor's Picks</h2>
+                    </div>
+                    <div class="grid grid-3" id="editors-grid"></div>
+                </section>
 
-        <section>
-          <div class="section-header"><h2>Popular Collections</h2></div>
-          <div class="grid grid-5" id="popular-playlists-grid"></div>
-        </section>
+                <section>
+                    <div class="section-header">
+                        <h2>Popular Collections</h2>
+                    </div>
+                    <div class="grid grid-5" id="popular-playlists-grid"></div>
+                </section>
 
-      </main>
+            </main>
+        </div>
     </div>
-  </div>
 
-  <div class="player" id="shell-player"></div>
-  <div class="mini-player" id="shell-mini-player"></div>
-  <nav class="mobile-nav" id="shell-mobilenav"></nav>
-  <div id="shell-overlays"></div>
+    <div class="player" id="shell-player"></div>
+    <div class="mini-player" id="shell-mini-player"></div>
+    <nav class="mobile-nav" id="shell-mobilenav"></nav>
+    <div id="shell-overlays"></div>
 
-  <script src="js/data.js"></script>
-  <script src="js/icons.js"></script>
-  <script src="js/shell.js"></script>
-  <script src="js/app.js"></script>
-  <script>
-    initAppPage("home");
+    <script src="js/data.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initAppPage("home");
 
-    (function fillHero() {
-      const f = ALBUMS[0], sh = ARTISTS.find((a) => a.id === f.artistId) || ARTISTS[0];
-      document.getElementById("hero-title").textContent = f.title;
-      document.getElementById("hero-sheikh").textContent = sh.name;
-      document.getElementById("hero-desc").textContent = f.description;
-      document.getElementById("hero-view").href = "album.html?id=" + f.id;
-      document.getElementById("hero-play").addEventListener("click", () => toast("Playing " + f.title));
-      const img = document.getElementById("hero-img");
-      img.src = sh.img; img.alt = sh.name;
-    })();
+        (function fillHero() {
+            const f = ALBUMS[0],
+                sh = ARTISTS.find((a) => a.id === f.artistId) || ARTISTS[0];
+            document.getElementById("hero-title").textContent = f.title;
+            document.getElementById("hero-sheikh").textContent = sh.name;
+            document.getElementById("hero-desc").textContent = f.description;
+            document.getElementById("hero-view").href = "album.html?id=" + f.id;
+            document.getElementById("hero-play").addEventListener("click", () => toast("Playing " + f.title));
+            const img = document.getElementById("hero-img");
+            img.src = sh.img;
+            img.alt = sh.name;
+        })();
 
-    document.getElementById("continue-rail").innerHTML = TRACKS.slice(0, 8).map((t) => `
-      <div class="card card-w" onclick="toast('Resuming ${t.title.replace(/'/g,"")}')" style="cursor:pointer;">
+        document.getElementById("continue-rail").innerHTML = TRACKS.slice(0, 8).map((t) => `
+      <div class="card card-w" onclick="toast('Resuming ${t.title.replace(/'/g, "")}')" style="cursor:pointer;">
         <div class="card-art"><img src="${t.art}" alt="${t.title}" /><span class="card-play">${ICONS.play}</span></div>
         <div class="card-title truncate">${t.title}</div>
         <div class="progress-track" style="margin-top:6px;"><div class="progress-fill" style="width:${20 + (t.plays % 70)}%"></div></div>
       </div>`).join("");
 
-    document.getElementById("madeforyou-rail").innerHTML = PLAYLISTS.slice(0, 6).map((p) => cardHTML(p, "playlist")).join("");
+        document.getElementById("madeforyou-rail").innerHTML = PLAYLISTS.slice(0, 6).map((p) => cardHTML(p, "playlist")).join("");
 
-    document.getElementById("trending-body").innerHTML = TRACKS.slice(0, 8)
-      .sort((a, b) => b.plays - a.plays)
-      .map((t, i) => trackRowHTML(t, i, { album: true })).join("");
+        document.getElementById("trending-body").innerHTML = TRACKS.slice(0, 8)
+            .sort((a, b) => b.plays - a.plays)
+            .map((t, i) => trackRowHTML(t, i, {
+                album: true
+            })).join("");
 
-    document.getElementById("new-releases-grid").innerHTML = ALBUMS.slice(0, 6).map((a) => cardHTML(a, "album")).join("");
+        document.getElementById("new-releases-grid").innerHTML = ALBUMS.slice(0, 6).map((a) => cardHTML(a, "album")).join("");
 
-    document.getElementById("featured-artists-rail").innerHTML = ARTISTS.slice(0, 10).map((a) => `
+        document.getElementById("featured-artists-rail").innerHTML = ARTISTS.slice(0, 10).map((a) => `
       <div class="card card-w artist">
         <a href="artist.html?id=${a.id}">
           <div class="card-art"><img src="${a.img}" alt="${a.name}" /></div>
           <div class="card-title truncate">${a.name} ${a.verified ? '<svg class="verified" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:-2px;"><path d="M12 2l2.4 2.1 3.1-.6 1 3 2.8 1.5-.6 3.1L23 14l-2.3 2.4.6 3.1-2.8 1.5-1 3-3.1-.6L12 26l-2.4-2.1-3.1.6-1-3-2.8-1.5.6-3.1L1 14l2.3-2.4-.6-3.1L5.5 7l1-3 3.1.6z"/></svg>' : ""}</div>
-          <div class="card-sub">${a.genre} · ${fmtCount(parseFloat(a.followers)*1000)} followers</div>
+          <div class="card-sub">${a.genre} · ${fmtCount(parseFloat(a.followers) * 1000)} followers</div>
         </a>
         <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;" onclick="this.textContent=this.textContent==='Follow'?'Following':'Follow';toast(this.textContent==='Following'?'Following '+ '${a.name}'.replace(/'/g,''):'Unfollowed')">Follow</button>
       </div>`).join("");
 
-    document.getElementById("genre-grid").innerHTML = GENRES.map((g) => `
+        document.getElementById("genre-grid").innerHTML = GENRES.map((g) => `
       <a class="genre-tile" href="discover.html?genre=${g.slug}" style="background:${g.color};"><span style="color:#fff;">${g.name}</span></a>`).join("");
 
-    document.getElementById("editors-grid").innerHTML = ALBUMS.slice(6, 9).map((a) => `
+        document.getElementById("editors-grid").innerHTML = ALBUMS.slice(6, 9).map((a) => `
       <a class="card" href="album.html?id=${a.id}" style="display:flex;gap:14px;align-items:center;padding:14px;">
         <img src="${a.art}" style="width:74px;height:74px;border-radius:8px;object-fit:cover;flex-shrink:0;" />
         <div>
@@ -141,7 +172,8 @@
         </div>
       </a>`).join("");
 
-    document.getElementById("popular-playlists-grid").innerHTML = PLAYLISTS.slice(4, 9).map((p) => cardHTML(p, "playlist")).join("");
-  </script>
+        document.getElementById("popular-playlists-grid").innerHTML = PLAYLISTS.slice(4, 9).map((p) => cardHTML(p, "playlist")).join("");
+    </script>
 </body>
+
 </html>

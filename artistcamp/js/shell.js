@@ -285,6 +285,7 @@ function renderAdminTopbar(title) {
   const el = document.getElementById("admin-topbar");
   if (!el) return;
   el.innerHTML = `
+    <button class="icon-btn admin-menu-btn" data-admin-menu aria-label="Open menu">${ICONS.menu}</button>
     <h1 style="font-size:18px;font-family:var(--font-display);">${title}</h1>
     <div class="search-field" style="max-width:340px;margin-left:24px;">${ICONS.search}<input placeholder="Search admin…" /></div>
     <div class="topbar-right">
@@ -299,4 +300,30 @@ function initAdminPage(active, title) {
   renderAdminSidebar(active);
   renderAdminTopbar(title);
   ensureOverlay();
+  if (!document.querySelector(".admin-scrim")) {
+    const scrim = document.createElement("div");
+    scrim.className = "admin-scrim";
+    scrim.setAttribute("data-admin-menu-close", "");
+    document.body.appendChild(scrim);
+  }
 }
+
+/* ---- Admin slide-in menu (small screens) ---- */
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-admin-menu]")) { document.body.classList.toggle("admin-nav-open"); return; }
+  if (e.target.closest("[data-admin-menu-close]") || e.target.closest(".admin-sidebar a")) document.body.classList.remove("admin-nav-open");
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.body.classList.remove("admin-nav-open"); });
+
+/* ---- Tables: copy each header label onto its cells so rows can turn into
+   labelled cards on small screens (see "data-table" rules in main.css). ---- */
+function labelTables() {
+  document.querySelectorAll(".data-table").forEach((t) => {
+    const heads = [...t.querySelectorAll("thead th")].map((h) => h.textContent.trim());
+    t.querySelectorAll("tbody tr").forEach((tr) => {
+      [...tr.children].forEach((td, i) => { if (heads[i] && !td.dataset.label) td.dataset.label = heads[i]; });
+    });
+  });
+}
+document.addEventListener("DOMContentLoaded", labelTables);
+new MutationObserver(labelTables).observe(document.documentElement, { childList: true, subtree: true });

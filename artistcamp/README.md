@@ -1,13 +1,28 @@
-# ArtistCamp — Frontend Prototype
+# Ugandan Sheikhs — Frontend Prototype
 
-A complete, static frontend for ArtistCamp: a premium music discovery, streaming,
-download and offline-listening platform. No backend, database, or authentication
+A complete, static frontend for Ugandan Sheikhs: an Islamic lecture discovery, streaming,
+download and offline-listening platform for Ugandan sheikhs. No backend, database, or authentication
 is implemented — every interaction is mocked in the browser so the whole product
 can be clicked through and evaluated before Laravel work begins.
 
 **Open `index.html` in a browser to start.** No build step, no server required.
 
 ---
+
+> **Sample data.** Names come from the supplied photo set; lecture titles, series, bios,
+> counts and comments in `js/data.js` are placeholders, not real statements by or about
+> any person. Replace them before launch.
+>
+> **Vocabulary.** Code keeps the original names (`artist`, `album`, `track`, `playlist`,
+> `genre`); the UI says Sheikh, Series, Lecture, Collection and Topic.
+>
+> **Theme.** Emerald & gold, dark by default with a light toggle. All colours live in
+> `css/tokens.css`, so re-skinning the whole app means editing that one file.
+>
+> **Responsive.** Pages fit the screen with no sideways scrolling from 320px up. On
+> tablets/phones the admin sidebar becomes a slide-in menu, admin tables become labelled
+> cards, and card rails wrap into grids. Desktop keeps scrollable rails.
+
 
 ## 1. Project Structure
 
@@ -16,12 +31,12 @@ artistcamp/
 ├── index.html                 Home / discovery feed
 ├── discover.html              Discover page (filters, moods, rails)
 ├── search.html                Advanced search with grouped results
-├── artist.html                Artist profile (?id=amara-ndlovu)
-├── album.html                 Album details (?id=alb-1)
-├── track.html                 Track details + comments (?id=trk-1)
-├── playlist.html               Playlist details (?id=pl-1)
+├── artist.html                Sheikh profile (?id=amara-ndlovu)
+├── album.html                 Series details (?id=alb-1)
+├── track.html                 Lecture details + comments (?id=trk-1)
+├── playlist.html               Collection details (?id=pl-1)
 ├── library.html                Your Library (tabs: overview/playlists/albums/artists/liked/downloads)
-├── liked.html                  Liked Songs collection
+├── liked.html                  Liked Lectures collection
 ├── downloads.html               Download manager (downloaded/downloading/queued/failed)
 ├── offline.html                 Offline Music (PWA-style offline state)
 ├── history.html                  Recently Played, grouped by day
@@ -35,12 +50,12 @@ artistcamp/
 ├── admin/
 │   ├── login.html               Separate, minimal admin sign-in
 │   ├── dashboard.html            Stats, charts, top tracks, recent activity
-│   ├── artists.html              Artist listing + Add Artist modal
-│   ├── albums.html               Album listing + Add Album modal
-│   ├── tracks.html               Track listing
+│   ├── artists.html              Sheikh listing + Add Sheikh modal
+│   ├── albums.html               Series listing + Add Series modal
+│   ├── tracks.html               Lecture listing
 │   ├── tracks-upload.html        Drag-and-drop upload + metadata form
-│   ├── genres.html               Genre management
-│   ├── playlists.html            Playlist moderation
+│   ├── genres.html               Topic management
+│   ├── playlists.html            Collection moderation
 │   ├── comments.html             Comment moderation + thread drawer
 │   ├── users.html                 User management + detail drawer
 │   ├── downloads.html             Platform-wide download stats
@@ -71,13 +86,13 @@ Admin pages follow the same idea via `initAdminPage("<nav-id>", "<title>")`.
 
 ## 2. Pages Delivered
 
-Listener app (24 pages): Home, Discover, Search, Artist, Album, Track, Playlist,
-Library, Liked Songs, Downloads, Offline Music, Recently Played, Following,
+Listener app (24 pages): Home, Discover, Search, Sheikh, Series, Lecture, Collection,
+Library, Liked Lectures, Downloads, Offline Music, Recently Played, Following,
 Profile, Settings, Sign In, Register, Forgot Password, Reset Password, Verify
 Email, plus a states/QA reference page.
 
-Admin dashboard (13 pages): Admin Sign In, Dashboard, Artists, Albums, Tracks,
-Upload Track, Genres, Playlists, Comments, Users, Downloads, Featured Content,
+Admin dashboard (13 pages): Admin Sign In, Dashboard, Sheikhs, Series, Lectures,
+Upload Lecture, Topics, Collections, Comments, Users, Downloads, Featured Content,
 Reports, Settings.
 
 Error pages (6): 403, 404, 419, 429, 500, 503.

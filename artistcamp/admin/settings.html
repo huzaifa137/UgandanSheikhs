@@ -19,6 +19,12 @@
   .settings-section.active{display:block;}
   .settings-section h2{font-size:18px;margin-bottom:6px;}
   .settings-section>p.desc{color:var(--text-secondary);font-size:13.5px;margin-bottom:22px;}
+  @media (max-width:860px){
+    .settings-layout{grid-template-columns:1fr;gap:20px;}
+    .settings-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+    .settings-nav a{background:var(--surface-1);text-align:center;}
+    .settings-section{max-width:none;}
+  }
 </style>
 </head>
 <body>
@@ -42,7 +48,7 @@
             <section class="settings-section active" data-section="general">
               <h2>General</h2><p class="desc">Basic information about your Ugandan Sheikhs instance.</p>
               <div class="field"><label>Platform name</label><input class="input" value="Ugandan Sheikhs" /></div>
-              <div class="field"><label>Support email</label><input class="input" value="support@artistcamp.dev" /></div>
+              <div class="field"><label>Support email</label><input class="input" value="support@ugandansheikhs.dev" /></div>
               <div class="field"><label>Default streaming quality</label><select class="select"><option>Normal</option><option>High</option></select></div>
               <button class="btn btn-primary" onclick="toast('Settings saved','success')">Save Changes</button>
             </section>
