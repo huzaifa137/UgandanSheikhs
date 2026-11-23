@@ -47,7 +47,7 @@
         <div style="flex:1;min-width:0;">
           <a class="truncate" href="artist.html?id=${a.id}" style="font-weight:600;font-size:14px;">${a.name}</a>
           <div class="text-secondary truncate" style="font-size:12.5px;">${a.genre} · ${a.followers} followers</div>
-          <div class="text-tertiary truncate" style="font-size:11.5px;margin-top:2px;">Latest: "${a.name.split(" ")[0]} Sessions"</div>
+          <div class="text-tertiary truncate" style="font-size:11.5px;margin-top:2px;">Latest: "${(ALBUMS.find(x => x.artistId === a.id) || {title: "New lectures"}).title}"</div>
         </div>
         <button class="btn btn-secondary btn-sm" onclick="this.textContent=this.textContent==='Following'?'Follow':'Following';toast(this.textContent==='Following'?'Unfollowed '+'${a.name}'.replace(/'/g,''):'Now following '+'${a.name}'.replace(/'/g,''))">Following</button>
       </div>`).join("");

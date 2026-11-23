@@ -20,7 +20,7 @@
 
         <div class="chip-row" id="genre-chips" style="margin-bottom:18px;"></div>
 
-        <div class="section-header" style="margin-top:8px;"><h2>Set a Mood</h2></div>
+        <div class="section-header" style="margin-top:8px;"><h2>Listen by Moment</h2></div>
         <div class="chip-row" id="mood-chips" style="margin-bottom:8px;"></div>
 
         <section id="trending"><div class="section-header"><h2>Trending Sheikhs</h2></div><div class="rail" id="trending-artists"></div></section>
@@ -57,7 +57,7 @@
     wireChips(genreChips);
 
     const moodChips = document.getElementById("mood-chips");
-    moodChips.innerHTML = ["Chill","Focus","Energy","Love","Party","Worship","Sleep","Workout","Travel"].map(m => `<button class="chip">${m}</button>`).join("");
+    moodChips.innerHTML = ["Morning","Commute","Before Sleep","Friday","Ramadan","Study","Reflection","Under 15 min","Long-form"].map(m => `<button class="chip">${m}</button>`).join("");
     wireChips(moodChips);
 
     document.getElementById("trending-artists").innerHTML = ARTISTS.slice(0, 10).map(a => cardHTML(a, "artist")).join("");
