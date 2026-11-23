@@ -1,9 +1,10 @@
 /* =====================================================================
    Ugandan Sheikhs — Theme engine
-   Three themes:  dark  (Emerald Night, default)
-                  ocean (Royal Blue — new)
-                  light (Ivory & Emerald)
-   plus "system", which follows the device's light/dark setting.
+   Three themes:  ocean (Royal Blue, DEFAULT)
+                  dark  (Emerald Night)
+                  light (Ivory Light)
+   plus "system", which follows the device (dark device -> Royal Blue,
+   light device -> Ivory Light).
 
    Loaded in <head> of EVERY page (listener, auth, admin, errors) so the
    chosen theme is applied before first paint — no flash of wrong colours.
@@ -11,14 +12,15 @@
    Public API (window.Theme):
      Theme.get()        -> saved preference: "dark" | "ocean" | "light" | "system"
      Theme.set(pref)    -> save + apply
-     Theme.cycle()      -> dark -> ocean -> light -> dark …
+     Theme.cycle()      -> ocean -> dark -> light -> ocean …
    Markup hooks:
      [data-theme-toggle]      button that cycles themes
      [data-theme-set="ocean"] any element that selects a theme (settings picker)
    ===================================================================== */
 (function () {
   var KEY = "ac-theme";
-  var THEMES = ["dark", "ocean", "light"];
+  var THEMES = ["ocean", "dark", "light"]; // order used by the toggle button
+  var DEFAULT = "ocean";
   var LABELS = { dark: "Emerald Night", ocean: "Royal Blue", light: "Ivory Light", system: "Match system" };
   var CHROME = { dark: "#0C1914", ocean: "#0B2F73", light: "#FFFFFF" }; // mobile browser bar colour
   var root = document.documentElement;
@@ -27,10 +29,10 @@
   function read() {
     var v = null;
     try { v = localStorage.getItem(KEY); } catch (e) {}
-    return THEMES.indexOf(v) > -1 || v === "system" ? v : "dark";
+    return THEMES.indexOf(v) > -1 || v === "system" ? v : DEFAULT;
   }
   function resolve(pref) {
-    if (pref === "system") return mq && mq.matches ? "light" : "dark";
+    if (pref === "system") return mq && mq.matches ? "light" : "ocean";
     return pref;
   }
   function apply(pref) {

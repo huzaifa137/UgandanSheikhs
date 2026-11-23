@@ -32,7 +32,7 @@ function renderSidebar(active) {
   const navItem = (i) => `<a class="nav-link ${active === i.id ? "active" : ""}" href="${i.href}">${ICONS[i.icon]}<span>${i.label}</span></a>`;
   el.innerHTML = `
     <a class="sidebar-logo" href="index.html">
-      <span class="mark">${ICONS.logo}</span>
+      <span class="logo-mark"><img class="logo-blue" src="img/logo-mark-blue.png" alt="" width="36" height="36" /><img class="logo-green" src="img/logo-mark-green.png" alt="" width="36" height="36" /></span>
       <span class="word">Ugandan Sheikhs</span>
     </a>
     <nav class="nav-group">
@@ -264,7 +264,7 @@ function renderAdminSidebar(active) {
   if (!el) return;
   el.innerHTML = `
     <a class="sidebar-logo" href="dashboard.html">
-      <span class="mark">${ICONS.logo}</span>
+      <span class="logo-mark"><img class="logo-blue" src="../img/logo-mark-blue.png" alt="" width="36" height="36" /><img class="logo-green" src="../img/logo-mark-green.png" alt="" width="36" height="36" /></span>
       <span class="word">Ugandan Sheikhs</span>
       <span class="badge badge-neutral" style="margin-left:auto;">Admin</span>
     </a>
