@@ -82,9 +82,9 @@
     }
 
     document.getElementById("downloaded-list").innerHTML = TRACKS.slice(0,6).map(t=>downloadRow(t,"downloaded")).join("");
-    document.getElementById("downloading-list").innerHTML = TRACKS.slice(6,8).map((t,i)=>downloadRow(t,"downloading",[62,28][i])).join("") || `<div class="empty-state" style="padding:32px;">${ICONS.download}<h3>Nothing downloading</h3><p>Downloads you start will show progress here.</p></div>`;
+    document.getElementById("downloading-list").innerHTML = TRACKS.slice(6,8).map((t,i)=>downloadRow(t,"downloading",[62,28][i])).join("") || `<div class="empty-state" style="padding:32px;"><div class="icon-wrap">${ICONS.download}</div><h3>Nothing downloading</h3><p>Downloads you start will show progress here.</p></div>`;
     document.getElementById("queued-list").innerHTML = TRACKS.slice(8,10).map(t=>downloadRow(t,"queued")).join("");
-    document.getElementById("failed-list").innerHTML = TRACKS.slice(10,11).map(t=>downloadRow(t,"failed")).join("") || `<div class="empty-state" style="padding:32px;">${ICONS.check}<h3>No failed downloads</h3></div>`;
+    document.getElementById("failed-list").innerHTML = TRACKS.slice(10,11).map(t=>downloadRow(t,"failed")).join("") || `<div class="empty-state" style="padding:32px;"><div class="icon-wrap">${ICONS.check}</div><h3>No failed downloads</h3></div>`;
   </script>
 </body>
 </html>

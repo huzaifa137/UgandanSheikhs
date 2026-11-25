@@ -402,7 +402,7 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 
 .drawer{
   position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:var(--bg-raised);
-  border-left:1px solid var(--border-subtle);z-index:calc(var(--z-drawer) + 1);
+  border-left:1px solid var(--border-subtle);z-index:calc(var(--z-modal) + 1);
   transform:translateX(100%);transition:transform var(--dur-base) var(--ease);
   display:flex;flex-direction:column;box-shadow:var(--shadow-3);
 }
@@ -466,7 +466,7 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 /* ===================== AUTH ===================== */
 .auth-shell{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
 .auth-visual{background:var(--bg-canvas);position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:48px;}
-.auth-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;}
+.auth-visual>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;}
 .auth-visual::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,var(--bg-base) 95%);}
 .auth-visual .quote{position:relative;z-index:1;font-family:var(--font-display);font-size:26px;line-height:1.3;max-width:26ch;}
 .auth-form-wrap{display:flex;align-items:center;justify-content:center;padding:40px;}
@@ -679,3 +679,66 @@ a.truncate{display:block;}
   .chart-placeholder{height:200px;}
 }
 @media (max-width:1200px){.admin-sidebar .user-chip .name{display:block;}}
+
+
+/* =====================================================================
+   PATCH 7: auth screens (logo panel, no-scroll login) + overlay layering
+   ===================================================================== */
+.auth-shell{min-height:100vh;min-height:100dvh;}
+.auth-visual{position:sticky;top:0;align-self:start;height:100vh;height:100dvh;align-items:center;justify-content:center;padding:32px;}
+.auth-visual::after{background:radial-gradient(ellipse at 50% 42%,transparent 30%,var(--bg-base) 135%);}
+.auth-brand{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;max-width:440px;}
+.auth-visual .logo-mark.auth-logo{width:clamp(170px,30vh,250px);height:clamp(170px,30vh,250px);filter:drop-shadow(0 18px 44px rgba(0,0,0,.5));}
+.auth-brand-name{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,3.6vh,30px);letter-spacing:-.01em;margin-top:6px;}
+.auth-visual .quote{font-size:clamp(16px,2.6vh,21px);line-height:1.4;max-width:26ch;color:var(--text-primary);opacity:.85;margin:0;}
+.auth-form-wrap{min-height:100vh;min-height:100dvh;padding:28px 40px;}
+
+/* Desktop: the brand lives on the left panel, so the small form logo is hidden */
+@media (min-width:861px){.auth-form-brand{display:none !important;}}
+
+/* Short screens (laptops): tighten the form so login fits without scrolling */
+@media (max-height:780px){
+  .auth-form-wrap{padding:18px 32px;}
+  .auth-form h1{font-size:25px;margin-bottom:6px;}
+  .auth-form>p{margin-bottom:16px;}
+  .auth-form .field{margin-bottom:12px;}
+  .auth-divider{margin:14px 0;}
+}
+@media (max-height:660px){
+  .auth-form h1{font-size:23px;}
+  .auth-form>p{margin-bottom:12px;}
+  .auth-form .field{margin-bottom:9px;}
+  .auth-form .input{padding-top:9px;padding-bottom:9px;}
+  .auth-divider{margin:10px 0;}
+}
+
+/* Phones & small tablets: left panel is hidden, so the logo leads the form */
+@media (max-width:860px){
+  .auth-form-wrap{padding:28px 20px;align-items:flex-start;}
+  .auth-form-brand{display:flex !important;flex-direction:column;align-items:center;gap:10px !important;margin:0 auto 22px !important;width:100%;text-align:center;}
+  .auth-form-brand .logo-mark,.auth-form .auth-form-brand .logo-mark{width:92px;height:92px;}
+  .auth-form-brand span:last-child{font-size:20px !important;font-weight:700 !important;}
+}
+
+/* =====================================================================
+   PATCH 8: empty-state icons + centered play button on sheikh cards
+   ===================================================================== */
+/* Empty states: icon always sits in a neat circle... */
+.empty-state .icon-wrap{flex-shrink:0;}
+.empty-state .icon-wrap svg{width:28px;height:28px;}
+/* ...and a bare icon (no wrapper) can never blow up to full size again */
+.empty-state>svg{width:56px;height:56px;flex-shrink:0;margin-bottom:20px;color:var(--text-tertiary);}
+
+/* Sheikh cards (round photo): the play button appears in the middle on hover */
+.card.artist .card-art::after{
+  content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:rgba(0,0,0,.34);opacity:0;transition:opacity var(--dur-base) var(--ease);
+}
+.card.artist:hover .card-art::after{opacity:1;}
+.card.artist .card-play{
+  left:50%;top:50%;right:auto;bottom:auto;width:54px;height:54px;z-index:1;
+  transform:translate(-50%,-50%) scale(.8);
+}
+.card.artist .card-play svg{width:22px;height:22px;}
+.card.artist:hover .card-play{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.card.artist .card-play:hover{transform:translate(-50%,-50%) scale(1.08);background:var(--accent-hover);}

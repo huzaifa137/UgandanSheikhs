@@ -50,7 +50,7 @@
           <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" onclick="toast('Report resolved','success')">${ICONS.check}</button>
           <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" onclick="this.closest('tr').remove();toast('Content removed','warning')">${ICONS.trash}</button>
         </div></td>
-      </tr>`).join("") : `<tr><td colspan="7"><div class="empty-state">${ICONS.flag}<h3>No open reports</h3><p>Flagged content will show up here for review.</p></div></td></tr>`;
+      </tr>`).join("") : `<tr><td colspan="7"><div class="empty-state"><div class="icon-wrap">${ICONS.flag}</div><h3>No open reports</h3><p>Flagged content will show up here for review.</p></div></td></tr>`;
   </script>
 </body>
 </html>

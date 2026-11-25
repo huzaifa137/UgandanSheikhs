@@ -225,8 +225,8 @@
 
 /* ---------- Auth & error pages ---------- */
 :root[data-theme="ocean"] .auth-visual{background:linear-gradient(160deg,#2F7BEA 0%,#1546A8 55%,#0A2152 100%);}
-:root[data-theme="ocean"] .auth-visual img{opacity:.32;mix-blend-mode:luminosity;}
-:root[data-theme="ocean"] .auth-visual::after{background:linear-gradient(180deg,transparent 25%,rgba(6,22,51,.92) 98%);}
+:root[data-theme="ocean"] .auth-visual>img{opacity:.32;mix-blend-mode:luminosity;}
+:root[data-theme="ocean"] .auth-visual::after{background:radial-gradient(ellipse at 50% 42%,transparent 30%,rgba(6,22,51,.88) 135%);}
 :root[data-theme="ocean"] .error-page .code{
   background:linear-gradient(180deg,#B5D8FF,#2468DA);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent;

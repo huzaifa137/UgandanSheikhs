@@ -83,7 +83,7 @@
       if (!artists.length && !tracks.length && !albums.length && !playlists.length) {
         document.getElementById("empty-search").style.display = "none";
         document.getElementById("results").style.display = "block";
-        document.getElementById("top-result").innerHTML = `<div class="empty-state">${ICONS.search}<h3>No results for "${q}"</h3><p>Try checking your spelling or searching for something more general.</p></div>`;
+        document.getElementById("top-result").innerHTML = `<div class="empty-state"><div class="icon-wrap">${ICONS.search}</div><h3>No results for "${q}"</h3><p>Try checking your spelling or searching for something more general.</p></div>`;
         ["result-songs","result-artists","result-albums","result-playlists"].forEach(id=>document.getElementById(id).innerHTML="");
         return;
       }
