@@ -51,7 +51,7 @@ function renderSidebar(active) {
     </div>
     <div class="sidebar-bottom">
       <a class="nav-link" href="settings.html">${ICONS.settings}<span>Settings</span></a>
-      <a class="nav-link" href="#" onclick="return false;">${ICONS.help}<span>Help</span></a>
+      <a class="nav-link ${active === "help" ? "active" : ""}" href="help.html">${ICONS.help}<span>Help</span></a>
     </div>
   `;
 }
@@ -90,6 +90,7 @@ function renderTopbar() {
           <a class="menu-item" href="library.html">${ICONS.library}My Library</a>
           <a class="menu-item" href="downloads.html">${ICONS.download}Downloads</a>
           <a class="menu-item" href="settings.html">${ICONS.settings}Settings</a>
+          <a class="menu-item" href="help.html">${ICONS.help}Help</a>
           <div class="menu-divider"></div>
           <a class="menu-item danger" href="login.html">${ICONS.logout}Sign Out</a>
         </div>

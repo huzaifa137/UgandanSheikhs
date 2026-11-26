@@ -555,7 +555,7 @@ function openReport(ctx) {
   document.getElementById("report-context").innerHTML = `
     <div class="report-context-row"><span>Reporting</span><strong>${escapeHTML(_report.kind)}: ${escapeHTML(_report.title)}</strong></div>
     ${_report.sub ? `<div class="report-context-row"><span>Details</span><strong>${escapeHTML(_report.sub)}</strong></div>` : ""}
-    <div class="report-context-row"><span>Found on</span><strong>${escapeHTML(_report.place)}${_report.source ? ` · ${escapeHTML(_report.source)}` : ""}</strong></div>`;
+    <div class="report-context-row"><span>Found on</span><strong>${escapeHTML(_report.place)}${_report.source && _report.source !== _report.place ? ` · ${escapeHTML(_report.source)}` : ""}</strong></div>`;
   document.getElementById("report-reason").selectedIndex = 0;
   document.getElementById("report-message").value = "";
   document.getElementById("report-count").textContent = "0 / 1000";
