@@ -28,14 +28,14 @@
         <div id="empty-search">
           <div id="recent-block">
             <div class="section-header" style="margin-top:0;"><h2>Recent Searches</h2><button class="see-all" onclick="clearRecentSearches()">Clear history</button></div>
-            <div class="chip-row" id="recent-list"></div>
+            <div class="chip-grid" id="recent-list"></div>
           </div>
 
           <div class="section-header" id="trending-head"><h2>Trending Searches</h2></div>
-          <div class="chip-row" id="trending-searches"></div>
+          <div class="chip-grid" id="trending-searches"></div>
 
           <div class="section-header"><h2>Browse Topics</h2></div>
-          <div class="grid grid-6" id="genre-grid"></div>
+          <div class="topic-grid" id="genre-grid"></div>
         </div>
 
         <div id="results" style="display:none;">
@@ -102,15 +102,15 @@
        With nothing to show, the whole block, heading included, is hidden. */
     let recentSearches = ["Hamza Kayiira","Sincerity in Worship","Daily Reminders","Imaam Kyeyune"];
     function renderRecentSearches() {
-      document.getElementById("recent-list").innerHTML = recentSearches.map(q=>`<button class="chip" onclick="runSearch(this.dataset.q)" data-q="${escapeHTML(q)}">${ICONS.clock}${escapeHTML(q)}</button>`).join("");
+      document.getElementById("recent-list").innerHTML = recentSearches.slice(0, 6).map(q=>`<button class="chip" onclick="runSearch(this.dataset.q)" data-q="${escapeHTML(q)}">${ICONS.clock}${escapeHTML(q)}</button>`).join("");
       document.getElementById("recent-block").style.display = recentSearches.length ? "" : "none";
       // the first visible heading shouldn't carry a big top gap
       document.getElementById("trending-head").style.marginTop = recentSearches.length ? "" : "0";
     }
     function clearRecentSearches() { recentSearches = []; renderRecentSearches(); toast("Search history cleared"); }
     renderRecentSearches();
-    document.getElementById("trending-searches").innerHTML = ["Tafsir of Juz Amma","Salim Bbosa","Friday Khutbah","Foundations of Tawheed","Ramadan collections"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.trendingUp}${q}</button>`).join("");
-    document.getElementById("genre-grid").innerHTML = GENRES.map(g => `<a class="genre-tile" href="discover.html?genre=${g.slug}" style="background:${g.color};"><span style="color:#fff;">${g.name}</span></a>`).join("");
+    document.getElementById("trending-searches").innerHTML = ["Tafsir of Juz Amma","Salim Bbosa","Friday Khutbah","Foundations of Tawheed","Ramadan collections"].slice(0, 6).map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.trendingUp}${q}</button>`).join("");
+    document.getElementById("genre-grid").innerHTML = GENRES.map(topicTileHTML).join("");
 
     function runSearch(q) {
       document.getElementById("page-search").value = q;
