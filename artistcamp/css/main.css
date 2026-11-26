@@ -246,6 +246,14 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 .t-actions{display:flex;gap:4px;justify-content:flex-end;opacity:0;transition:opacity var(--dur-fast) var(--ease);}
 .track-row:hover .t-actions{opacity:1;}
 
+/* Clickable lecture rows (Discover: Most Downloaded / Most Discussed) */
+.track-row.is-link{cursor:pointer;}
+.track-row.is-link:hover .t-num .num{display:block;}          /* these rows have no play icon, so keep the number */
+.track-row.is-link:hover .t-title-link,
+.track-row.is-link:focus-within .t-title-link{color:var(--accent);text-decoration:underline;text-underline-offset:3px;}
+.t-title-link{display:block;color:inherit;}
+.track-row.is-link .t-actions{cursor:default;}
+
 /* ===================== HERO ===================== */
 .hero{
   display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center;

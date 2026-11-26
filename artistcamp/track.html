@@ -85,7 +85,7 @@
         </div>
       </div>
 
-      <div class="section-header"><h2>Comments</h2></div>
+      <div class="section-header" id="comments" style="scroll-margin-top:84px;"><h2>Comments</h2></div>
       <div class="chip-row" id="comment-sort" style="margin-bottom:16px;">
         <button class="chip active" data-sort="top">Top Comments</button>
         <button class="chip" data-sort="newest">Newest</button>
@@ -128,6 +128,12 @@
     }
     renderComments("top");
     wireChips(document.getElementById("comment-sort"), { onChange: (_, chip) => renderComments(chip.dataset.sort) });
+    // Deep link: track.html?id=trk-50#comments jumps to the Comments section once the page has rendered
+    if (location.hash === "#comments") {
+      const goToComments = () => document.getElementById("comments")?.scrollIntoView({ block: "start" });
+      requestAnimationFrame(goToComments);
+      window.addEventListener("load", goToComments);   // re-check after images settle the layout
+    }
     document.getElementById("track-like-btn").addEventListener("click", function(){
       const liked = this.classList.toggle("liked");
       this.innerHTML = liked ? `${ICONS.heartFill}<span>Liked</span>` : `${ICONS.heart}<span>Like</span>`;

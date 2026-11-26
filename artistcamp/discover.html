@@ -72,8 +72,25 @@
         <img src="${a.art}" style="width:74px;height:74px;border-radius:8px;object-fit:cover;flex-shrink:0;" />
         <div><div class="eyebrow" style="margin-bottom:4px;">Editor's Choice</div><div class="card-title">${a.title}</div><div class="card-sub">${a.artist}</div></div>
       </a>`;
-    const downloadedRowHTML = (t,i) => `<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${fmtCount(t.downloads)}</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Download started')">${ICONS.download}</button></div></td></tr>`;
-    const discussedRowHTML = (t,i) => `<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${(t.likes % 200)+12} comments</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><a class="icon-btn" style="width:30px;height:30px;background:none;" href="track.html?id=${t.id}">${ICONS.message}</a></div></td></tr>`;
+    // Rows in these two tables are clickable: the whole row opens the lecture (see wireRowLinks below).
+    // The title is also a real link so keyboard / screen-reader / middle-click users get the same thing.
+    const downloadedRowHTML = (t,i) => `<tr class="track-row is-link" data-href="track.html?id=${t.id}"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}" alt=""/><div><a class="t-title t-title-link" href="track.html?id=${t.id}">${t.title}</a><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${fmtCount(t.downloads)}</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><button class="icon-btn" style="width:30px;height:30px;background:none;" title="Download" aria-label="Download" onclick="toast('Download started')">${ICONS.download}</button></div></td></tr>`;
+    // Most Discussed opens the lecture straight at its Comments section (#comments)
+    const discussedRowHTML = (t,i) => `<tr class="track-row is-link" data-href="track.html?id=${t.id}#comments"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}" alt=""/><div><a class="t-title t-title-link" href="track.html?id=${t.id}#comments">${t.title}</a><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${(t.likes % 200)+12} comments</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><a class="icon-btn" style="width:30px;height:30px;background:none;" href="track.html?id=${t.id}#comments" title="View comments" aria-label="View comments">${ICONS.message}</a></div></td></tr>`;
+
+    // One delegated listener per table (rows are re-rendered whenever a topic chip changes).
+    // Clicks on real links/buttons (sheikh name, download, comment icon) keep their own behaviour.
+    function wireRowLinks(tbodyId) {
+      document.getElementById(tbodyId).addEventListener("click", (e) => {
+        if (e.target.closest("a, button")) return;
+        const row = e.target.closest("tr[data-href]");
+        if (!row) return;
+        if (e.metaKey || e.ctrlKey) window.open(row.dataset.href, "_blank");
+        else location.href = row.dataset.href;
+      });
+    }
+    wireRowLinks("most-downloaded");
+    wireRowLinks("most-discussed");
 
     function renderDiscover(topic) {
       const sections = [
