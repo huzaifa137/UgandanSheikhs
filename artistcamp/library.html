@@ -20,16 +20,18 @@
 
         <div class="page-header">
           <div><h1>Your Library</h1><p>Everything you've saved, followed, and downloaded.</p></div>
-          <div class="flex gap-8">
-            <select class="select" style="width:auto;">
+          <div class="lib-tools">
+            <select class="select" id="lib-sort" aria-label="Sort library">
               <option>Recently Added</option><option>Recently Played</option><option>Alphabetical</option><option>Creator</option>
             </select>
-            <button class="icon-btn" id="view-grid" title="Grid view"></button>
-            <button class="icon-btn" id="view-list" title="List view"></button>
+            <div class="view-toggle" role="group" aria-label="View">
+              <button class="icon-btn active" id="view-grid" title="Grid view" aria-label="Grid view" aria-pressed="true"></button>
+              <button class="icon-btn" id="view-list" title="List view" aria-label="List view" aria-pressed="false"></button>
+            </div>
           </div>
         </div>
 
-        <div class="tabs" id="lib-tabs">
+        <div class="tabs tabs-grid3" id="lib-tabs">
           <button class="tab active" data-target="overview">Overview</button>
           <button class="tab" data-target="playlists">Collections</button>
           <button class="tab" data-target="albums">Series</button>
@@ -57,10 +59,10 @@
           <div class="grid grid-6" id="lib-artists-2"></div>
         </div>
         <div data-tabpanel="liked" style="display:none;">
-          <table class="track-table"><tbody id="lib-liked"></tbody></table>
+          <div id="lib-liked"></div>
         </div>
         <div data-tabpanel="downloads" style="display:none;">
-          <table class="track-table"><tbody id="lib-downloads"></tbody></table>
+          <div id="lib-downloads"></div>
         </div>
 
       </main>
@@ -79,7 +81,7 @@
   <script>
     initAppPage("library");
     document.getElementById("view-grid").innerHTML = ICONS.grid;
-    document.getElementById("view-list").innerHTML = ICONS.library;
+    document.getElementById("view-list").innerHTML = ICONS.queue;
 
     wireTabs(document.getElementById("lib-tabs"));
     if (location.hash) {
@@ -88,14 +90,67 @@
       tab?.click();
     }
 
-    document.getElementById("lib-playlists").innerHTML = PLAYLISTS.slice(0,6).map(p=>cardHTML(p,"playlist")).join("");
-    document.getElementById("lib-playlists-2").innerHTML = PLAYLISTS.map(p=>cardHTML(p,"playlist")).join("");
-    document.getElementById("lib-albums").innerHTML = ALBUMS.slice(0,6).map(a=>cardHTML(a,"album")).join("");
-    document.getElementById("lib-albums-2").innerHTML = ALBUMS.map(a=>cardHTML(a,"album")).join("");
-    document.getElementById("lib-artists").innerHTML = ARTISTS.slice(0,6).map(a=>cardHTML(a,"artist")).join("");
-    document.getElementById("lib-artists-2").innerHTML = ARTISTS.map(a=>cardHTML(a,"artist")).join("");
-    document.getElementById("lib-liked").innerHTML = TRACKS.slice(0,10).map((t,i)=>trackRowHTML(t,i,{album:true})).join("");
-    document.getElementById("lib-downloads").innerHTML = TRACKS.filter(t=>t.downloadable).slice(0,10).map((t,i)=>trackRowHTML(t,i,{album:true})).join("");
+    /* ---------- sorting + grid/list view (applies to every tab) ---------- */
+    let sortBy = "Recently Added", view = "grid";
+    const nameOf = (x) => x.name || x.title;
+    const creatorOf = (x) => x.creator || x.artist || x.name;      // collection → creator, series/lecture → sheikh, sheikh → self
+    const SORTERS = {
+      "Recently Added":  (items) => items,                           // data order = newest first
+      "Recently Played": (items) => [...items].reverse(),            // placeholder until real play history exists
+      "Alphabetical":    (items) => [...items].sort((a, b) => nameOf(a).localeCompare(nameOf(b))),
+      "Creator":         (items) => [...items].sort((a, b) => creatorOf(a).localeCompare(creatorOf(b)) || nameOf(a).localeCompare(nameOf(b))),
+    };
+
+    const hrefOf = (item, kind) => kind === "artist" ? `artist.html?id=${item.id}` : kind === "album" ? `album.html?id=${item.id}` : kind === "track" ? `track.html?id=${item.id}` : `playlist.html?id=${item.id}`;
+    const subOf = (item, kind) => kind === "artist" ? `${item.followers} followers` : kind === "album" ? `${item.artist} · ${item.type}` : kind === "track" ? item.artist : `By ${item.creator} · ${item.tracks.length} lectures`;
+    const cardFor = (item, kind) => kind === "track" ? `
+      <a class="card card-w" href="${hrefOf(item, kind)}">
+        <div class="card-art"><img src="${item.art}" alt="${item.title}" loading="lazy" /></div>
+        <div class="card-title truncate">${item.title}</div><div class="card-sub truncate">${item.artist}</div>
+      </a>` : cardHTML(item, kind);
+    const rowFor = (item, kind) => `
+      <a class="lib-row" href="${hrefOf(item, kind)}">
+        <img class="${kind === "artist" ? "round" : ""}" src="${item.img || item.art}" alt="" loading="lazy" />
+        <span class="lib-row-text"><span class="lib-row-title truncate">${nameOf(item)}</span><span class="lib-row-sub truncate">${subOf(item, kind)}</span></span>
+        <span class="lib-row-play" role="button" aria-label="Play" onclick="event.preventDefault();event.stopPropagation();toast('Playing ${nameOf(item).replace(/'/g, "")}')">${ICONS.play}</span>
+      </a>`;
+
+    const SECTIONS = [
+      { id: "lib-playlists",   kind: "playlist", items: () => PLAYLISTS, limit: 6 },
+      { id: "lib-albums",      kind: "album",    items: () => ALBUMS,    limit: 6 },
+      { id: "lib-artists",     kind: "artist",   items: () => ARTISTS,   limit: 6 },
+      { id: "lib-playlists-2", kind: "playlist", items: () => PLAYLISTS },
+      { id: "lib-albums-2",    kind: "album",    items: () => ALBUMS },
+      { id: "lib-artists-2",   kind: "artist",   items: () => ARTISTS },
+      { id: "lib-liked",       kind: "track",    items: () => TRACKS.slice(0, 10), table: true },
+      { id: "lib-downloads",   kind: "track",    items: () => TRACKS.filter(t => t.downloadable).slice(0, 10), table: true },
+    ];
+    // remember each container's original grid classes so Grid view can restore them
+    SECTIONS.forEach(s => { s.el = document.getElementById(s.id); s.gridClass = s.el.className || "grid grid-6"; });
+
+    function renderLibrary() {
+      SECTIONS.forEach(s => {
+        let items = SORTERS[sortBy](s.items());
+        if (s.limit) items = items.slice(0, s.limit);
+        if (view === "list") {
+          s.el.className = s.table ? "" : "lib-list";
+          s.el.innerHTML = s.table
+            ? `<table class="track-table"><tbody>${items.map((t, i) => trackRowHTML(t, i, { album: true })).join("")}</tbody></table>`
+            : items.map(i => rowFor(i, s.kind)).join("");
+        } else {
+          s.el.className = s.table ? "grid grid-6" : s.gridClass;
+          s.el.innerHTML = items.map(i => cardFor(i, s.kind)).join("");
+        }
+      });
+      document.getElementById("view-grid").classList.toggle("active", view === "grid");
+      document.getElementById("view-list").classList.toggle("active", view === "list");
+      document.getElementById("view-grid").setAttribute("aria-pressed", view === "grid");
+      document.getElementById("view-list").setAttribute("aria-pressed", view === "list");
+    }
+    document.getElementById("lib-sort").addEventListener("change", (e) => { sortBy = e.target.value; renderLibrary(); });
+    document.getElementById("view-grid").addEventListener("click", () => { view = "grid"; renderLibrary(); });
+    document.getElementById("view-list").addEventListener("click", () => { view = "list"; renderLibrary(); });
+    renderLibrary();
   </script>
 </body>
 </html>

@@ -284,6 +284,20 @@ function trackRowHTML(t, i, opts = {}) {
   </tr>`;
 }
 
+/* Topic tile (Home): gradient from the topic colour, a watermark icon, and the lecture count */
+const TOPIC_ICONS = { tafsir: "file", aqeedah: "star", fiqh: "layers", hadith: "message", seerah: "compass", tazkiyah: "heart", khutbah: "megaphone", family: "users", youth: "sparkle", ramadan: "clock" };
+function topicTileHTML(g) {
+  const n = TRACKS.filter((t) => t.genre === g.name).length;
+  const icon = ICONS[TOPIC_ICONS[g.slug]] || ICONS.tag;
+  return `
+  <a class="topic-tile" href="discover.html?genre=${g.slug}" style="--c:${g.color};">
+    <span class="topic-tile-mark" aria-hidden="true">${icon}</span>
+    <span class="topic-tile-badge" aria-hidden="true">${icon}</span>
+    <span class="topic-tile-body"><span class="topic-tile-name">${g.name}</span><span class="topic-tile-count">${n} lecture${n === 1 ? "" : "s"}</span></span>
+    <span class="topic-tile-go" aria-hidden="true">${ICONS.chevRight}</span>
+  </a>`;
+}
+
 /* Link to the series a lecture belongs to (falls back to plain text if it is in no series) */
 function seriesLinkHTML(t) {
   const s = seriesOf(t);

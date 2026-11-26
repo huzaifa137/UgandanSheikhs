@@ -35,9 +35,13 @@
                     <div class="hero-art"><img id="hero-img" src="" alt="" /></div>
                 </section>
 
-                <section>
+                <section id="continue-section">
                     <div class="section-header">
-                        <h2>Continue Listening</h2><a class="see-all" href="history.html">See all</a>
+                        <h2>Continue Listening</h2>
+                        <div class="section-actions">
+                            <button type="button" class="see-all" id="continue-clear">Clear</button>
+                            <a class="see-all" href="history.html">See all</a>
+                        </div>
                     </div>
                     <div class="rail" id="continue-rail"></div>
                 </section>
@@ -86,7 +90,7 @@
                     <div class="section-header">
                         <h2>Topics</h2>
                     </div>
-                    <div class="grid grid-6" id="genre-grid"></div>
+                    <div class="topic-grid" id="genre-grid"></div>
                 </section>
 
                 <section>
@@ -132,12 +136,33 @@
             img.alt = sh.name;
         })();
 
-        document.getElementById("continue-rail").innerHTML = TRACKS.slice(0, 8).map((t) => `
-      <div class="card card-w" onclick="toast('Resuming ${t.title.replace(/'/g, "")}')" style="cursor:pointer;">
-        <div class="card-art"><img src="${t.art}" alt="${t.title}" /><span class="card-play">${ICONS.play}</span></div>
+        /* Continue Listening: with nothing left, the whole section (heading included) is hidden.
+           Prototype: cleared in memory only, so a refresh brings the sample lectures back. */
+        let continueItems = TRACKS.slice(0, 8);
+        function renderContinue() {
+            document.getElementById("continue-section").style.display = continueItems.length ? "" : "none";
+            document.getElementById("continue-rail").innerHTML = continueItems.map((t) => `
+      <div class="card card-w" data-id="${t.id}" onclick="toast('Resuming ${t.title.replace(/'/g, "")}')" style="cursor:pointer;">
+        <div class="card-art"><img src="${t.art}" alt="${t.title}" /><span class="card-play">${ICONS.play}</span>
+          <button type="button" class="card-remove" title="Remove" aria-label="Remove from Continue Listening" data-remove="${t.id}">${ICONS.x}</button></div>
         <div class="card-title truncate">${t.title}</div>
         <div class="progress-track" style="margin-top:6px;"><div class="progress-fill" style="width:${20 + (t.plays % 70)}%"></div></div>
       </div>`).join("");
+        }
+        document.getElementById("continue-rail").addEventListener("click", (e) => {
+            const rm = e.target.closest("[data-remove]");
+            if (!rm) return;
+            e.stopPropagation();
+            continueItems = continueItems.filter((t) => t.id !== rm.dataset.remove);
+            renderContinue();
+            toast("Removed from Continue Listening");
+        }, true);
+        document.getElementById("continue-clear").addEventListener("click", () => {
+            continueItems = [];
+            renderContinue();
+            toast("Continue Listening cleared");
+        });
+        renderContinue();
 
         document.getElementById("madeforyou-rail").innerHTML = PLAYLISTS.slice(0, 6).map((p) => cardHTML(p, "playlist")).join("");
 
@@ -159,8 +184,7 @@
         <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;" onclick="this.textContent=this.textContent==='Follow'?'Following':'Follow';toast(this.textContent==='Following'?'Following '+ '${a.name}'.replace(/'/g,''):'Unfollowed')">Follow</button>
       </div>`).join("");
 
-        document.getElementById("genre-grid").innerHTML = GENRES.map((g) => `
-      <a class="genre-tile" href="discover.html?genre=${g.slug}" style="background:${g.color};"><span style="color:#fff;">${g.name}</span></a>`).join("");
+        document.getElementById("genre-grid").innerHTML = GENRES.map(topicTileHTML).join("");
 
         document.getElementById("editors-grid").innerHTML = ALBUMS.slice(6, 9).map((a) => `
       <a class="card" href="album.html?id=${a.id}" style="display:flex;gap:14px;align-items:center;padding:14px;">
