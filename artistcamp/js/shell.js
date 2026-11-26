@@ -199,6 +199,20 @@ function wireNotifications() {
   wireTabs(tabs, (filter) => { list.innerHTML = notifListHTML(filter); list.scrollTop = 0; });
 }
 
+function queueListHTML() {
+  if (!STATE.queue.length) return `<p class="text-secondary" style="font-size:13px;padding:8px 0;">Nothing queued yet.</p>`;
+  return STATE.queue.map((t) => `
+    <div style="display:flex;gap:10px;align-items:center;padding:8px 0;">
+      <img src="${t.art}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;" />
+      <div style="min-width:0;flex:1;"><div class="truncate" style="font-size:13.5px;font-weight:600;">${t.title}</div><div class="truncate" style="font-size:12px;color:var(--text-secondary);">${t.artist}</div></div>
+      <span style="font-size:12px;color:var(--text-tertiary);">${fmtDuration(t.duration)}</span>
+    </div>`).join("");
+}
+function renderQueueList() {
+  const el = document.getElementById("queue-list");
+  if (el) el.innerHTML = queueListHTML();
+}
+
 function renderGlobalOverlays() {
   const el = document.getElementById("shell-overlays");
   if (!el) return;
@@ -234,12 +248,7 @@ function renderGlobalOverlays() {
           <div><div style="font-size:13.5px;font-weight:600;color:var(--accent);">${STATE.currentTrack.title}</div><div style="font-size:12px;color:var(--text-secondary);">${STATE.currentTrack.artist}</div></div>
         </div>
         <div class="nav-group-label">Next Up</div>
-        ${STATE.queue.map((t) => `
-          <div style="display:flex;gap:10px;align-items:center;padding:8px 0;">
-            <img src="${t.art}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;" />
-            <div style="min-width:0;flex:1;"><div class="truncate" style="font-size:13.5px;font-weight:600;">${t.title}</div><div class="truncate" style="font-size:12px;color:var(--text-secondary);">${t.artist}</div></div>
-            <span style="font-size:12px;color:var(--text-tertiary);">${fmtDuration(t.duration)}</span>
-          </div>`).join("")}
+        <div id="queue-list">${queueListHTML()}</div>
       </div>
     </div>
 

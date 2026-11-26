@@ -20,7 +20,7 @@
 
         <div class="page-header">
           <div><h1>Recently Played</h1><p>Your listening history across Ugandan Sheikhs.</p></div>
-          <button class="btn btn-secondary" onclick="document.getElementById('history-body').innerHTML='';document.getElementById('history-empty').style.display='flex';toast('Listening history cleared')">Clear History</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('history-groups').innerHTML='';document.getElementById('history-empty').style.display='flex';this.style.display='none';toast('Listening history cleared')">Clear History</button>
         </div>
 
         <div id="history-groups"></div>
@@ -47,14 +47,22 @@
     initAppPage("history");
     document.querySelector("#history-empty .icon-wrap").innerHTML = ICONS.clock;
 
+    // Same information as the series page: lecture title, then the sheikh and the series it belongs to.
     function historyRow(t, time) {
-      return `<div style="display:flex;align-items:center;gap:14px;padding:9px 4px;border-radius:8px;" class="hist-row">
-        <img src="${t.art}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;" />
-        <div style="flex:1;min-width:0;"><div class="truncate" style="font-weight:600;font-size:13.5px;">${t.title}</div><a class="truncate text-secondary" style="font-size:12px;" href="artist.html?id=${t.artistId}">${t.artist}</a></div>
-        <span class="text-tertiary truncate" style="font-size:12px;width:120px;">${t.album}</span>
-        <span class="text-secondary" style="font-size:12px;">${time}</span>
-        <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Playing ${t.title.replace(/'/g,"")}')">${ICONS.play}</button>
-        <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Lecture options opened')">${ICONS.more}</button>
+      const series = seriesOf(t);
+      const seriesName = series ? series.title : t.album;
+      const seriesHref = series ? `album.html?id=${series.id}` : null;
+      const seriesLink = seriesHref ? `<a href="${seriesHref}">${seriesName}</a>` : `<span>${seriesName}</span>`;
+      return `<div class="hist-row">
+        <img class="hist-art" src="${t.art}" alt="" />
+        <div class="hist-main">
+          <a class="hist-title truncate" href="track.html?id=${t.id}">${t.title}</a>
+          <div class="hist-sub truncate"><a href="artist.html?id=${t.artistId}">${t.artist}</a><span class="hist-inline-series"> · ${seriesLink}</span></div>
+        </div>
+        <div class="hist-series truncate">${seriesLink}</div>
+        <span class="hist-time">${time}</span>
+        <button class="icon-btn hist-btn" title="Play" aria-label="Play" onclick="toast('Playing ${t.title.replace(/'/g,"")}')">${ICONS.play}</button>
+        <button class="icon-btn hist-btn" title="More options" aria-label="More options" aria-haspopup="menu" data-menu="lecture:${t.id}">${ICONS.more}</button>
       </div>`;
     }
 

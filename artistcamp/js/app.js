@@ -114,7 +114,7 @@ function openDrawer(id) {
   document.getElementById("overlay").classList.add("open");
   document.getElementById(id)?.classList.add("open");
 }
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModals(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModals(); CtxMenu.close(); } });
 
 /* ---------- Player logic (mock) ---------- */
 const Player = {
@@ -173,7 +173,7 @@ const Player = {
 
     document.getElementById("p-queue")?.addEventListener("click", () => openDrawer("queue-drawer"));
     document.getElementById("p-download")?.addEventListener("click", () => toast("Downloaded for offline listening", "success"));
-    document.getElementById("player-more")?.addEventListener("click", () => toast("Lecture options opened"));
+    document.getElementById("player-more")?.setAttribute("data-menu", "player");
   },
 };
 
@@ -271,17 +271,23 @@ function trackRowHTML(t, i, opts = {}) {
         </div>
       </div>
     </td>
-    ${opts.album ? `<td class="t-meta truncate"><a href="album.html?id=${t.id.replace("trk", "alb")}">${t.album}</a></td>` : ""}
+    ${opts.album ? `<td class="t-meta truncate">${seriesLinkHTML(t)}</td>` : ""}
     <td class="t-meta">${fmtCount(t.plays)}</td>
     <td class="t-meta">${fmtDuration(t.duration)}</td>
     <td>
       <div class="t-actions">
         <button class="icon-btn" style="width:30px;height:30px;background:none;" title="Like" onclick="toast('Added to Liked Lectures','success')">${ICONS.heart}</button>
         ${t.downloadable ? `<button class="icon-btn" style="width:30px;height:30px;background:none;" title="Download" onclick="toast('Download started')">${ICONS.download}</button>` : ""}
-        <button class="icon-btn" style="width:30px;height:30px;background:none;" title="More" onclick="toast('Lecture options opened')">${ICONS.more}</button>
+        <button class="icon-btn" style="width:30px;height:30px;background:none;" title="More options" aria-label="More options" aria-haspopup="menu" data-menu="lecture:${t.id}">${ICONS.more}</button>
       </div>
     </td>
   </tr>`;
+}
+
+/* Link to the series a lecture belongs to (falls back to plain text if it is in no series) */
+function seriesLinkHTML(t) {
+  const s = seriesOf(t);
+  return s ? `<a href="album.html?id=${s.id}">${s.title}</a>` : escapeHTML(t.album);
 }
 
 function cardHTML(item, kind) {
@@ -298,6 +304,195 @@ function cardHTML(item, kind) {
     <div class="card-sub truncate">${sub}</div>
   </a>`;
 }
+
+/* ---------- "More options" menus ----------
+   One menu component for every ⋯ button. Put data-menu="lecture:<id>", "series:<id>", "sheikh:<id>" or "player"
+   on a button and the delegated handler below opens the right menu. Desktop: a popover next to the
+   button. Phones (<=640px): a bottom sheet. Actions that need the backend (download, like, follow)
+   still toast in this prototype; navigation, copy-link and queue actions are real. */
+const CtxMenu = {
+  el: null, scrim: null, anchor: null, items: [], isSheet: false,
+
+  ensure() {
+    if (this.el) return;
+    this.scrim = document.createElement("div");
+    this.scrim.className = "ctx-scrim";
+    this.scrim.addEventListener("click", () => this.close());
+    this.el = document.createElement("div");
+    this.el.className = "ctx-menu";
+    this.el.setAttribute("role", "menu");
+    this.el.addEventListener("click", (e) => {
+      const row = e.target.closest("[data-ctx]");
+      if (!row || row.disabled || row.getAttribute("aria-disabled") === "true") return;
+      const item = this.items[Number(row.dataset.ctx)];
+      if (!item) return;
+      if (item.keepOpen) { e.preventDefault(); item.onClick && item.onClick(); return; }
+      this.close(!item.href);
+      if (item.onClick) item.onClick();
+    });
+    this.el.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      e.preventDefault();
+      const rows = [...this.el.querySelectorAll("[data-ctx]:not([aria-disabled='true'])")];
+      const i = rows.indexOf(document.activeElement);
+      rows[(i + (e.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length]?.focus();
+    });
+    document.body.append(this.scrim, this.el);
+    // a popover would drift away from its button, so it closes on resize/scroll; a bottom sheet stays put
+    window.addEventListener("resize", () => { if (!this.isSheet) this.close(false); });
+    window.addEventListener("scroll", (e) => { if (!this.isSheet && this.el.classList.contains("open") && !this.el.contains(e.target)) this.close(false); }, true);
+  },
+
+  /* spec = { title, subtitle, art, items: [{ icon, label, onClick, href, danger, disabled, divider, keepOpen }] } */
+  open(anchor, spec) {
+    this.ensure();
+    this.anchor = anchor || this.anchor;
+    this.items = spec.items.filter((i) => !i.divider);
+    let n = -1;
+    this.el.innerHTML = `
+      ${spec.title ? `<div class="ctx-head">${spec.art ? `<img src="${spec.art}" alt="" />` : ""}<div><div class="ctx-title truncate">${escapeHTML(spec.title)}</div>${spec.subtitle ? `<div class="ctx-sub truncate">${escapeHTML(spec.subtitle)}</div>` : ""}</div></div>` : ""}
+      <div class="ctx-list">
+        ${spec.items.map((i) => {
+          if (i.divider) return `<div class="menu-divider"></div>`;
+          n++;
+          const inner = `${i.icon ? ICONS[i.icon] : "<span class=\"ctx-noicon\"></span>"}<span>${i.label}</span>`;
+          const cls = `menu-item${i.danger ? " danger" : ""}`;
+          return i.href
+            ? `<a class="${cls}" role="menuitem" data-ctx="${n}" href="${i.href}">${inner}</a>`
+            : `<button type="button" class="${cls}" role="menuitem" data-ctx="${n}"${i.disabled ? ` aria-disabled="true"` : ""}>${inner}</button>`;
+        }).join("")}
+      </div>`;
+    this.isSheet = window.matchMedia("(max-width:640px)").matches;
+    this.el.classList.toggle("is-sheet", this.isSheet);
+    this.scrim.classList.toggle("open", this.isSheet);
+    this.anchor?.setAttribute("aria-expanded", "true");
+    if (!this.isSheet && this.anchor) {
+      const r = this.anchor.getBoundingClientRect();
+      const w = this.el.offsetWidth, h = this.el.offsetHeight;
+      const left = Math.min(Math.max(8, r.right - w), window.innerWidth - w - 8);
+      let top = r.bottom + 6;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+      this.el.style.left = left + "px";
+      this.el.style.top = top + "px";
+    } else { this.el.style.left = this.el.style.top = ""; }
+    this.el.classList.add("open");
+    this.el.querySelector("[data-ctx]")?.focus({ preventScroll: true });
+  },
+
+  close(returnFocus = true) {
+    if (!this.el || !this.el.classList.contains("open")) return;
+    this.el.classList.remove("open");
+    this.scrim.classList.remove("open");
+    this.anchor?.setAttribute("aria-expanded", "false");
+    if (returnFocus) this.anchor?.focus({ preventScroll: true });
+  },
+};
+
+function copyLink(href) {
+  const url = new URL(href, location.href).href;
+  const done = () => toast("Link copied to clipboard", "success");
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(done, () => toast(url));
+  else {
+    const ta = Object.assign(document.createElement("textarea"), { value: url });
+    ta.style.cssText = "position:fixed;opacity:0;";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch { toast(url); }
+    ta.remove();
+  }
+}
+
+function queueRefresh() { if (typeof renderQueueList === "function") renderQueueList(); }
+
+function lectureMenuSpec(t, anchor) {
+  const series = seriesOf(t);
+  const artist = ARTISTS.find((a) => a.id === t.artistId);
+  return {
+    title: t.title, subtitle: `${t.artist}${series ? " · " + series.title : ""}`, art: t.art,
+    items: [
+      { icon: "play", label: "Play now", onClick: () => toast(`Playing ${t.title}`) },
+      { icon: "queue", label: "Play next", onClick: () => { STATE.queue.unshift(t); queueRefresh(); toast("Will play next", "success"); } },
+      { icon: "plus", label: "Add to queue", onClick: () => { STATE.queue.push(t); queueRefresh(); toast("Added to queue", "success"); } },
+      { icon: "layers", label: "Add to collection…", keepOpen: true, onClick: () => CtxMenu.open(anchor, collectionPickerSpec(t, anchor)) },
+      { icon: "heart", label: "Add to Liked Lectures", onClick: () => toast("Added to Liked Lectures", "success") },
+      t.downloadable
+        ? { icon: "download", label: "Download", onClick: () => toast("Download started") }
+        : { icon: "cloudOff", label: "Streaming only", disabled: true },
+      { divider: true },
+      series ? { icon: "disc", label: "Go to series", href: `album.html?id=${series.id}` } : null,
+      artist ? { icon: "users", label: "Go to sheikh", href: `artist.html?id=${artist.id}` } : null,
+      { icon: "file", label: "Open lecture page", href: `track.html?id=${t.id}` },
+      { divider: true },
+      { icon: "share", label: "Copy link", onClick: () => copyLink(`track.html?id=${t.id}`) },
+      { icon: "flag", label: "Report a problem", onClick: () => toast("Thanks, we'll review this lecture") },
+    ].filter(Boolean),
+  };
+}
+
+function collectionPickerSpec(t, anchor) {
+  const mine = PLAYLISTS.filter((p) => p.creator === "You");
+  return {
+    title: "Add to collection", subtitle: t.title,
+    items: [
+      { icon: "chevLeft", label: "Back", keepOpen: true, onClick: () => CtxMenu.open(anchor, lectureMenuSpec(t, anchor)) },
+      { divider: true },
+      { icon: "plus", label: "New collection", onClick: () => { ensureOverlay(); openModal("create-playlist-modal"); } },
+      ...mine.map((p) => ({ icon: "layers", label: escapeHTML(p.name), onClick: () => toast(`Added to ${p.name}`, "success") })),
+    ],
+  };
+}
+
+function seriesMenuSpec(a) {
+  const dl = a.tracks.filter((t) => t.downloadable).length;
+  return {
+    title: a.title, subtitle: `${a.artist} · ${a.tracks.length} lecture${a.tracks.length === 1 ? "" : "s"}`, art: a.art,
+    items: [
+      { icon: "play", label: "Play series", onClick: () => toast(`Playing ${a.title}`) },
+      { icon: "shuffle", label: "Shuffle", onClick: () => toast("Shuffling series") },
+      { icon: "queue", label: "Add all to queue", onClick: () => { STATE.queue.push(...a.tracks); queueRefresh(); toast(`${a.tracks.length} lectures added to queue`, "success"); } },
+      { icon: "download", label: dl ? `Download ${dl} lecture${dl === 1 ? "" : "s"}` : "No downloads available", disabled: !dl, onClick: () => toast("Series download started", "success") },
+      { icon: "library", label: "Save to library", onClick: () => toast("Saved to library", "success") },
+      { divider: true },
+      { icon: "users", label: "Go to sheikh", href: `artist.html?id=${a.artistId}` },
+      { icon: "share", label: "Copy link", onClick: () => copyLink(`album.html?id=${a.id}`) },
+      { icon: "flag", label: "Report a problem", onClick: () => toast("Thanks, we'll review this series") },
+    ],
+  };
+}
+
+function sheikhMenuSpec(a) {
+  return {
+    title: a.name, subtitle: `${a.followers} followers`, art: a.img,
+    items: [
+      { icon: "play", label: "Play lectures", onClick: () => toast(`Playing ${a.name}`) },
+      { icon: "shuffle", label: "Shuffle", onClick: () => toast("Shuffling lectures") },
+      { icon: "userPlus", label: "Follow", onClick: () => { const f = document.getElementById("follow-btn"); if (f) f.click(); else toast("Following " + a.name, "success"); } },
+      { divider: true },
+      { icon: "share", label: "Copy profile link", onClick: () => copyLink(`artist.html?id=${a.id}`) },
+      { icon: "flag", label: "Report a problem", onClick: () => toast("Thanks, we'll review this profile") },
+    ],
+  };
+}
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-menu]");
+  if (!btn) {
+    if (CtxMenu.el && !CtxMenu.el.contains(e.target)) CtxMenu.close(false);
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+  if (CtxMenu.el?.classList.contains("open") && CtxMenu.anchor === btn) { CtxMenu.close(); return; }
+  const [kind, id] = btn.dataset.menu.split(":");
+  let spec = null;
+  if (kind === "lecture") { const t = TRACKS.find((x) => x.id === id); if (t) spec = lectureMenuSpec(t, btn); }
+  else if (kind === "player") spec = lectureMenuSpec(STATE.currentTrack, btn);
+  else if (kind === "series") { const a = ALBUMS.find((x) => x.id === id); if (a) spec = seriesMenuSpec(a); }
+  else if (kind === "sheikh") { const a = ARTISTS.find((x) => x.id === id); if (a) spec = sheikhMenuSpec(a); }
+  if (!spec) return toast("Options aren't available for this item");
+  btn.setAttribute("aria-haspopup", "menu");
+  CtxMenu.close(false);
+  CtxMenu.open(btn, spec);
+}, true);
 
 /* ---------- Init hook every page calls ---------- */
 function initAppPage(active) {

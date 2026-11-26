@@ -26,10 +26,12 @@
         <div class="chip-row" id="filter-chips" style="margin-bottom:24px;"></div>
 
         <div id="empty-search">
-          <div class="section-header" style="margin-top:0;"><h2>Recent Searches</h2><button class="see-all" onclick="document.getElementById('recent-list').innerHTML='';toast('Search history cleared')">Clear history</button></div>
-          <div class="chip-row" id="recent-list"></div>
+          <div id="recent-block">
+            <div class="section-header" style="margin-top:0;"><h2>Recent Searches</h2><button class="see-all" onclick="clearRecentSearches()">Clear history</button></div>
+            <div class="chip-row" id="recent-list"></div>
+          </div>
 
-          <div class="section-header"><h2>Trending Searches</h2></div>
+          <div class="section-header" id="trending-head"><h2>Trending Searches</h2></div>
           <div class="chip-row" id="trending-searches"></div>
 
           <div class="section-header"><h2>Browse Topics</h2></div>
@@ -83,7 +85,8 @@
       const noResultsAtAll = !!top.querySelector(".empty-state");
       document.querySelectorAll("#results [data-group]").forEach(g => {
         const wanted = searchFilter === "All" || g.dataset.group === searchFilter;
-        g.style.display = wanted && !(searchFilter !== "All" && lastCounts[g.dataset.group] === 0) ? "" : "none";
+        // a group with no matches never shows (no empty headings), whatever the type filter
+        g.style.display = wanted && lastCounts[g.dataset.group] > 0 ? "" : "none";
       });
       top.style.display = searchFilter === "All" || noResultsAtAll ? "" : "none";
       // chosen type has no matches (but other types do): say so instead of leaving the page blank
@@ -95,7 +98,17 @@
     }
     wireChips(filterChips, { onChange: (value) => { searchFilter = value; applySearchFilter(); } });
 
-    document.getElementById("recent-list").innerHTML = ["Hamza Kayiira","Sincerity in Worship","Daily Reminders","Imaam Kyeyune"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.clock}${q}</button>`).join("");
+    /* Recent searches (prototype: in memory only, so a refresh brings the sample ones back).
+       With nothing to show, the whole block, heading included, is hidden. */
+    let recentSearches = ["Hamza Kayiira","Sincerity in Worship","Daily Reminders","Imaam Kyeyune"];
+    function renderRecentSearches() {
+      document.getElementById("recent-list").innerHTML = recentSearches.map(q=>`<button class="chip" onclick="runSearch(this.dataset.q)" data-q="${escapeHTML(q)}">${ICONS.clock}${escapeHTML(q)}</button>`).join("");
+      document.getElementById("recent-block").style.display = recentSearches.length ? "" : "none";
+      // the first visible heading shouldn't carry a big top gap
+      document.getElementById("trending-head").style.marginTop = recentSearches.length ? "" : "0";
+    }
+    function clearRecentSearches() { recentSearches = []; renderRecentSearches(); toast("Search history cleared"); }
+    renderRecentSearches();
     document.getElementById("trending-searches").innerHTML = ["Tafsir of Juz Amma","Salim Bbosa","Friday Khutbah","Foundations of Tawheed","Ramadan collections"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.trendingUp}${q}</button>`).join("");
     document.getElementById("genre-grid").innerHTML = GENRES.map(g => `<a class="genre-tile" href="discover.html?genre=${g.slug}" style="background:${g.color};"><span style="color:#fff;">${g.name}</span></a>`).join("");
 
@@ -112,7 +125,7 @@
       if (!artists.length && !tracks.length && !albums.length && !playlists.length) {
         document.getElementById("empty-search").style.display = "none";
         document.getElementById("results").style.display = "block";
-        document.getElementById("top-result").innerHTML = `<div class="empty-state"><div class="icon-wrap">${ICONS.search}</div><h3>No results for "${q}"</h3><p>Try checking your spelling or searching for something more general.</p></div>`;
+        document.getElementById("top-result").innerHTML = `<div class="empty-state"><div class="icon-wrap">${ICONS.search}</div><h3>No results for "${escapeHTML(q)}"</h3><p>Try checking your spelling or searching for something more general.</p></div>`;
         ["result-songs","result-artists","result-albums","result-playlists"].forEach(id=>document.getElementById(id).innerHTML="");
         applySearchFilter();
         return;
@@ -132,7 +145,7 @@
       document.getElementById("result-songs").innerHTML = tracks.slice(0,6).map((t,i)=>trackRowHTML(t,i,{album:true})).join("");
       document.getElementById("result-artists").innerHTML = artists.slice(0,6).map(a=>cardHTML(a,"artist")).join("");
       document.getElementById("result-albums").innerHTML = albums.slice(0,6).map(a=>cardHTML(a,"album")).join("");
-      document.getElementById("result-playlists").innerHTML = playlists.length ? playlists.slice(0,5).map(p=>cardHTML(p,"playlist")).join("") : PLAYLISTS.slice(0,5).map(p=>cardHTML(p,"playlist")).join("");
+      document.getElementById("result-playlists").innerHTML = playlists.slice(0,5).map(p=>cardHTML(p,"playlist")).join("");
       applySearchFilter();
     }
 

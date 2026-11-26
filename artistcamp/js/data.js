@@ -190,6 +190,34 @@ const ALBUMS = SERIES.map((ser, i) => {
   };
 });
 
+/* The series a lecture really belongs to (the one whose page lists it).
+   A lecture can sit in more than one series in this mock data, so prefer the
+   series with the same topic. Returns an ALBUMS entry, or null. */
+const _seriesOfCache = {};
+function seriesOf(track) {
+  if (!track) return null;
+  if (!(track.id in _seriesOfCache)) {
+    const owners = ALBUMS.filter((a) => a.tracks.some((x) => x.id === track.id));
+    _seriesOfCache[track.id] = owners.find((a) => a.genre === track.genre) || owners[0] || null;
+  }
+  return _seriesOfCache[track.id];
+}
+
+/* "Listen by Moment" (Discover). PLACEHOLDER RULES for the prototype: in Laravel these become
+   tags on each lecture (a lecture_moment pivot table). Add as many as you like, the UI copes. */
+const _topicIn = (t, ...names) => names.includes(t.genre);
+const MOMENTS = [
+  { id: "morning",  name: "Morning",       hint: "Short reminders to start the day", icon: "sparkle",   test: (t) => t.duration <= 1800 && _topicIn(t, "Tazkiyah", "Hadith", "Qur'an & Tafsir") },
+  { id: "commute",  name: "Commute",       hint: "Under 40 minutes",                 icon: "compass",   test: (t) => t.duration <= 2400 },
+  { id: "sleep",    name: "Before Sleep",  hint: "Calm, reflective listening",       icon: "volume",    test: (t) => _topicIn(t, "Seerah", "Tazkiyah", "Qur'an & Tafsir") && t.duration <= 2700 },
+  { id: "friday",   name: "Friday",        hint: "Khutbahs and Jumu'ah themes",      icon: "megaphone", test: (t) => _topicIn(t, "Khutbah") || /Friday/i.test(t.title) },
+  { id: "ramadan",  name: "Ramadan",       hint: "Fasting and the blessed month",    icon: "star",      test: (t) => _topicIn(t, "Ramadan") || /Fasting/i.test(t.title) },
+  { id: "study",    name: "Study",         hint: "In-depth, 40 minutes and longer",  icon: "file",      test: (t) => _topicIn(t, "Fiqh", "Aqeedah", "Hadith", "Qur'an & Tafsir") && t.duration >= 2400 },
+  { id: "reflect",  name: "Reflection",    hint: "Character, family and the heart",  icon: "heart",     test: (t) => _topicIn(t, "Tazkiyah", "Family & Marriage", "Youth") },
+  { id: "short",    name: "Under 25 min",  hint: "Quick listens",                    icon: "clock",     test: (t) => t.duration <= 1500 },
+  { id: "long",     name: "Long-form",     hint: "50 minutes and longer",            icon: "layers",    test: (t) => t.duration >= 3000 },
+];
+
 /* Collections (was "playlists") */
 const PLAYLIST_NAMES = [
   { name: "Morning Reminders", desc: "Short reminders to start the day with focus." },

@@ -60,7 +60,7 @@
           <button class="btn btn-outline" onclick="toast('Series download started','success')">${ICONS.download}<span>Download Series</span></button>
           <button class="icon-btn btn-icon-only" onclick="toast('Saved to library','success')">${ICONS.heart}</button>
           <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
-          <button class="icon-btn btn-icon-only" onclick="toast('More options opened')">${ICONS.more}</button>
+          <button class="icon-btn btn-icon-only" title="More options" aria-label="More options" aria-haspopup="menu" data-menu="series:${album.id}">${ICONS.more}</button>
         </div>
       </div>
 
@@ -78,7 +78,7 @@
             <td class="t-meta">${fmtDuration(t.duration)}</td>
             <td><div class="t-actions">
               <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Added to Liked Lectures','success')">${ICONS.heart}</button>
-              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Lecture options opened')">${ICONS.more}</button>
+              <button class="icon-btn" style="width:30px;height:30px;background:none;" title="More options" aria-label="More options" aria-haspopup="menu" data-menu="lecture:${t.id}">${ICONS.more}</button>
             </div></td>
           </tr>`).join("")}
         </tbody>

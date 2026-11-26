@@ -22,10 +22,23 @@
           <div><h1>Discover Knowledge</h1><p>Find your next beneficial lecture.</p></div>
         </div>
 
-        <div id="genres"><div class="chip-row" id="genre-chips" style="margin-bottom:18px;"></div></div>
+        <!-- Topics: one scrolling row (never wraps, however many topics there are) + "All topics" picker -->
+        <div id="genres" class="topic-bar">
+          <div class="chip-scroller" id="topic-scroller">
+            <button type="button" class="chip-nav prev" id="topic-prev" aria-label="Scroll topics left"></button>
+            <div class="chip-track" id="genre-chips" role="tablist" aria-label="Topics"></div>
+            <button type="button" class="chip-nav next" id="topic-next" aria-label="Scroll topics right"></button>
+          </div>
+          <button type="button" class="btn btn-secondary topic-all-btn" id="topic-all-btn"></button>
+        </div>
 
-        <div class="section-header" style="margin-top:8px;"><h2>Listen by Moment</h2></div>
-        <div class="chip-row" id="mood-chips" style="margin-bottom:8px;"></div>
+        <!-- Moments: tile grid that shows the first few and expands on demand -->
+        <section id="moments">
+          <div class="section-header" style="margin-top:8px;"><h2>Listen by Moment</h2><button type="button" class="see-all" id="moment-toggle" hidden></button></div>
+          <input class="input moment-search" id="moment-search" type="search" placeholder="Find a moment" aria-label="Find a moment" hidden />
+          <div class="moment-grid collapsed" id="moment-grid"></div>
+          <div id="moment-results"></div>
+        </section>
 
         <section id="trending"><div class="section-header"><h2>Trending Sheikhs</h2></div><div class="rail" id="trending-artists"></div></section>
         <section><div class="section-header"><h2>Recommended for You</h2></div><div class="grid grid-6" id="recommended"></div></section>
@@ -56,11 +69,6 @@
   <script src="js/app.js"></script>
   <script>
     initAppPage("discover");
-
-    /* ---- "Listen by Moment": still highlight-only (needs a rule for what counts as a Commute / Study lecture) ---- */
-    const moodChips = document.getElementById("mood-chips");
-    moodChips.innerHTML = ["Morning","Commute","Before Sleep","Friday","Ramadan","Study","Reflection","Under 15 min","Long-form"].map(m => `<button class="chip">${m}</button>`).join("");
-    wireChips(moodChips);
 
     /* ---- Topic chips: filter every section below (topic = null means all topics) ---- */
     // a sheikh "is on" a topic when at least one of their lectures is
@@ -93,6 +101,8 @@
     wireRowLinks("most-discussed");
 
     function renderDiscover(topic) {
+      currentTopic = topic;
+      if (typeof renderMoments === "function" && document.getElementById("moment-grid")) renderMoments();
       const sections = [
         ["trending-artists", sheikhsOn(ARTISTS.slice(0, 10), topic),                    a => cardHTML(a, "artist")],
         ["recommended",      byTopic(ALBUMS.slice(0, 6), topic),                         a => cardHTML(a, "album")],
@@ -115,11 +125,114 @@
       });
     }
 
+    /* ================= Topic bar ================= */
+    let currentTopic = null;
+    const topicCount = (name) => TRACKS.filter(t => t.genre === name).length;
     const genreChips = document.getElementById("genre-chips");
     genreChips.innerHTML = ["All", ...GENRES.map(g => g.name)].map((g, i) =>
-      `<button class="chip ${i===0?"active":""}" data-topic="${i===0 ? "" : escapeHTML(g)}">${g}</button>`).join("");
-    wireChips(genreChips, { onChange: (_, chip) => renderDiscover(chip.dataset.topic || null) });
+      `<button class="chip ${i===0?"active":""}" role="tab" aria-selected="${i===0}" data-topic="${i===0 ? "" : escapeHTML(g)}">${escapeHTML(g)}</button>`).join("");
+    wireChips(genreChips, { onChange: (_, chip) => {
+      currentTopic = chip.dataset.topic || null;
+      genreChips.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-selected", c.classList.contains("active")));
+      chip.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      renderDiscover(currentTopic);
+    } });
+
+    // arrows + edge fades appear only when the row actually overflows
+    const scroller = document.getElementById("topic-scroller");
+    const updateScroller = () => {
+      const max = genreChips.scrollWidth - genreChips.clientWidth;
+      scroller.classList.toggle("can-left", genreChips.scrollLeft > 4);
+      scroller.classList.toggle("can-right", genreChips.scrollLeft < max - 4);
+    };
+    document.getElementById("topic-prev").innerHTML = ICONS.chevLeft;
+    document.getElementById("topic-next").innerHTML = ICONS.chevRight;
+    document.getElementById("topic-prev").onclick = () => genreChips.scrollBy({ left: -genreChips.clientWidth * .7, behavior: "smooth" });
+    document.getElementById("topic-next").onclick = () => genreChips.scrollBy({ left: genreChips.clientWidth * .7, behavior: "smooth" });
+    genreChips.addEventListener("scroll", updateScroller, { passive: true });
+    window.addEventListener("resize", updateScroller);
+
+    // "All topics" picker: searchable list with lecture counts, for when there are dozens of topics
+    document.getElementById("topic-all-btn").innerHTML = `${ICONS.grid}<span>All topics</span>`;
+    document.getElementById("shell-overlays").insertAdjacentHTML("beforeend", `
+      <div class="modal topic-modal" id="topic-modal" role="dialog" aria-modal="true" aria-label="All topics">
+        <div class="modal-head"><h3>All topics</h3><button class="icon-btn" aria-label="Close" onclick="closeModals()">${ICONS.x}</button></div>
+        <input class="input" id="topic-search" type="search" placeholder="Search topics" aria-label="Search topics" autocomplete="off" />
+        <div class="topic-list" id="topic-list"></div>
+      </div>`);
+    function renderTopicList() {
+      const q = document.getElementById("topic-search").value.trim().toLowerCase();
+      const rows = [{ name: "All topics", value: "", n: TRACKS.length }, ...GENRES.map(g => ({ name: g.name, value: g.name, n: topicCount(g.name), color: g.color }))]
+        .filter(r => !q || r.name.toLowerCase().includes(q));
+      document.getElementById("topic-list").innerHTML = rows.length ? rows.map(r => `
+        <button type="button" class="topic-row ${(currentTopic || "") === r.value ? "active" : ""}" data-topic="${escapeHTML(r.value)}">
+          <span class="topic-dot" style="background:${r.color || "var(--accent)"};"></span><span class="topic-name">${escapeHTML(r.name)}</span><span class="topic-n">${r.n} lectures</span>
+        </button>`).join("") : `<p class="text-secondary" style="padding:18px 4px;font-size:13.5px;">No topics match “${escapeHTML(q)}”.</p>`;
+    }
+    document.getElementById("topic-search").addEventListener("input", renderTopicList);
+    document.getElementById("topic-list").addEventListener("click", (e) => {
+      const row = e.target.closest(".topic-row");
+      if (!row) return;
+      closeModals();
+      [...genreChips.children].find(c => c.dataset.topic === row.dataset.topic)?.click();
+    });
+    document.getElementById("topic-all-btn").addEventListener("click", () => {
+      document.getElementById("topic-search").value = ""; renderTopicList();
+      ensureOverlay(); openModal("topic-modal");
+      document.getElementById("topic-search").focus();
+    });
+
+    /* ================= Listen by Moment ================= */
+    const MOMENT_VISIBLE = 6;            // tiles shown before "Show all"
+    let activeMoment = null, momentsExpanded = false;
+    const momentTracks = (m) => TRACKS.filter(t => m.test(t) && (!currentTopic || t.genre === currentTopic));
+    function renderMoments() {
+      const grid = document.getElementById("moment-grid");
+      const q = document.getElementById("moment-search").value.trim().toLowerCase();
+      const list = MOMENTS.filter(m => !q || m.name.toLowerCase().includes(q) || m.hint.toLowerCase().includes(q));
+      grid.innerHTML = list.map(m => {
+        const n = momentTracks(m).length;
+        return `<button type="button" class="moment-tile ${activeMoment === m.id ? "active" : ""}" data-moment="${m.id}" aria-pressed="${activeMoment === m.id}" ${n ? "" : 'aria-disabled="true" disabled'}>
+          <span class="moment-ico">${ICONS[m.icon]}</span>
+          <span class="moment-text"><strong>${m.name}</strong><small>${n} lecture${n === 1 ? "" : "s"} · ${m.hint}</small></span>
+        </button>`;
+      }).join("") || `<p class="text-secondary" style="font-size:13.5px;">No moments match “${escapeHTML(q)}”.</p>`;
+      const many = MOMENTS.length > MOMENT_VISIBLE;
+      grid.classList.toggle("collapsed", many && !momentsExpanded && !q);
+      const toggle = document.getElementById("moment-toggle");
+      toggle.hidden = !many;
+      toggle.textContent = momentsExpanded ? "Show less" : `Show all ${MOMENTS.length}`;
+      document.getElementById("moment-search").hidden = !(MOMENTS.length > 12 && momentsExpanded);
+      renderMomentResults();
+    }
+    function renderMomentResults() {
+      const box = document.getElementById("moment-results");
+      const m = MOMENTS.find(x => x.id === activeMoment);
+      if (!m) { box.innerHTML = ""; return; }
+      const list = momentTracks(m);
+      box.innerHTML = `
+        <div class="moment-results-head">
+          <div><strong>${m.name}</strong><span class="text-secondary"> · ${list.length} lecture${list.length === 1 ? "" : "s"}${currentTopic ? ` on ${escapeHTML(currentTopic)}` : ""}</span></div>
+          <button type="button" class="see-all" id="moment-clear">Clear</button>
+        </div>
+        ${list.length ? `<table class="track-table"><tbody>${list.slice(0, 8).map((t, i) => trackRowHTML(t, i, { album: true })).join("")}</tbody></table>
+          ${list.length > 8 ? `<p class="text-tertiary" style="font-size:12.5px;margin-top:10px;">Showing 8 of ${list.length}</p>` : ""}`
+          : `<p class="text-secondary" style="font-size:13.5px;padding:10px 0;">No ${m.name} lectures${currentTopic ? ` on ${escapeHTML(currentTopic)}` : ""} yet.</p>`}`;
+      document.getElementById("moment-clear").onclick = () => { activeMoment = null; renderMoments(); };
+    }
+    document.getElementById("moment-grid").addEventListener("click", (e) => {
+      const tile = e.target.closest(".moment-tile");
+      if (!tile || tile.disabled) return;
+      activeMoment = activeMoment === tile.dataset.moment ? null : tile.dataset.moment;
+      renderMoments();
+      if (activeMoment) document.getElementById("moment-results").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    document.getElementById("moment-toggle").onclick = () => { momentsExpanded = !momentsExpanded; renderMoments(); };
+    document.getElementById("moment-search").addEventListener("input", renderMoments);
+
     renderDiscover(null);
+    renderMoments();
+    updateScroller();
 
     // Search page "Browse Topics" tiles link here as discover.html?genre=<slug>
     const wanted = GENRES.find(g => g.slug === new URLSearchParams(location.search).get("genre"));

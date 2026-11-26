@@ -56,7 +56,7 @@
           <button class="btn btn-primary" onclick="toast('Playing ${artist.name}'.replace(/\\n/g,''))">${ICONS.play}<span>Play</span></button>
           <button class="btn btn-secondary" id="follow-btn">${ICONS.userPlus}<span>Follow</span></button>
           <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
-          <button class="icon-btn btn-icon-only" onclick="toast('More options opened')">${ICONS.more}</button>
+          <button class="icon-btn btn-icon-only" title="More options" aria-label="More options" aria-haspopup="menu" data-menu="sheikh:${artist.id}">${ICONS.more}</button>
         </div>
       </div>
 

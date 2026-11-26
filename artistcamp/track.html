@@ -45,7 +45,7 @@
           <h1 class="track-title">${track.title}</h1>
           <div class="entity-hero-meta track-meta">
             <a href="artist.html?id=${artist.id}" style="color:var(--text-primary);font-weight:600;">${artist.name}</a>
-            <span>·</span><a href="album.html?id=alb-1" style="color:var(--text-secondary);">${track.album}</a>
+            <span>·</span>${seriesOf(track) ? `<a href="album.html?id=${seriesOf(track).id}" style="color:var(--text-secondary);">${seriesOf(track).title}</a>` : `<span>${track.album}</span>`}
             <span>·</span><span>${track.year}</span>
           </div>
           <div class="hero-actions track-actions">
@@ -71,7 +71,7 @@
         <button class="tab" data-target="credits">Details</button>
       </div>
       <div data-tabpanel="about" style="max-width:640px;">
-        <p class="text-secondary">${track.title} is a lecture on ${track.genre} by ${artist.name}, taken from ${track.album} (${track.year}). It has quickly become a favorite in listener-curated collections across the platform.</p>
+        <p class="text-secondary">${track.title} is a lecture on ${track.genre} by ${artist.name}, taken from ${seriesOf(track) ? seriesOf(track).title : track.album} (${track.year}). It has quickly become a favorite in listener-curated collections across the platform.</p>
       </div>
       <div data-tabpanel="lyrics" style="display:none;">
         ${emptyStateHTML({ icon: "mic", title: "Transcript not available", body: `${artist.name} hasn't added a transcript for this lecture yet.` })}

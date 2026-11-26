@@ -68,11 +68,11 @@
           <tr class="track-row">
             <td class="t-num">${isOwner ? `<span style="cursor:grab;color:var(--text-tertiary);">::</span>` : `<span class="num">${i+1}</span><button class="icon-btn play-ico" style="background:none;width:18px;height:18px;">${ICONS.play}</button>`}</td>
             <td><div class="t-title-cell"><img src="${t.art}" /><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td>
-            <td class="t-meta truncate">${t.album}</td>
+            <td class="t-meta truncate">${seriesLinkHTML(t)}</td>
             <td class="t-meta">${fmtDuration(t.duration)}</td>
             <td><div class="t-actions">
               ${isOwner ? `<button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Removed from playlist')">${ICONS.x}</button>` : ""}
-              <button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Lecture options opened')">${ICONS.more}</button>
+              <button class="icon-btn" style="width:30px;height:30px;background:none;" title="More options" aria-label="More options" aria-haspopup="menu" data-menu="lecture:${t.id}">${ICONS.more}</button>
             </div></td>
           </tr>`).join("")}
         </tbody>
