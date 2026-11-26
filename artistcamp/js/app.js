@@ -284,15 +284,14 @@ function trackRowHTML(t, i, opts = {}) {
   </tr>`;
 }
 
-/* Topic tile (Home): gradient from the topic colour, a watermark icon, and the lecture count */
-const TOPIC_ICONS = { tafsir: "file", aqeedah: "star", fiqh: "layers", hadith: "message", seerah: "compass", tazkiyah: "heart", khutbah: "megaphone", family: "users", youth: "sparkle", ramadan: "clock" };
+/* Topic tile (Home): calm, uniform card with a small eight-pointed star (khatam) ornament.
+   The topic colour is deliberately NOT used here, so the grid stays quiet and consistent. */
+const TOPIC_ORNAMENT = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" stroke="currentColor" stroke-width="1.3"/><rect x="6.5" y="6.5" width="11" height="11" stroke="currentColor" stroke-width="1.3" transform="rotate(45 12 12)"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>`;
 function topicTileHTML(g) {
   const n = TRACKS.filter((t) => t.genre === g.name).length;
-  const icon = ICONS[TOPIC_ICONS[g.slug]] || ICONS.tag;
   return `
-  <a class="topic-tile" href="discover.html?genre=${g.slug}" style="--c:${g.color};">
-    <span class="topic-tile-mark" aria-hidden="true">${icon}</span>
-    <span class="topic-tile-badge" aria-hidden="true">${icon}</span>
+  <a class="topic-tile" href="discover.html?genre=${g.slug}">
+    <span class="topic-tile-mark">${TOPIC_ORNAMENT}</span>
     <span class="topic-tile-body"><span class="topic-tile-name">${g.name}</span><span class="topic-tile-count">${n} lecture${n === 1 ? "" : "s"}</span></span>
     <span class="topic-tile-go" aria-hidden="true">${ICONS.chevRight}</span>
   </a>`;
@@ -307,7 +306,7 @@ function seriesLinkHTML(t) {
 function cardHTML(item, kind) {
   const href = kind === "artist" ? `artist.html?id=${item.id}` : kind === "album" ? `album.html?id=${item.id}` : `playlist.html?id=${item.id}`;
   const title = item.name || item.title;
-  const sub = kind === "artist" ? item.genre : kind === "album" ? item.artist : `By ${item.creator}`;
+  const sub = kind === "artist" ? item.genre : kind === "album" ? item.artist : item.kind === "personal" ? "Private · only you" : `By ${item.creator}`;
   return `
   <a class="card card-w ${kind === "artist" ? "artist" : ""}" href="${href}">
     <div class="card-art">
@@ -415,6 +414,7 @@ function copyLink(href) {
   }
 }
 
+let MENU_FROM = "";   // which surface opened the current "more options" menu (used by Report a problem)
 function queueRefresh() { if (typeof renderQueueList === "function") renderQueueList(); }
 
 function lectureMenuSpec(t, anchor) {
@@ -437,13 +437,13 @@ function lectureMenuSpec(t, anchor) {
       { icon: "file", label: "Open lecture page", href: `track.html?id=${t.id}` },
       { divider: true },
       { icon: "share", label: "Copy link", onClick: () => copyLink(`track.html?id=${t.id}`) },
-      { icon: "flag", label: "Report a problem", onClick: () => toast("Thanks, we'll review this lecture") },
+      { icon: "flag", label: "Report a problem", onClick: () => openReport({ kind: "Lecture", id: t.id, title: t.title, sub: t.artist, source: MENU_FROM || "Lecture menu", itemHref: `track.html?id=${t.id}` }) },
     ].filter(Boolean),
   };
 }
 
 function collectionPickerSpec(t, anchor) {
-  const mine = PLAYLISTS.filter((p) => p.creator === "You");
+  const mine = myCollections();
   return {
     title: "Add to collection", subtitle: t.title,
     items: [
@@ -468,7 +468,7 @@ function seriesMenuSpec(a) {
       { divider: true },
       { icon: "users", label: "Go to sheikh", href: `artist.html?id=${a.artistId}` },
       { icon: "share", label: "Copy link", onClick: () => copyLink(`album.html?id=${a.id}`) },
-      { icon: "flag", label: "Report a problem", onClick: () => toast("Thanks, we'll review this series") },
+      { icon: "flag", label: "Report a problem", onClick: () => openReport({ kind: "Series", id: a.id, title: a.title, sub: a.artist, source: "Series menu", itemHref: `album.html?id=${a.id}` }) },
     ],
   };
 }
@@ -482,7 +482,7 @@ function sheikhMenuSpec(a) {
       { icon: "userPlus", label: "Follow", onClick: () => { const f = document.getElementById("follow-btn"); if (f) f.click(); else toast("Following " + a.name, "success"); } },
       { divider: true },
       { icon: "share", label: "Copy profile link", onClick: () => copyLink(`artist.html?id=${a.id}`) },
-      { icon: "flag", label: "Report a problem", onClick: () => toast("Thanks, we'll review this profile") },
+      { icon: "flag", label: "Report a problem", onClick: () => openReport({ kind: "Sheikh", id: a.id, title: a.name, sub: "Sheikh profile", source: "Sheikh menu", itemHref: `artist.html?id=${a.id}` }) },
     ],
   };
 }
@@ -497,6 +497,7 @@ document.addEventListener("click", (e) => {
   e.stopPropagation();
   if (CtxMenu.el?.classList.contains("open") && CtxMenu.anchor === btn) { CtxMenu.close(); return; }
   const [kind, id] = btn.dataset.menu.split(":");
+  MENU_FROM = kind === "player" ? "Player bar" : "";
   let spec = null;
   if (kind === "lecture") { const t = TRACKS.find((x) => x.id === id); if (t) spec = lectureMenuSpec(t, btn); }
   else if (kind === "player") spec = lectureMenuSpec(STATE.currentTrack, btn);
@@ -507,6 +508,89 @@ document.addEventListener("click", (e) => {
   CtxMenu.close(false);
   CtxMenu.open(btn, spec);
 }, true);
+
+/* ---------- Report a problem ----------
+   One modal for every "Report a problem" entry point (lecture / series / sheikh menus, comment Report links).
+   It captures WHAT is reported and WHERE the listener was when they reported it, plus their own message.
+   Prototype: saved to localStorage ("us_reports") and shown on admin/reports.html.
+   Laravel: POST /reports { type, item_id, source, page_url, reason, message }. */
+const REPORT_STORE = "us_reports";
+const PAGE_LABELS = { index: "Home", discover: "Discover", library: "Your Library", search: "Search", track: "Lecture page", album: "Series page", artist: "Sheikh page", playlist: "Collection page", history: "History", liked: "Liked Lectures", downloads: "Downloads", offline: "Offline", following: "Following", profile: "Profile", settings: "Settings" };
+const REPORT_REASONS = ["Won't play or download", "Wrong title, sheikh or details", "Inappropriate or disrespectful content", "Incorrect or misleading content", "Copyright concern", "Something else"];
+function currentPageLabel() {
+  const file = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
+  return PAGE_LABELS[file] || document.title.split("—")[0].trim() || "Ugandan Sheikhs";
+}
+function loadReports() { try { return JSON.parse(localStorage.getItem(REPORT_STORE) || "[]"); } catch { return []; } }
+function saveReports(list) { try { localStorage.setItem(REPORT_STORE, JSON.stringify(list)); return true; } catch { return false; } }
+
+let _report = null;
+function ensureReportModal() {
+  if (document.getElementById("report-modal")) return;
+  ensureOverlay();
+  document.body.insertAdjacentHTML("beforeend", `
+    <div class="modal report-modal" id="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-title">
+      <div class="modal-head"><h3 id="report-title">Report a problem</h3><button type="button" class="icon-btn" aria-label="Close" onclick="closeModals()">${ICONS.x}</button></div>
+      <div class="report-context" id="report-context"></div>
+      <div class="field"><label for="report-reason">What's the problem?</label>
+        <select class="select" id="report-reason">${REPORT_REASONS.map((r) => `<option>${r}</option>`).join("")}</select></div>
+      <div class="field"><label for="report-message">Tell us more</label>
+        <textarea class="textarea" id="report-message" maxlength="1000" placeholder="Describe the problem in your own words so the team can look into it."></textarea>
+        <div class="report-meta"><span class="field-hint" id="report-error" role="alert"></span><span class="field-hint" id="report-count">0 / 1000</span></div></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="report-send">Send report</button>
+      </div>
+    </div>`);
+  const msg = document.getElementById("report-message");
+  msg.addEventListener("input", () => {
+    document.getElementById("report-count").textContent = `${msg.value.length} / 1000`;
+    if (msg.value.trim().length >= 10) document.getElementById("report-error").textContent = "";
+  });
+  document.getElementById("report-send").addEventListener("click", submitReport);
+}
+function openReport(ctx) {
+  _report = { place: currentPageLabel(), href: location.href.split("/").pop(), source: "", sub: "", ...ctx };
+  ensureReportModal();
+  document.getElementById("report-context").innerHTML = `
+    <div class="report-context-row"><span>Reporting</span><strong>${escapeHTML(_report.kind)}: ${escapeHTML(_report.title)}</strong></div>
+    ${_report.sub ? `<div class="report-context-row"><span>Details</span><strong>${escapeHTML(_report.sub)}</strong></div>` : ""}
+    <div class="report-context-row"><span>Found on</span><strong>${escapeHTML(_report.place)}${_report.source ? ` · ${escapeHTML(_report.source)}` : ""}</strong></div>`;
+  document.getElementById("report-reason").selectedIndex = 0;
+  document.getElementById("report-message").value = "";
+  document.getElementById("report-count").textContent = "0 / 1000";
+  document.getElementById("report-error").textContent = "";
+  openModal("report-modal");
+  setTimeout(() => document.getElementById("report-message")?.focus(), 60);
+}
+function submitReport() {
+  const message = document.getElementById("report-message").value.trim();
+  if (message.length < 10) {
+    document.getElementById("report-error").textContent = "Please write at least a short sentence (10 characters).";
+    document.getElementById("report-message").focus();
+    return;
+  }
+  const list = loadReports();
+  list.unshift({
+    id: `rep-${Date.now()}`, type: _report.kind, itemId: _report.id || "", title: _report.title,
+    place: _report.place, source: _report.source, page: _report.href, itemHref: _report.itemHref || "",
+    reason: document.getElementById("report-reason").value, message,
+    by: CURRENT_USER.name, date: new Date().toISOString(), status: "Open",
+  });
+  saveReports(list);
+  closeModals();
+  toast("Report sent. Jazakallahu khayran, our team will review it.", "success");
+}
+// Comment "Report" links: <button data-report="comment:cmt-3">
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-report]");
+  if (!b) return;
+  const [kind, id] = b.dataset.report.split(":");
+  if (kind !== "comment") return;
+  const c = COMMENTS.find((x) => x.id === id);
+  const lecture = c && TRACKS.find((x) => x.id === c.trackId);
+  openReport({ kind: "Comment", id, title: c ? `Comment by ${c.user}` : "Comment", sub: c ? `“${c.body.slice(0, 80)}${c.body.length > 80 ? "…" : ""}”` : "", source: "Comments" + (lecture ? ` on “${lecture.title}”` : "") });
+});
 
 /* ---------- Init hook every page calls ---------- */
 function initAppPage(active) {

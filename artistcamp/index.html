@@ -164,7 +164,7 @@
         });
         renderContinue();
 
-        document.getElementById("madeforyou-rail").innerHTML = PLAYLISTS.slice(0, 6).map((p) => cardHTML(p, "playlist")).join("");
+        document.getElementById("madeforyou-rail").innerHTML = visibleCollections().slice(0, 6).map((p) => cardHTML(p, "playlist")).join("");
 
         document.getElementById("trending-body").innerHTML = TRACKS.slice(0, 8)
             .sort((a, b) => b.plays - a.plays)
@@ -196,7 +196,7 @@
         </div>
       </a>`).join("");
 
-        document.getElementById("popular-playlists-grid").innerHTML = PLAYLISTS.slice(4, 9).map((p) => cardHTML(p, "playlist")).join("");
+        document.getElementById("popular-playlists-grid").innerHTML = officialCollections().slice(0, 5).map((p) => cardHTML(p, "playlist")).join("");
     </script>
 </body>
 

@@ -235,12 +235,26 @@ const PLAYLISTS = PLAYLIST_NAMES.map((p, i) => ({
   id: `pl-${i + 1}`,
   name: p.name,
   description: p.desc,
+  kind: i < 5 ? "personal" : "official",            // personal = made by the listener; official = made by admins
+  owner: i < 5 ? "aminanakato" : null,              // personal collections belong to one user (CURRENT_USER.username)
   creator: i < 5 ? "You" : "Ugandan Sheikhs Editorial",
   art: ART(`collection-${i}`, 700, 700),
   tracks: TRACKS.slice(i * 4, i * 4 + 12).length ? TRACKS.slice((i * 3) % TRACKS.length, (i * 3) % TRACKS.length + 10) : TRACKS.slice(0, 10),
   updated: `${(i % 20) + 1} days ago`,
-  privacy: i % 4 === 0 ? "Private" : "Public",
+  privacy: i < 5 ? "Private" : "Public",           // personal collections are ALWAYS private; official ones are public
 }));
+
+/* Collections come in two kinds:
+   - official: created by admins (admin/playlists.html), public to every listener.
+   - personal: created by a listener for themselves, visible ONLY to that listener. They never appear
+     in Home, Search, sheikh pages or profiles of other people, and admins only see an aggregate count.
+   In Laravel: collections.kind + collections.user_id, and a policy that scopes every query. */
+const isOfficialCollection = (p) => p.kind === "official";
+const isMyCollection = (p) => p.kind === "personal" && p.owner === CURRENT_USER.username;
+const canSeeCollection = (p) => isOfficialCollection(p) || isMyCollection(p);
+const officialCollections = () => PLAYLISTS.filter(isOfficialCollection);
+const myCollections = () => PLAYLISTS.filter(isMyCollection);
+const visibleCollections = () => PLAYLISTS.filter(canSeeCollection);
 
 const COMMENT_BODIES = [
   "Jazakallahu khayran, this reminder came at exactly the right time.",

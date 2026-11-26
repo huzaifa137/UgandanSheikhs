@@ -18,19 +18,36 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Collections</h1><p>Review user-created and editorial collections.</p></div></div>
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Collections</h1><p>Official collections created by the admin team. These are public to every listener.</p></div>
+          <button class="btn btn-primary" id="new-official-btn"></button>
+        </div>
+
+        <p class="private-note" style="margin-bottom:20px;" id="user-collections-note"></p>
 
         <div class="chip-row" style="margin-bottom:20px;" id="pl-chips">
-          <button class="chip active">All</button><button class="chip">Editorial</button><button class="chip">User-Created</button><button class="chip">Featured</button>
+          <button class="chip active">All</button><button class="chip">Featured</button>
         </div>
 
         <table class="data-table">
-          <thead><tr><th>Collection</th><th>Creator</th><th>Lectures</th><th>Privacy</th><th>Updated</th><th></th></tr></thead>
+          <thead><tr><th>Collection</th><th>Created by</th><th>Lectures</th><th>Visibility</th><th>Updated</th><th></th></tr></thead>
           <tbody id="playlists-table"></tbody>
         </table>
         <div id="playlists-empty"></div>
 
       </main>
+    </div>
+  </div>
+
+  <div class="modal" id="official-modal">
+    <div class="modal-head"><h3>New Official Collection</h3><button class="icon-btn" aria-label="Close" onclick="closeModals()" id="official-close"></button></div>
+    <div class="field"><label>Collection name</label><input class="input" id="official-name" placeholder="e.g. Ramadan Preparation" /></div>
+    <div class="field"><label>Description</label><textarea class="textarea" placeholder="What will listeners find in this collection?"></textarea></div>
+    <label class="flex items-center gap-8" style="font-size:13.5px;margin-bottom:6px;"><input type="checkbox" /> Feature on the homepage</label>
+    <p class="field-hint">Official collections are visible to all listeners.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
+      <button class="btn btn-primary" id="official-save">Create Collection</button>
     </div>
   </div>
 
@@ -42,14 +59,23 @@
     initAdminPage("playlists", "Collections");
 
     // "Featured" = the same five collections shown as Promoted Collections on admin/featured.html
-    const FEATURED = new Set(PLAYLISTS.slice(0, 5).map(p => p.id));
-    const isEditorial = (p) => /editorial/i.test(p.creator);
+    const FEATURED = new Set(officialCollections().slice(0, 5).map(p => p.id));
+
+    // Listener collections are private: admins only ever see how many exist, never what is in them.
+    const listenerTotal = ADMIN_USERS.reduce((s, u) => s + u.playlists, 0);
+    document.getElementById("user-collections-note").innerHTML = `${ICONS.lock}<span><strong>${listenerTotal}</strong> private collections have been created by listeners. They are only visible to their owners and are not shown here.</span>`;
+    document.getElementById("new-official-btn").innerHTML = `${ICONS.plus}<span>New Official Collection</span>`;
+    document.getElementById("official-close").innerHTML = ICONS.x;
+    document.getElementById("new-official-btn").addEventListener("click", () => { ensureOverlay(); document.getElementById("official-name").value = ""; openModal("official-modal"); });
+    document.getElementById("official-save").addEventListener("click", () => {
+      const n = document.getElementById("official-name");
+      if (!n.value.trim()) { n.focus(); return toast("Give the collection a name", "warning"); }
+      closeModals(); toast("Official collection created", "success");
+    });
 
     const PL_FILTERS = {
-      "All":          () => true,
-      "Editorial":    (tr) => tr.dataset.editorial === "true",
-      "User-Created": (tr) => tr.dataset.editorial !== "true",
-      "Featured":     (tr) => tr.dataset.featured === "true",
+      "All":      () => true,
+      "Featured": (tr) => tr.dataset.featured === "true",
     };
     let plFilter = "All";
     function applyPlaylistFilter() {
@@ -61,8 +87,8 @@
       });
       document.getElementById("playlists-empty").innerHTML = shown ? "" : emptyStateHTML({
         icon: "layers",
-        title: plFilter === "All" ? "No collections" : `No ${plFilter.toLowerCase()} collections`,
-        body: "Nothing to review in this view right now.",
+        title: plFilter === "All" ? "No official collections" : `No ${plFilter.toLowerCase()} collections`,
+        body: "Create an official collection to share it with every listener.",
       });
     }
     wireChips(document.getElementById("pl-chips"), { onChange: (value) => { plFilter = value; applyPlaylistFilter(); } });
@@ -73,12 +99,12 @@
       toast("Collection featured on homepage", "success");
     }
 
-    document.getElementById("playlists-table").innerHTML = PLAYLISTS.map(p => `
-      <tr data-editorial="${isEditorial(p)}" data-featured="${FEATURED.has(p.id)}">
+    document.getElementById("playlists-table").innerHTML = officialCollections().map(p => `
+      <tr data-featured="${FEATURED.has(p.id)}">
         <td class="flex items-center gap-8"><img src="${p.art}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;"/>${p.name}</td>
         <td>${p.creator}</td>
         <td>${p.tracks.length}</td>
-        <td><span class="badge ${p.privacy==='Public'?'badge-success':'badge-neutral'}">${p.privacy}</span></td>
+        <td><span class="badge badge-success">Public</span></td>
         <td class="text-secondary">${p.updated}</td>
         <td><div class="flex gap-8">
           <a class="icon-btn" style="width:30px;height:30px;" href="../playlist.html?id=${p.id}" title="View">${ICONS.eye}</a>

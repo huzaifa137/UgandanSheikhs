@@ -45,7 +45,7 @@ function renderSidebar(active) {
     <div class="nav-group">
       <div class="nav-group-label">Collections</div>
       <div class="playlist-nav">
-        ${PLAYLISTS.slice(0, 5).map((p) => `<a class="nav-link" href="playlist.html?id=${p.id}"><span style="width:18px;height:18px;border-radius:4px;background:var(--surface-3);flex-shrink:0;background-image:url('${p.art}');background-size:cover;"></span><span class="truncate">${p.name}</span></a>`).join("")}
+        ${myCollections().slice(0, 5).map((p) => `<a class="nav-link" href="playlist.html?id=${p.id}"><span style="width:18px;height:18px;border-radius:4px;background:var(--surface-3);flex-shrink:0;background-image:url('${p.art}');background-size:cover;"></span><span class="truncate">${p.name}</span></a>`).join("")}
         <button class="nav-link" id="create-playlist-btn" style="width:100%;">${ICONS.plus}<span>Create Collection</span></button>
       </div>
     </div>
@@ -254,18 +254,24 @@ function renderGlobalOverlays() {
 
     <div class="modal" id="create-playlist-modal">
       <div class="modal-head"><h3>Create Collection</h3><button class="icon-btn" onclick="closeModals()">${ICONS.x}</button></div>
-      <div class="field"><label>Collection name</label><input class="input" placeholder="e.g. Friday Reminders" /></div>
+      <div class="field"><label>Collection name</label><input class="input" id="new-collection-name" placeholder="e.g. Friday Reminders" /></div>
       <div class="field"><label>Description</label><textarea class="textarea" placeholder="What's this collection about?"></textarea></div>
-      <div class="field"><label>Privacy</label>
-        <select class="select"><option>Public</option><option>Private</option><option>Unlisted</option></select>
-      </div>
+      <p class="private-note">${ICONS.lock}<span>Collections you create are private. Only you can see and open them.</span></p>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-        <button class="btn btn-primary" onclick="closeModals();toast('Collection created','success')">Create Collection</button>
+        <button class="btn btn-primary" onclick="createCollectionFromModal()">Create Collection</button>
       </div>
     </div>
   `;
   document.getElementById("overlay").addEventListener("click", closeModals);
+}
+
+function createCollectionFromModal() {
+  const input = document.getElementById("new-collection-name");
+  if (!input.value.trim()) { input.focus(); input.style.borderColor = "var(--error)"; return toast("Give your collection a name", "warning"); }
+  input.style.borderColor = ""; input.value = "";
+  closeModals();
+  toast("Private collection created", "success");
 }
 
 function renderShell(active) {

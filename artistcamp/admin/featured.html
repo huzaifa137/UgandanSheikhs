@@ -85,7 +85,7 @@
     draggableList("feat-artists", ARTISTS.slice(0,5), a=>a.name, a=>a.genre, a=>a.img);
     draggableList("feat-albums", ALBUMS.slice(0,5), a=>a.title, a=>a.artist, a=>a.art);
     draggableList("feat-editor", ALBUMS.slice(5,9), a=>a.title, a=>a.artist, a=>a.art);
-    draggableList("feat-playlists", PLAYLISTS.slice(0,5), p=>p.name, p=>p.creator, p=>p.art);
+    draggableList("feat-playlists", officialCollections().slice(0,5), p=>p.name, p=>p.creator, p=>p.art);
   </script>
 </body>
 </html>

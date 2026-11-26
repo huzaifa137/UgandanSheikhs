@@ -41,7 +41,7 @@
         <div class="rail" id="profile-artists"></div>
 
         <div class="section-header"><h2>Public Collections</h2></div>
-        <div class="grid grid-5" id="profile-playlists"></div>
+        <div id="profile-playlists"></div>
 
         <div class="section-header"><h2>Recently Played</h2></div>
         <div class="rail" id="profile-recent"></div>
@@ -70,7 +70,7 @@
     document.querySelector(".entity-hero-actions .btn-secondary").innerHTML = ICONS.edit + "<span>Edit Profile</span>";
 
     document.getElementById("profile-artists").innerHTML = ARTISTS.slice(0,8).map(a=>cardHTML(a,"artist")).join("");
-    document.getElementById("profile-playlists").innerHTML = PLAYLISTS.slice(0,5).map(p=>cardHTML(p,"playlist")).join("");
+    document.getElementById("profile-playlists").innerHTML = emptyStateHTML({ icon: "layers", title: "No public collections", body: "Collections you create are private and only visible to you." });
     document.getElementById("profile-recent").innerHTML = TRACKS.slice(0,8).map(t => `
       <div class="card card-w"><div class="card-art"><img src="${t.art}" alt="${t.title}"/><span class="card-play">${ICONS.play}</span></div><div class="card-title truncate">${t.title}</div><div class="card-sub truncate">${t.artist}</div></div>`).join("");
   </script>

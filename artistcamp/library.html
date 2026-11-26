@@ -41,8 +41,12 @@
         </div>
 
         <div data-tabpanel="overview">
-          <div class="section-header" style="margin-top:0;"><h2>Collections</h2></div>
-          <div class="grid grid-6" id="lib-playlists"></div>
+          <div class="section-header" style="margin-top:0;"><h2>My Collections</h2><button type="button" class="see-all" data-new-collection>New collection</button></div>
+          <p class="text-secondary lib-note">Private to you. No one else can see these.</p>
+          <div class="grid grid-6" id="lib-my"></div>
+          <div class="section-header"><h2>Ugandan Sheikhs Collections</h2></div>
+          <p class="text-secondary lib-note">Curated by the Ugandan Sheikhs team for everyone.</p>
+          <div class="grid grid-6" id="lib-official"></div>
           <div class="section-header"><h2>Series</h2></div>
           <div class="grid grid-6" id="lib-albums"></div>
           <div class="section-header"><h2>Sheikhs You Follow</h2></div>
@@ -50,7 +54,12 @@
         </div>
 
         <div data-tabpanel="playlists" style="display:none;">
-          <div class="grid grid-6" id="lib-playlists-2"></div>
+          <div class="section-header" style="margin-top:0;"><h2>My Collections</h2><button type="button" class="see-all" data-new-collection>New collection</button></div>
+          <p class="text-secondary lib-note">Private to you. No one else can see these.</p>
+          <div class="grid grid-6" id="lib-my-2"></div>
+          <div class="section-header"><h2>Ugandan Sheikhs Collections</h2></div>
+          <p class="text-secondary lib-note">Curated by the Ugandan Sheikhs team for everyone.</p>
+          <div class="grid grid-6" id="lib-official-2"></div>
         </div>
         <div data-tabpanel="albums" style="display:none;">
           <div class="grid grid-6" id="lib-albums-2"></div>
@@ -102,7 +111,7 @@
     };
 
     const hrefOf = (item, kind) => kind === "artist" ? `artist.html?id=${item.id}` : kind === "album" ? `album.html?id=${item.id}` : kind === "track" ? `track.html?id=${item.id}` : `playlist.html?id=${item.id}`;
-    const subOf = (item, kind) => kind === "artist" ? `${item.followers} followers` : kind === "album" ? `${item.artist} · ${item.type}` : kind === "track" ? item.artist : `By ${item.creator} · ${item.tracks.length} lectures`;
+    const subOf = (item, kind) => kind === "artist" ? `${item.followers} followers` : kind === "album" ? `${item.artist} · ${item.type}` : kind === "track" ? item.artist : `${item.kind === "personal" ? "Private" : "By " + item.creator} · ${item.tracks.length} lectures`;
     const cardFor = (item, kind) => kind === "track" ? `
       <a class="card card-w" href="${hrefOf(item, kind)}">
         <div class="card-art"><img src="${item.art}" alt="${item.title}" loading="lazy" /></div>
@@ -116,10 +125,12 @@
       </a>`;
 
     const SECTIONS = [
-      { id: "lib-playlists",   kind: "playlist", items: () => PLAYLISTS, limit: 6 },
+      { id: "lib-my",          kind: "playlist", items: () => myCollections(),       limit: 6, empty: { title: "No collections yet", body: "Create a private collection to keep lectures you want to come back to." } },
+      { id: "lib-official",    kind: "playlist", items: () => officialCollections(), limit: 6 },
       { id: "lib-albums",      kind: "album",    items: () => ALBUMS,    limit: 6 },
       { id: "lib-artists",     kind: "artist",   items: () => ARTISTS,   limit: 6 },
-      { id: "lib-playlists-2", kind: "playlist", items: () => PLAYLISTS },
+      { id: "lib-my-2",        kind: "playlist", items: () => myCollections(),       empty: { title: "No collections yet", body: "Create a private collection to keep lectures you want to come back to." } },
+      { id: "lib-official-2",  kind: "playlist", items: () => officialCollections() },
       { id: "lib-albums-2",    kind: "album",    items: () => ALBUMS },
       { id: "lib-artists-2",   kind: "artist",   items: () => ARTISTS },
       { id: "lib-liked",       kind: "track",    items: () => TRACKS.slice(0, 10), table: true },
@@ -132,6 +143,7 @@
       SECTIONS.forEach(s => {
         let items = SORTERS[sortBy](s.items());
         if (s.limit) items = items.slice(0, s.limit);
+        if (!items.length && s.empty) { s.el.className = ""; s.el.innerHTML = emptyStateHTML({ icon: "layers", ...s.empty }); return; }
         if (view === "list") {
           s.el.className = s.table ? "" : "lib-list";
           s.el.innerHTML = s.table
@@ -150,6 +162,7 @@
     document.getElementById("lib-sort").addEventListener("change", (e) => { sortBy = e.target.value; renderLibrary(); });
     document.getElementById("view-grid").addEventListener("click", () => { view = "grid"; renderLibrary(); });
     document.getElementById("view-list").addEventListener("click", () => { view = "list"; renderLibrary(); });
+    document.querySelectorAll("[data-new-collection]").forEach(b => b.addEventListener("click", () => { ensureOverlay(); openModal("create-playlist-modal"); }));
     renderLibrary();
   </script>
 </body>

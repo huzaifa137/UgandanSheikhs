@@ -110,7 +110,7 @@
             <div class="flex gap-16" style="font-size:12px;color:var(--text-secondary);">
               <button class="flex items-center gap-8" onclick="toast('Liked comment')">${ICONS.heart} ${c.likes}</button>
               <button onclick="toast('Reply box opened')">Reply</button>
-              <button onclick="toast('Comment reported')">Report</button>
+              <button type="button" data-report="comment:${c.id}">Report</button>
             </div>
           </div>
         </div>`).join("")}

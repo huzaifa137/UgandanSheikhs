@@ -72,7 +72,7 @@
         <div class="card-sub truncate">${a.artist}</div>
       </div>`).join("");
 
-    document.getElementById("offline-playlists").innerHTML = PLAYLISTS.slice(0,5).map(p=>`
+    document.getElementById("offline-playlists").innerHTML = visibleCollections().slice(0,5).map(p=>`
       <div class="card card-w">
         <div class="card-art"><img src="${p.art}" alt="${p.name}" /><span class="badge badge-success" style="position:absolute;left:8px;top:8px;">${ICONS.cloudOff} Offline</span></div>
         <div class="card-title truncate">${p.name}</div>

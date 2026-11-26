@@ -118,7 +118,7 @@
       const artists = ARTISTS.filter(a => a.name.toLowerCase().includes(query) || a.genre.toLowerCase().includes(query));
       const tracks = TRACKS.filter(t => t.title.toLowerCase().includes(query));
       const albums = ALBUMS.filter(a => a.title.toLowerCase().includes(query));
-      const playlists = PLAYLISTS.filter(p => p.name.toLowerCase().includes(query));
+      const playlists = visibleCollections().filter(p => p.name.toLowerCase().includes(query));
       lastQuery = q;
       lastCounts = { Lectures: tracks.length, Sheikhs: artists.length, Series: albums.length, Collections: playlists.length };
 

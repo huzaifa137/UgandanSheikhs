@@ -189,20 +189,24 @@
     function renderMoments() {
       const grid = document.getElementById("moment-grid");
       const q = document.getElementById("moment-search").value.trim().toLowerCase();
-      const list = MOMENTS.filter(m => !q || m.name.toLowerCase().includes(q) || m.hint.toLowerCase().includes(q));
-      grid.innerHTML = list.map(m => {
-        const n = momentTracks(m).length;
-        return `<button type="button" class="moment-tile ${activeMoment === m.id ? "active" : ""}" data-moment="${m.id}" aria-pressed="${activeMoment === m.id}" ${n ? "" : 'aria-disabled="true" disabled'}>
+      // moments with no lectures (for the chosen topic) are hidden completely, not shown disabled
+      const available = MOMENTS.map(m => ({ m, n: momentTracks(m).length })).filter(x => x.n > 0);
+      if (activeMoment && !available.some(x => x.m.id === activeMoment)) activeMoment = null;
+      document.getElementById("moments").style.display = available.length ? "" : "none";
+      const list = available.filter(({ m }) => !q || m.name.toLowerCase().includes(q) || m.hint.toLowerCase().includes(q));
+      grid.innerHTML = list.map(({ m, n }) => {
+        return `<button type="button" class="moment-tile ${activeMoment === m.id ? "active" : ""}" data-moment="${m.id}" aria-pressed="${activeMoment === m.id}">
           <span class="moment-ico">${ICONS[m.icon]}</span>
           <span class="moment-text"><strong>${m.name}</strong><small>${n} lecture${n === 1 ? "" : "s"} · ${m.hint}</small></span>
         </button>`;
       }).join("") || `<p class="text-secondary" style="font-size:13.5px;">No moments match “${escapeHTML(q)}”.</p>`;
-      const many = MOMENTS.length > MOMENT_VISIBLE;
+      const many = available.length > MOMENT_VISIBLE;
       grid.classList.toggle("collapsed", many && !momentsExpanded && !q);
       const toggle = document.getElementById("moment-toggle");
       toggle.hidden = !many;
-      toggle.textContent = momentsExpanded ? "Show less" : `Show all ${MOMENTS.length}`;
-      document.getElementById("moment-search").hidden = !(MOMENTS.length > 12 && momentsExpanded);
+      toggle.textContent = momentsExpanded ? "Show less" : `Show all ${available.length}`;
+      document.getElementById("moment-search").hidden = !(available.length > 12 && momentsExpanded);
+      if (!available.length) { document.getElementById("moment-results").innerHTML = ""; return; }
       renderMomentResults();
     }
     function renderMomentResults() {

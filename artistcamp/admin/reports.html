@@ -18,10 +18,10 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Reports</h1><p>Content flagged by listeners for review.</p></div></div>
+        <div class="page-header"><div><h1 style="font-size:22px;">Reports</h1><p>Problems reported by listeners, with where they were reported from.</p></div></div>
 
         <table class="data-table">
-          <thead><tr><th>Type</th><th>Content</th><th>Reported By</th><th>Reason</th><th>Date</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Type</th><th>Content</th><th>Found On</th><th>Reason</th><th>Message</th><th>Reported By</th><th>Date</th><th>Status</th><th></th></tr></thead>
           <tbody id="reports-table"></tbody>
         </table>
 
@@ -35,22 +35,44 @@
   <script src="../js/app.js"></script>
   <script>
     initAdminPage("reports", "Reports");
-    const reports = COMMENTS.filter(c => c.status === "Reported").map((c,i) => ({
-      type: "Comment", content: c.body.slice(0,42) + "…", by: ["Aisha K.","Yusuf A.","Kwame O."][i%3], reason: ["Spam","Harassment","Off-topic"][i%3], date: c.time, status: i%2===0?"Open":"Resolved",
+    const fmtWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
+
+    // seeded examples (flagged comments) + real reports sent from the listener app (stored in this browser)
+    const seeded = COMMENTS.filter(c => c.status === "Reported").map((c, i) => ({
+      id: `seed-${c.id}`, type: "Comment", title: c.body.slice(0, 42) + "…", place: "Lecture page", source: "Comments",
+      reason: ["Inappropriate or disrespectful content", "Something else", "Incorrect or misleading content"][i % 3],
+      message: "Flagged by a listener.", by: ["Aisha K.", "Yusuf A.", "Kwame O."][i % 3], date: c.time, status: i % 2 === 0 ? "Open" : "Resolved", seeded: true,
     }));
-    document.getElementById("reports-table").innerHTML = reports.length ? reports.map(r => `
-      <tr>
-        <td><span class="badge badge-neutral">${r.type}</span></td>
-        <td class="truncate" style="max-width:280px;">${r.content}</td>
-        <td>${r.by}</td>
-        <td>${r.reason}</td>
-        <td class="text-secondary">${r.date}</td>
-        <td><span class="badge ${r.status==='Open'?'badge-warning':'badge-success'}">${r.status}</span></td>
-        <td><div class="flex gap-8">
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" onclick="toast('Report resolved','success')">${ICONS.check}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" onclick="this.closest('tr').remove();toast('Content removed','warning')">${ICONS.trash}</button>
-        </div></td>
-      </tr>`).join("") : `<tr><td colspan="7"><div class="empty-state"><div class="icon-wrap">${ICONS.flag}</div><h3>No open reports</h3><p>Flagged content will show up here for review.</p></div></td></tr>`;
+    let reports = [...loadReports(), ...seeded];
+
+    function renderReports() {
+      document.getElementById("reports-table").innerHTML = reports.length ? reports.map(r => `
+        <tr data-id="${r.id}">
+          <td><span class="badge badge-neutral">${escapeHTML(r.type)}</span></td>
+          <td class="truncate" style="max-width:220px;" title="${escapeHTML(r.title)}">${escapeHTML(r.title)}</td>
+          <td>${escapeHTML(r.place)}${r.source ? `<div class="text-tertiary" style="font-size:12px;">${escapeHTML(r.source)}</div>` : ""}</td>
+          <td>${escapeHTML(r.reason)}</td>
+          <td style="max-width:280px;white-space:normal;" title="${escapeHTML(r.message)}">${escapeHTML(r.message)}</td>
+          <td>${escapeHTML(r.by)}</td>
+          <td class="text-secondary">${escapeHTML(fmtWhen(r.date))}</td>
+          <td><span class="badge ${r.status==='Open'?'badge-warning':'badge-success'}">${r.status}</span></td>
+          <td><div class="flex gap-8">
+            <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" title="Mark resolved" aria-label="Mark resolved" data-act="resolve">${ICONS.check}</button>
+            <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete report" aria-label="Delete report" data-act="remove">${ICONS.trash}</button>
+          </div></td>
+        </tr>`).join("") : `<tr><td colspan="9"><div class="empty-state"><div class="icon-wrap">${ICONS.flag}</div><h3>No reports</h3><p>Problems reported by listeners will show up here.</p></div></td></tr>`;
+      labelTables();
+    }
+    document.getElementById("reports-table").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-act]"); if (!btn) return;
+      const id = btn.closest("tr").dataset.id;
+      const r = reports.find(x => x.id === id); if (!r) return;
+      if (btn.dataset.act === "resolve") { r.status = "Resolved"; toast("Report resolved", "success"); }
+      else { reports = reports.filter(x => x.id !== id); toast("Report deleted", "warning"); }
+      saveReports(reports.filter(x => !x.seeded));
+      renderReports();
+    });
+    renderReports();
   </script>
 </body>
 </html>

@@ -32,8 +32,17 @@
   <script>
     initAppPage("");
     const params = new URLSearchParams(location.search);
-    const playlist = PLAYLISTS.find(p => p.id === params.get("id")) || PLAYLISTS[0];
-    const isOwner = playlist.creator === "You";
+    const found = PLAYLISTS.find(p => p.id === params.get("id"));
+    // someone else's private collection is treated as if it does not exist
+    const hidden = found && !canSeeCollection(found);
+    const playlist = hidden ? null : (found || visibleCollections()[0]);
+    if (!playlist) {
+      document.getElementById("content").innerHTML = emptyStateHTML({ icon: "lock", title: "Collection unavailable", body: "This collection is private or no longer exists.", style: "margin-top:40px;" }) +
+        `<p style="text-align:center;margin-top:16px;"><a class="btn btn-secondary" href="library.html#playlists">Back to your library</a></p>`;
+      throw new Error("collection hidden");
+    }
+    const isOwner = isMyCollection(playlist);
+    const isPrivate = playlist.kind === "personal";
     const totalSecs = playlist.tracks.reduce((s,t)=>s+t.duration,0);
 
     document.getElementById("content").innerHTML = `
@@ -41,7 +50,7 @@
         <div class="entity-hero-body" style="margin-top:0;">
           <img class="entity-hero-art" src="${playlist.art}" alt="${playlist.name}" />
           <div class="entity-hero-info">
-            <div class="kind">${playlist.privacy} Collection</div>
+            <div class="kind">${isPrivate ? `<span class="badge-private">${ICONS.lock}Private collection · only you` + `</span>` : "Ugandan Sheikhs Collection"}</div>
             <h1>${playlist.name}</h1>
             <p class="text-secondary" style="margin:6px 0 10px;max-width:52ch;">${playlist.description}</p>
             <div class="entity-hero-meta">
@@ -56,8 +65,9 @@
           <button class="btn btn-secondary" onclick="toast('Shuffling playlist')">${ICONS.shuffle}<span>Shuffle</span></button>
           <button class="btn btn-outline" onclick="toast('Collection download started','success')">${ICONS.download}<span>Download Collection</span></button>
           <button class="icon-btn btn-icon-only" onclick="toast('Saved to library','success')">${ICONS.heart}</button>
-          <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
-          ${isOwner ? `<button class="icon-btn btn-icon-only" id="edit-playlist-btn">${ICONS.edit}</button>` : ""}
+          ${isPrivate ? "" : `<button class="icon-btn btn-icon-only" title="Copy link" aria-label="Copy link" onclick="copyLink('playlist.html?id=${playlist.id}')">${ICONS.share}</button>`}
+          ${isOwner ? `<button class="icon-btn btn-icon-only" id="edit-playlist-btn" title="Edit collection" aria-label="Edit collection">${ICONS.edit}</button>
+          <button class="icon-btn btn-icon-only" id="delete-playlist-btn" title="Delete collection" aria-label="Delete collection" style="color:var(--error);">${ICONS.trash}</button>` : ""}
         </div>
       </div>
 
@@ -82,13 +92,7 @@
         <div class="modal-head"><h3>Edit Collection</h3><button class="icon-btn" onclick="closeModals()">${ICONS.x}</button></div>
         <div class="field"><label>Collection name</label><input class="input" value="${playlist.name}" /></div>
         <div class="field"><label>Description</label><textarea class="textarea">${playlist.description}</textarea></div>
-        <div class="field"><label>Privacy</label>
-          <select class="select">
-            <option ${playlist.privacy==="Public"?"selected":""}>Public</option>
-            <option ${playlist.privacy==="Private"?"selected":""}>Private</option>
-            <option>Unlisted</option>
-          </select>
-        </div>
+        <p class="private-note">${ICONS.lock}<span>This collection is private. Only you can see and open it.</span></p>
         <div class="field"><label>Cover image</label><div class="dropzone" style="padding:24px;"><div class="icon-wrap" style="margin:0 auto 10px;width:40px;height:40px;">${ICONS.upload}</div><p style="font-size:13px;">Drop an image or browse</p></div></div>
         <div class="modal-actions">
           <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
@@ -97,6 +101,9 @@
       </div>
     `;
     document.getElementById("edit-playlist-btn")?.addEventListener("click", () => { ensureOverlay(); openModal("edit-playlist-modal"); });
+    document.getElementById("delete-playlist-btn")?.addEventListener("click", () => {
+      if (confirm(`Delete "${playlist.name}"? This can't be undone.`)) { toast("Collection deleted", "success"); setTimeout(() => location.href = "library.html#playlists", 600); }
+    });
   </script>
 </body>
 </html>
