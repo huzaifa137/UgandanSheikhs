@@ -14,11 +14,13 @@ const NAV_PRIMARY = [
   { id: "new-releases", label: "New Lectures", href: "discover.html#new", icon: "sparkle" },
   { id: "trending", label: "Trending", href: "discover.html#trending", icon: "trendingUp" },
   { id: "genres", label: "Topics", href: "discover.html#genres", icon: "tag" },
+  { id: "books", label: "Books", href: "books.html", icon: "book" },
 ];
 const NAV_LIBRARY = [
   { id: "library", label: "My Library", href: "library.html", icon: "library" },
   { id: "liked", label: "Liked Lectures", href: "liked.html", icon: "heart" },
   { id: "albums", label: "Series", href: "library.html#albums", icon: "disc" },
+  { id: "my-books", label: "My Books", href: "library.html#books", icon: "book" },
   { id: "following", label: "Following", href: "following.html", icon: "userPlus" },
   { id: "playlists", label: "Collections", href: "library.html#playlists", icon: "layers" },
   { id: "downloads", label: "Downloads", href: "downloads.html", icon: "download" },
@@ -292,6 +294,7 @@ const ADMIN_NAV = [
   { id: "artists", label: "Sheikhs", href: "artists.html", icon: "users" },
   { id: "albums", label: "Series", href: "albums.html", icon: "disc" },
   { id: "tracks", label: "Lectures", href: "tracks.html", icon: "layers" },
+  { id: "books", label: "Books", href: "books.html", icon: "book" },
   { id: "genres", label: "Topics", href: "genres.html", icon: "tag" },
   { id: "playlists", label: "Collections", href: "playlists.html", icon: "library" },
   { id: "users", label: "Users", href: "users.html", icon: "users" },

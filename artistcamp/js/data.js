@@ -203,6 +203,215 @@ function seriesOf(track) {
   return _seriesOfCache[track.id];
 }
 
+/* =====================================================================
+   Books
+   A book is a PDF (or later EPUB) that belongs to a sheikh and can be attached to a series and
+   to individual lectures, so a listener can follow the teaching on the page.
+
+   Page numbers in this file are PRINTED page numbers (the numbers on the paper pages that
+   sheikhs refer to in class). `pageOffset` is how many pages sit in front of printed page 1 in the
+   PDF file, so PDF page = printed page + pageOffset.
+
+   Laravel: books, book_chapters, book_lecture_links (lecture_id, book_id, from_page, to_page,
+   sync_points JSON), book_user_state (user_id, book_id, last_page, saved, downloaded_at),
+   book_bookmarks, book_notes. See README section "Books".
+   ===================================================================== */
+const BOOK_CHAPTERS_BIDAYAT = [
+  { title: "Preface to the tenth edition", titleAr: "مقدمة الطبعة العاشرة", page: 3, front: true },
+  { title: "Intentions of the student of knowledge", titleAr: "النوايا التي ينويها الطالب", page: 4, front: true },
+  { title: "Etiquette of the student of knowledge", titleAr: "آداب طالب العلم", page: 19, front: true },
+  { title: "Introduction", titleAr: "مقدمة", page: 45, front: true },
+  { n: 1, title: "Purification (Taharah)", titleAr: "كتاب الطهارة", page: 48, sub: [
+    { title: "Waters", titleAr: "باب المياه", page: 50 },
+    { title: "Vessels", titleAr: "باب الآنية", page: 51 },
+    { title: "Siwak and the acts of fitrah", titleAr: "باب السواك وخصال الفطرة", page: 54 },
+    { title: "Wudu", titleAr: "باب الوضوء", page: 55 },
+    { title: "Wiping over the socks", titleAr: "باب المسح على الخفين", page: 58 },
+    { title: "What nullifies wudu", titleAr: "باب نواقض الوضوء", page: 59 },
+    { title: "Ghusl", titleAr: "باب الغسل", page: 60 },
+    { title: "Tayammum", titleAr: "باب التيمم", page: 63 },
+    { title: "Removing impurity", titleAr: "باب إزالة النجاسة", page: 65 },
+  ] },
+  { n: 2, title: "Prayer (Salah)", titleAr: "كتاب الصلاة", page: 68, sub: [
+    { title: "Adhan and iqamah", titleAr: "باب الأذان والإقامة", page: 69 },
+    { title: "Conditions of a valid prayer", titleAr: "باب شروط صحة الصلاة", page: 71 },
+    { title: "Rulings of the prayer", titleAr: "باب أحكام الصلاة", page: 72 },
+    { title: "Prostrations of forgetfulness", titleAr: "باب سجود السهو", page: 81 },
+    { title: "Congregational prayer", titleAr: "باب صلاة الجماعة", page: 82 },
+    { title: "Friday prayer", titleAr: "باب صلاة الجمعة", page: 84 },
+  ] },
+  { n: 3, title: "Funerals (Janaiz)", titleAr: "كتاب الجنائز", page: 85 },
+  { n: 4, title: "Zakah", titleAr: "كتاب الزكاة", page: 90 },
+  { n: 5, title: "Fasting (Siyam)", titleAr: "كتاب الصيام", page: 95 },
+  { n: 6, title: "I'tikaf", titleAr: "كتاب الاعتكاف", page: 100 },
+  { n: 7, title: "Hajj", titleAr: "كتاب الحج", page: 102 },
+  { n: 8, title: "Jihad", titleAr: "كتاب الجهاد", page: 110 },
+  { n: 9, title: "Sales (Buyu')", titleAr: "كتاب البيع", page: 113 },
+  { n: 10, title: "Interdiction (Hajr)", titleAr: "كتاب الحجر", page: 128 },
+  { n: 11, title: "Partnerships (Sharikah)", titleAr: "كتاب الشركة", page: 133 },
+  { n: 12, title: "Loans for use (Ariyah)", titleAr: "كتاب العارية", page: 142 },
+  { n: 13, title: "Usurpation (Ghasb)", titleAr: "كتاب الغصب", page: 145 },
+  { n: 14, title: "Endowments (Waqf)", titleAr: "كتاب الوقف", page: 154 },
+  { n: 15, title: "Wills (Wasaya)", titleAr: "كتاب الوصايا", page: 160 },
+  { n: 16, title: "Inheritance (Fara'id)", titleAr: "كتاب الفرائض", page: 164 },
+  { n: 17, title: "Manumission ('Itq)", titleAr: "كتاب العتق", page: 169 },
+  { n: 18, title: "Marriage (Nikah)", titleAr: "كتاب النكاح", page: 171 },
+  { n: 19, title: "Dowry (Sadaq)", titleAr: "كتاب الصداق", page: 180 },
+  { n: 20, title: "Khul'", titleAr: "كتاب الخلع", page: 187 },
+  { n: 21, title: "Divorce (Talaq)", titleAr: "كتاب الطلاق", page: 189 },
+  { n: 22, title: "Ila'", titleAr: "كتاب الإيلاء", page: 195 },
+  { n: 23, title: "Zihar", titleAr: "كتاب الظهار", page: 197 },
+  { n: 24, title: "Li'an", titleAr: "كتاب اللعان", page: 199 },
+  { n: 25, title: "Waiting period ('Iddah)", titleAr: "كتاب العدة", page: 202 },
+  { n: 26, title: "Breastfeeding (Rada')", titleAr: "كتاب الرضاع", page: 205 },
+  { n: 27, title: "Maintenance (Nafaqat)", titleAr: "كتاب النفقات", page: 207 },
+  { n: 28, title: "Offences against persons (Jinayat)", titleAr: "كتاب الجنايات", page: 211 },
+  { n: 29, title: "Blood money (Diyat)", titleAr: "كتاب الديات", page: 216 },
+  { n: 30, title: "Prescribed punishments (Hudud)", titleAr: "كتاب الحدود", page: 222 },
+  { n: 31, title: "Foods (At'imah)", titleAr: "كتاب الأطعمة", page: 234 },
+  { n: 32, title: "Hunting and slaughter", titleAr: "كتاب الصيد والذبائح", page: 237 },
+  { n: 33, title: "Oaths (Aymaan)", titleAr: "كتاب الأيمان", page: 240 },
+  { n: 34, title: "Judiciary (Qada')", titleAr: "كتاب القضاء", page: 245 },
+  { n: 35, title: "Testimony (Shahadat)", titleAr: "كتاب الشهادات", page: 252 },
+  { n: 36, title: "Acknowledgement (Iqrar)", titleAr: "كتاب الإقرار", page: 259 },
+  { title: "Index (Fihris)", titleAr: "الفهرس", page: 263, back: true },
+  { title: "Licence to teach the text", titleAr: "إجازة في حفظ متن بداية المتفقه", page: 285, back: true },
+];
+
+const BOOKS = [
+  {
+    id: "book-1",
+    slug: "bidayat-al-mutafaqqih",
+    title: "Bidayat al-Mutafaqqih",
+    titleAr: "بداية المتفقه",
+    subtitle: "A book that gathers the rulings of fiqh into general principles",
+    subtitleAr: "كتاب يجمع الأحكام الفقهية في ضوابط كلية",
+    author: "Wahid ibn Abd al-Salam Bali",
+    authorAr: "وحيد بن عبد السلام بن بالي",
+    publisher: "Dar al-Fawa'id · Dar Ibn Rajab",
+    edition: "15th edition",
+    language: "Arabic",
+    dir: "rtl",
+    topic: "Fiqh",
+    level: "Beginner",
+    format: "PDF",
+    pages: 292,                 // pages in the PDF file
+    pageOffset: 2,              // PDF page = printed page + 2
+    fileSize: 4528715,          // bytes
+    file: `${ASSET_BASE}books/bidayat-al-mutafaqqih.pdf`,
+    cover: `${ASSET_BASE}img/books/bidayat-al-mutafaqqih.jpg`,
+    scanned: true,              // images only, so no in-book text search yet (needs OCR, see README)
+    sheikhId: "ssenjala",
+    seriesIds: ["alb-21"],
+    downloadable: true,
+    status: "Published",
+    featured: true,
+    added: "Nov 2026",
+    readers: 3920,
+    downloads: 1284,
+    description: "A beginner's compendium of Islamic jurisprudence that arranges the rulings of fiqh, from purification to acknowledgement, into short general principles that a student can memorise and return to. It opens with the intentions and etiquette of the student of knowledge. Ssenjala teaches it lesson by lesson in the series below.",
+    chapters: BOOK_CHAPTERS_BIDAYAT,
+  },
+];
+
+const bookById = (id) => BOOKS.find((b) => b.id === id) || null;
+const publishedBooks = () => BOOKS.filter((b) => b.status === "Published");
+const booksOfSheikh = (sheikhId) => publishedBooks().filter((b) => b.sheikhId === sheikhId);
+const booksOfSeries = (series) => (series && series.bookIds ? series.bookIds.map(bookById).filter(Boolean) : []);
+const bookOfLecture = (t) => (t && t.bookRef ? bookById(t.bookRef.bookId) : null);
+const lecturesOfBook = (b) => TRACKS.filter((t) => t.bookRef && t.bookRef.bookId === b.id).sort((x, y) => x.bookRef.from - y.bookRef.from);
+const printedOf = (b, pdfPage) => pdfPage - b.pageOffset;      // PDF page → printed page (≤ 0 means cover/front)
+const pdfPageOf = (b, printed) => printed + b.pageOffset;      // printed page → PDF page
+const lastPrintedPage = (b) => b.pages - b.pageOffset;
+
+function fmtBytes(n) {
+  return n >= 1048576 ? (n / 1048576).toFixed(1).replace(/\.0$/, "") + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+}
+
+/* Flat outline of a book (front matter, books, and their chapters) with the printed page each one ends on. */
+function bookOutline(b) {
+  const flat = [];
+  b.chapters.forEach((c) => {
+    flat.push({ ...c, depth: 0, label: c.n ? `${c.n}` : "" });
+    (c.sub || []).forEach((s, i) => flat.push({ ...s, depth: 1, label: "" }));
+  });
+  flat.sort((a, z) => a.page - z.page || a.depth - z.depth);
+  flat.forEach((c, i) => { c.end = flat[i + 1] ? Math.max(c.page, flat[i + 1].page - 1) : lastPrintedPage(b); });
+  return flat;
+}
+/* The chapter (deepest one) that contains a printed page, or null before the first chapter. */
+function chapterAt(b, printed) {
+  let hit = null;
+  bookOutline(b).forEach((c) => { if (c.page <= printed) hit = c; });
+  return hit;
+}
+
+/* Follow-along: which printed page a lecture is on at a given second, and the reverse.
+   Exact if an admin saved sync points ({ t: seconds, page }), otherwise spread evenly (an estimate). */
+function pageAtTime(t, secs) {
+  const { from, to } = t.bookRef;
+  if (t.syncPoints && t.syncPoints.length) {
+    let p = from;
+    t.syncPoints.forEach((s) => { if (secs >= s.t) p = s.page; });
+    return p;
+  }
+  return Math.min(to, from + Math.floor((secs / t.duration) * (to - from + 1)));
+}
+function timeAtPage(t, page) {
+  const { from, to } = t.bookRef;
+  if (t.syncPoints && t.syncPoints.length) {
+    const hit = t.syncPoints.find((s) => s.page >= page);
+    return hit ? hit.t : 0;
+  }
+  return Math.round(((page - from) / (to - from + 1)) * t.duration);
+}
+const lectureHasExactSync = (t) => !!(t.syncPoints && t.syncPoints.length);
+
+/* Ssenjala teaches Bidayat al-Mutafaqqih (demo data): one series, one lesson per stretch of pages. */
+(function seedBidayatSeries() {
+  const book = BOOKS[0];
+  const sheikh = ARTISTS.find((a) => a.id === book.sheikhId);
+  const lessons = [
+    ["Intentions and Etiquette of the Student", 4, 44, 3300],
+    ["Purification: Waters and Vessels", 48, 54, 2400],
+    ["Wudu, Wiping over the Socks and What Nullifies Wudu", 55, 59, 2700],
+    ["Ghusl, Tayammum and Removing Impurity", 60, 67, 3000],
+    ["Prayer: Adhan, Conditions and Rulings", 68, 80, 3600],
+    ["Forgetfulness, Congregation and Friday Prayer", 81, 84, 2400],
+    ["Funerals", 85, 89, 2100],
+    ["Zakah", 90, 94, 2700],
+  ];
+  const series = {
+    id: "alb-21",
+    title: "Explanation of Bidayat al-Mutafaqqih",
+    artistId: sheikh.id,
+    artist: sheikh.name,
+    type: "Series",
+    genre: "Fiqh",
+    year: 2026,
+    art: book.cover,
+    tracks: [],
+    bookIds: [book.id],
+    description: `${sheikh.name} explains Bidayat al-Mutafaqqih lesson by lesson. Open the book beside each lecture and follow the pages as he teaches.`,
+    label: "Ugandan Sheikhs",
+    copyright: `© 2026 ${sheikh.name}`,
+  };
+  lessons.forEach(([name, from, to, duration], i) => {
+    const t = {
+      id: `trk-${TRACKS.length + 1}`,
+      title: `Bidayat al-Mutafaqqih, Lesson ${i + 1}: ${name}`,
+      artistId: sheikh.id, artist: sheikh.name,
+      album: series.title, genre: "Fiqh", duration,
+      plays: 2400 - i * 190, downloads: 610 - i * 48, likes: 380 - i * 31,
+      explicit: false, downloadable: true, art: book.cover, year: 2026,
+      bookRef: { bookId: book.id, from, to },
+    };
+    TRACKS.push(t);
+    series.tracks.push(t);
+  });
+  ALBUMS.push(series);
+})();
+
 /* "Listen by Moment" (Discover). PLACEHOLDER RULES for the prototype: in Laravel these become
    tags on each lecture (a lecture_moment pivot table). Add as many as you like, the UI copes. */
 const _topicIn = (t, ...names) => names.includes(t.genre);

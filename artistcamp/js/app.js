@@ -202,7 +202,8 @@ function wireGlobalSearch() {
     const artists = ARTISTS.filter((a) => a.name.toLowerCase().includes(q)).slice(0, 3);
     const tracks = TRACKS.filter((t) => t.title.toLowerCase().includes(q)).slice(0, 3);
     const albums = ALBUMS.filter((a) => a.title.toLowerCase().includes(q)).slice(0, 2);
-    if (!artists.length && !tracks.length && !albums.length) {
+    const books = publishedBooks().filter((b) => `${b.title} ${b.titleAr} ${b.author} ${b.authorAr}`.toLowerCase().includes(q)).slice(0, 2);
+    if (!artists.length && !tracks.length && !albums.length && !books.length) {
       box.innerHTML = `<div class="nav-group-label">No quick matches</div><a class="menu-item" href="search.html?q=${encodeURIComponent(input.value.trim())}">${ICONS.search}Search all for “${escapeHTML(input.value.trim())}”</a>`;
       box.classList.add("open");
       return;
@@ -211,6 +212,7 @@ function wireGlobalSearch() {
       artists.length ? `<div class="nav-group-label">Sheikhs</div>${artists.map((a) => `<a class="menu-item" href="artist.html?id=${a.id}">${ICONS.users}${a.name}</a>`).join("")}` : "",
       tracks.length ? `<div class="nav-group-label">Lectures</div>${tracks.map((t) => `<a class="menu-item" href="track.html?id=${t.id}">${ICONS.disc}${t.title}</a>`).join("")}` : "",
       albums.length ? `<div class="nav-group-label">Series</div>${albums.map((a) => `<a class="menu-item" href="album.html?id=${a.id}">${ICONS.disc}${a.title}</a>`).join("")}` : "",
+      books.length ? `<div class="nav-group-label">Books</div>${books.map((b) => `<a class="menu-item" href="book.html?id=${b.id}">${ICONS.book}${escapeHTML(b.title)}</a>`).join("")}` : "",
       `<a class="menu-item" href="search.html?q=${encodeURIComponent(input.value.trim())}">${ICONS.search}See all results for “${escapeHTML(input.value.trim())}”</a>`,
     ].join("");
     box.classList.add("open");
@@ -304,6 +306,7 @@ function seriesLinkHTML(t) {
 }
 
 function cardHTML(item, kind) {
+  if (kind === "book") return bookCardHTML(item);
   const href = kind === "artist" ? `artist.html?id=${item.id}` : kind === "album" ? `album.html?id=${item.id}` : `playlist.html?id=${item.id}`;
   const title = item.name || item.title;
   const sub = kind === "artist" ? item.genre : kind === "album" ? item.artist : item.kind === "personal" ? "Private · only you" : `By ${item.creator}`;
@@ -432,6 +435,7 @@ function lectureMenuSpec(t, anchor) {
         ? { icon: "download", label: "Download", onClick: () => toast("Download started") }
         : { icon: "cloudOff", label: "Streaming only", disabled: true },
       { divider: true },
+      bookOfLecture(t) ? { icon: "book", label: `Follow in the book (${pagesLabel(t.bookRef.from, t.bookRef.to)})`, href: bookReadHref(bookOfLecture(t), t.bookRef.from, t.id) } : null,
       series ? { icon: "disc", label: "Go to series", href: `album.html?id=${series.id}` } : null,
       artist ? { icon: "users", label: "Go to sheikh", href: `artist.html?id=${artist.id}` } : null,
       { icon: "file", label: "Open lecture page", href: `track.html?id=${t.id}` },
@@ -466,6 +470,7 @@ function seriesMenuSpec(a) {
       { icon: "download", label: dl ? `Download ${dl} lecture${dl === 1 ? "" : "s"}` : "No downloads available", disabled: !dl, onClick: () => toast("Series download started", "success") },
       { icon: "library", label: "Save to library", onClick: () => toast("Saved to library", "success") },
       { divider: true },
+      ...booksOfSeries(a).map((b) => ({ icon: "book", label: `Read ${escapeHTML(b.title)}`, href: bookReadHref(b, (a.tracks.find((t) => t.bookRef) || {}).bookRef?.from) })),
       { icon: "users", label: "Go to sheikh", href: `artist.html?id=${a.artistId}` },
       { icon: "share", label: "Copy link", onClick: () => copyLink(`album.html?id=${a.id}`) },
       { icon: "flag", label: "Report a problem", onClick: () => openReport({ kind: "Series", id: a.id, title: a.title, sub: a.artist, source: "Series menu", itemHref: `album.html?id=${a.id}` }) },
@@ -503,6 +508,7 @@ document.addEventListener("click", (e) => {
   else if (kind === "player") spec = lectureMenuSpec(STATE.currentTrack, btn);
   else if (kind === "series") { const a = ALBUMS.find((x) => x.id === id); if (a) spec = seriesMenuSpec(a); }
   else if (kind === "sheikh") { const a = ARTISTS.find((x) => x.id === id); if (a) spec = sheikhMenuSpec(a); }
+  else if (kind === "book") { const b = bookById(id); if (b) spec = bookMenuSpec(b); }
   if (!spec) return toast("Options aren't available for this item");
   btn.setAttribute("aria-haspopup", "menu");
   CtxMenu.close(false);
@@ -515,7 +521,7 @@ document.addEventListener("click", (e) => {
    Prototype: saved to localStorage ("us_reports") and shown on admin/reports.html.
    Laravel: POST /reports { type, item_id, source, page_url, reason, message }. */
 const REPORT_STORE = "us_reports";
-const PAGE_LABELS = { index: "Home", discover: "Discover", library: "Your Library", search: "Search", track: "Lecture page", album: "Series page", artist: "Sheikh page", playlist: "Collection page", history: "History", liked: "Liked Lectures", downloads: "Downloads", offline: "Offline", following: "Following", profile: "Profile", settings: "Settings" };
+const PAGE_LABELS = { index: "Home", discover: "Discover", library: "Your Library", search: "Search", track: "Lecture page", album: "Series page", book: "Book page", books: "Books", reader: "Book reader", artist: "Sheikh page", playlist: "Collection page", history: "History", liked: "Liked Lectures", downloads: "Downloads", offline: "Offline", following: "Following", profile: "Profile", settings: "Settings" };
 const REPORT_REASONS = ["Won't play or download", "Wrong title, sheikh or details", "Inappropriate or disrespectful content", "Incorrect or misleading content", "Copyright concern", "Something else"];
 function currentPageLabel() {
   const file = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
@@ -613,6 +619,219 @@ function wireRailDrag() {
     rail.addEventListener("click", (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
     rail.addEventListener("dragstart", (e) => e.preventDefault());
   });
+}
+
+/* =====================================================================
+   Books: shelf service and shared builders
+   BookShelf is the browser-side stand-in for the Laravel endpoints that will store a listener's saved
+   books, reading position, bookmarks and notes. It keeps everything in localStorage ("us_books").
+   Reading position is a PDF page; bookmarks and notes use PRINTED page numbers (see data.js).
+   ===================================================================== */
+const SHELF_STORE = "us_books";
+const BookShelf = {
+  _s: null,
+  state() {
+    if (!this._s) {
+      let stored = null;
+      try { stored = JSON.parse(localStorage.getItem(SHELF_STORE) || "null"); } catch { stored = null; }
+      this._s = { saved: [], downloaded: [], progress: {}, bookmarks: {}, notes: {}, prefs: {}, ...(stored || {}) };
+    }
+    return this._s;
+  },
+  commit() { try { localStorage.setItem(SHELF_STORE, JSON.stringify(this._s)); return true; } catch { return false; } },
+
+  isSaved(id) { return this.state().saved.includes(id); },
+  toggleSaved(id) {
+    const s = this.state(), on = !s.saved.includes(id);
+    s.saved = on ? [id, ...s.saved] : s.saved.filter((x) => x !== id);
+    this.commit();
+    return on;
+  },
+  isDownloaded(id) { return this.state().downloaded.includes(id); },
+  markDownloaded(id) { const s = this.state(); if (!s.downloaded.includes(id)) { s.downloaded.unshift(id); this.commit(); } },
+  removeDownload(id) { const s = this.state(); s.downloaded = s.downloaded.filter((x) => x !== id); this.commit(); },
+
+  progress(id) { return this.state().progress[id] || null; },             // { page: PDF page, at: ms }
+  setProgress(id, pdfPage) { this.state().progress[id] = { page: pdfPage, at: Date.now() }; this.commit(); },
+  continueReading() {
+    return Object.entries(this.state().progress)
+      .map(([id, p]) => ({ book: bookById(id), ...p }))
+      .filter((x) => x.book && x.book.status === "Published")
+      .sort((a, z) => z.at - a.at);
+  },
+
+  bookmarks(id) { return (this.state().bookmarks[id] || []).slice().sort((a, z) => a.page - z.page); },
+  hasBookmark(id, page) { return (this.state().bookmarks[id] || []).some((m) => m.page === page); },
+  toggleBookmark(id, page) {
+    const s = this.state(), list = s.bookmarks[id] || [];
+    const on = !list.some((m) => m.page === page);
+    s.bookmarks[id] = on ? [...list, { page, at: Date.now() }] : list.filter((m) => m.page !== page);
+    this.commit();
+    return on;
+  },
+
+  notes(id) { return (this.state().notes[id] || []).slice().sort((a, z) => a.page - z.page || a.at - z.at); },
+  addNote(id, page, text) {
+    const s = this.state();
+    (s.notes[id] = s.notes[id] || []).push({ id: "n" + Date.now().toString(36), page, text, at: Date.now() });
+    this.commit();
+  },
+  removeNote(id, noteId) { const s = this.state(); s.notes[id] = (s.notes[id] || []).filter((n) => n.id !== noteId); this.commit(); },
+
+  pref(key, fallback) { const v = this.state().prefs[key]; return v === undefined ? fallback : v; },
+  setPref(key, value) { this.state().prefs[key] = value; this.commit(); },
+};
+
+function agoLabel(ts) {
+  const m = Math.round((Date.now() - ts) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  if (m < 1440) return `${Math.round(m / 60)} h ago`;
+  return `${Math.round(m / 1440)} d ago`;
+}
+const pagesLabel = (from, to) => (from === to ? `p. ${from}` : `pp. ${from}–${to}`);
+
+/* Link into the reader. page = PRINTED page, lectureId = the lecture to follow along with. */
+function bookReadHref(b, page, lectureId) {
+  const q = new URLSearchParams({ id: b.id });
+  if (page) q.set("page", page);
+  if (lectureId) q.set("lecture", lectureId);
+  return `reader.html?${q}`;
+}
+/* Where "Continue" should open: last position if there is one, else the start */
+function bookResumeHref(b) {
+  const p = BookShelf.progress(b.id);
+  const printed = p ? printedOf(b, p.page) : 0;
+  return bookReadHref(b, printed >= 1 ? printed : 0);
+}
+
+function downloadBook(b) {
+  if (!b.downloadable) return toast("The publisher allows reading online only", "warning");
+  const a = Object.assign(document.createElement("a"), { href: b.file, download: `${b.slug}.pdf` });
+  document.body.appendChild(a); a.click(); a.remove();
+  BookShelf.markDownloaded(b.id);
+  toast(`Downloading ${b.title} (${fmtBytes(b.fileSize)})`, "success");
+}
+
+/* ---- Save to shelf button (any element with data-shelf="<book id>" is wired by one delegated handler) ---- */
+function shelfBtnInner(on, iconOnly) {
+  return (on ? ICONS.check : ICONS.library) + (iconOnly ? "" : `<span>${on ? "On your shelf" : "Save to shelf"}</span>`);
+}
+function shelfButtonHTML(b, cls = "btn btn-secondary") {
+  const on = BookShelf.isSaved(b.id), iconOnly = cls.includes("btn-icon-only");
+  return `<button type="button" class="${cls}" data-shelf="${b.id}" aria-pressed="${on}" title="${on ? "Remove from your shelf" : "Save to your shelf"}">${shelfBtnInner(on, iconOnly)}</button>`;
+}
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-shelf]");
+  if (!btn) return;
+  e.preventDefault();
+  const b = bookById(btn.dataset.shelf);
+  if (!b) return;
+  const on = BookShelf.toggleSaved(b.id);
+  document.querySelectorAll(`[data-shelf="${b.id}"]`).forEach((x) => {
+    x.innerHTML = shelfBtnInner(on, x.classList.contains("btn-icon-only"));
+    x.setAttribute("aria-pressed", on);
+    x.title = on ? "Remove from your shelf" : "Save to your shelf";
+  });
+  document.dispatchEvent(new CustomEvent("shelf:change", { detail: { id: b.id, saved: on } }));
+  toast(on ? "Saved to your shelf" : "Removed from your shelf", on ? "success" : "info");
+});
+
+/* ---- Book card (portrait cover). Use in .rail or .grid like the other cards. ---- */
+function bookCardHTML(b) {
+  const p = BookShelf.progress(b.id);
+  const pct = p ? Math.min(100, Math.round((p.page / b.pages) * 100)) : 0;
+  const t = escapeHTML(b.title);
+  return `
+  <a class="card card-w book-card" href="book.html?id=${b.id}">
+    <div class="card-art book-art">
+      <img src="${b.cover}" alt="${t}" loading="lazy" />
+      ${pct ? `<span class="book-progress" role="img" aria-label="${pct}% read"><i style="width:${pct}%"></i></span>` : ""}
+      <span class="card-play" role="button" aria-label="Read ${t}" onclick="event.preventDefault();event.stopPropagation();location.href='${bookResumeHref(b)}'">${ICONS.book}</span>
+    </div>
+    <div class="card-title truncate">${t}</div>
+    <div class="card-sub truncate">${escapeHTML(b.author)}</div>
+  </a>`;
+}
+
+/* ---- Lecture page: "Follow along in the book" ---- */
+function followAlongHTML(t) {
+  const b = bookOfLecture(t);
+  if (!b) return "";
+  const { from, to } = t.bookRef;
+  const ch = chapterAt(b, from);
+  return `
+  <section class="follow-card" aria-label="Follow along in the book">
+    <a class="follow-cover" href="book.html?id=${b.id}"><img src="${b.cover}" alt="Cover of ${escapeHTML(b.title)}" /></a>
+    <div class="follow-body">
+      <div class="follow-kicker">${ICONS.headphones}<span>Follow along in the book</span></div>
+      <h3 class="follow-title">${escapeHTML(b.title)} <span class="ar" lang="ar">${b.titleAr}</span></h3>
+      <p class="follow-sub">This lecture covers ${pagesLabel(from, to)}${ch ? `, starting in <span class="ar" lang="ar">${ch.titleAr}</span>` : ""}. Keep the book open beside the audio.</p>
+      <div class="follow-actions">
+        <a class="btn btn-primary btn-sm" href="${bookReadHref(b, from, t.id)}">${ICONS.book}<span>Open at page ${from}</span></a>
+        ${b.downloadable ? `<button type="button" class="btn btn-secondary btn-sm" onclick="downloadBook(bookById('${b.id}'))">${ICONS.download}<span>Download PDF</span></button>` : ""}
+        ${shelfButtonHTML(b, "btn btn-ghost btn-sm")}
+      </div>
+    </div>
+  </section>`;
+}
+
+/* ---- Series page: "Study with the book" ---- */
+function seriesBookHTML(series) {
+  const books = booksOfSeries(series);
+  if (!books.length) return "";
+  return books.map((b) => {
+    const linked = series.tracks.filter((t) => t.bookRef && t.bookRef.bookId === b.id);
+    const from = linked.length ? Math.min(...linked.map((t) => t.bookRef.from)) : 0;
+    const to = linked.length ? Math.max(...linked.map((t) => t.bookRef.to)) : 0;
+    const first = linked[0];
+    return `
+    <section class="follow-card" aria-label="Study with the book">
+      <a class="follow-cover" href="book.html?id=${b.id}"><img src="${b.cover}" alt="Cover of ${escapeHTML(b.title)}" /></a>
+      <div class="follow-body">
+        <div class="follow-kicker">${ICONS.book}<span>Study with the book</span></div>
+        <h3 class="follow-title">${escapeHTML(b.title)} <span class="ar" lang="ar">${b.titleAr}</span></h3>
+        <p class="follow-sub">${escapeHTML(b.author)}. ${linked.length ? `The ${linked.length} lectures in this series cover ${pagesLabel(from, to)}; each lecture shows its own pages below.` : "Read it alongside this series."}</p>
+        <div class="follow-actions">
+          <a class="btn btn-primary btn-sm" href="${first ? bookReadHref(b, first.bookRef.from, first.id) : bookResumeHref(b)}">${ICONS.book}<span>Read along</span></a>
+          ${b.downloadable ? `<button type="button" class="btn btn-secondary btn-sm" onclick="downloadBook(bookById('${b.id}'))">${ICONS.download}<span>Download PDF</span></button>` : ""}
+          ${shelfButtonHTML(b, "btn btn-ghost btn-sm")}
+        </div>
+      </div>
+    </section>`;
+  }).join("");
+}
+
+/* Small "pp. 55–59" link shown on a lecture row. */
+function lecturePagesChip(t) {
+  const b = bookOfLecture(t);
+  if (!b) return "";
+  return `<a class="book-pages" href="${bookReadHref(b, t.bookRef.from, t.id)}" title="Open ${escapeHTML(b.title)} at these pages">${ICONS.book}<span>${pagesLabel(t.bookRef.from, t.bookRef.to)}</span></a>`;
+}
+
+function bookMenuSpec(b) {
+  const sheikh = ARTISTS.find((a) => a.id === b.sheikhId);
+  const p = BookShelf.progress(b.id);
+  const printed = p ? printedOf(b, p.page) : 0;
+  const saved = BookShelf.isSaved(b.id);
+  return {
+    title: b.title, subtitle: `${b.author} · ${b.format}`, art: b.cover,
+    items: [
+      { icon: "book", label: printed >= 1 ? `Continue reading (p. ${printed})` : "Read now", href: bookResumeHref(b) },
+      b.downloadable ? { icon: "download", label: `Download PDF (${fmtBytes(b.fileSize)})`, onClick: () => downloadBook(b) } : { icon: "cloudOff", label: "Read online only", disabled: true },
+      { icon: saved ? "check" : "library", label: saved ? "Remove from shelf" : "Save to shelf", onClick: () => {
+          const on = BookShelf.toggleSaved(b.id);
+          document.querySelectorAll(`[data-shelf="${b.id}"]`).forEach((x) => { x.innerHTML = shelfBtnInner(on, x.classList.contains("btn-icon-only")); x.setAttribute("aria-pressed", on); });
+          document.dispatchEvent(new CustomEvent("shelf:change", { detail: { id: b.id, saved: on } }));
+          toast(on ? "Saved to your shelf" : "Removed from your shelf", on ? "success" : "info");
+        } },
+      { divider: true },
+      { icon: "file", label: "Open book page", href: `book.html?id=${b.id}` },
+      sheikh ? { icon: "users", label: "Go to sheikh", href: `artist.html?id=${sheikh.id}` } : null,
+      { icon: "share", label: "Copy link", onClick: () => copyLink(`book.html?id=${b.id}`) },
+      { icon: "flag", label: "Report a problem", onClick: () => openReport({ kind: "Book", id: b.id, title: b.title, sub: b.author, source: "Book menu", itemHref: `book.html?id=${b.id}` }) },
+    ].filter(Boolean),
+  };
 }
 
 /* ---------- Init hook every page calls ---------- */
