@@ -38,30 +38,30 @@
     const bars = Array.from({length:70},(_,i)=> 10 + Math.round(Math.sin(i*0.4)*18 + Math.random()*22));
 
     document.getElementById("content").innerHTML = `
-      <div class="hero" style="grid-template-columns:280px 1fr;padding:32px;">
+      <div class="hero track-hero">
         <div class="hero-art" style="box-shadow:var(--shadow-2);"><img src="${track.art}" alt="${track.title}" /></div>
-        <div>
+        <div class="track-hero-copy">
           <div class="eyebrow">${track.genre} ${track.explicit ? '· <span class="badge badge-explicit" style="vertical-align:1px;">E</span>' : ""}</div>
-          <h1 style="font-size:2.2rem;margin:8px 0 6px;">${track.title}</h1>
-          <div class="entity-hero-meta" style="margin-bottom:18px;">
+          <h1 class="track-title">${track.title}</h1>
+          <div class="entity-hero-meta track-meta">
             <a href="artist.html?id=${artist.id}" style="color:var(--text-primary);font-weight:600;">${artist.name}</a>
             <span>·</span><a href="album.html?id=alb-1" style="color:var(--text-secondary);">${track.album}</a>
             <span>·</span><span>${track.year}</span>
           </div>
-          <div class="hero-actions" style="margin-bottom:22px;">
-            <button class="btn btn-primary" onclick="toast('Playing ${track.title.replace(/'/g,"")}')">${ICONS.play}<span>Play</span></button>
+          <div class="hero-actions track-actions">
+            <button class="btn btn-primary btn-play" onclick="toast('Playing ${track.title.replace(/'/g,"")}')">${ICONS.play}<span>Play</span></button>
             ${track.downloadable ? `<button class="btn btn-secondary" onclick="toast('Download started','success')">${ICONS.download}<span>Download</span></button>` : `<button class="btn btn-secondary" disabled>${ICONS.download}<span>Streaming Only</span></button>`}
             <button class="btn btn-outline" id="track-like-btn">${ICONS.heart}<span>Like</span></button>
             <button class="icon-btn btn-icon-only" onclick="toast('Added to playlist selector')">${ICONS.plus}</button>
             <button class="icon-btn btn-icon-only" onclick="toast('Link copied to clipboard')">${ICONS.share}</button>
           </div>
-          <div class="flex gap-16 text-secondary" style="font-size:13px;">
+          <div class="flex gap-16 text-secondary track-stats">
             <span>${fmtCount(track.plays)} plays</span><span>${fmtCount(track.downloads)} downloads</span><span>${fmtCount(track.likes)} likes</span>
           </div>
         </div>
       </div>
 
-      <div class="wave" style="margin:28px 0;">
+      <div class="wave track-wave">
         ${bars.map((h,i)=>`<span style="height:${h}px;" class="${i<26?'played':''}"></span>`).join("")}
       </div>
 

@@ -71,7 +71,7 @@ function renderTopbar() {
     </div>
     <div class="topbar-right">
       <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Switch theme">${ICONS.moon}${ICONS.ocean}${ICONS.sun}</button>
-      <span class="status-pill ${STATE.online ? "online" : "offline"}" id="status-pill">
+      <span class="status-pill ${STATE.online ? "online" : "offline"}" id="status-pill" role="button" tabindex="0" aria-label="${STATE.online ? "Online — click to simulate offline mode" : "Offline mode — click to go back online"}">
         <span class="status-dot"></span>${STATE.online ? "Online" : "Offline Mode"}
       </span>
       <button class="icon-btn" id="notif-btn" aria-label="Notifications" style="position:relative;">

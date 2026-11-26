@@ -118,6 +118,8 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
   display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
   padding:6px 11px;border-radius:var(--radius-pill);
 }
+.status-pill{cursor:pointer;user-select:none;}
+.status-pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .status-pill.online{background:var(--success-soft);color:var(--success);}
 .status-pill.offline{background:var(--warning-soft);color:var(--warning);}
 .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
@@ -246,6 +248,22 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 .t-actions{display:flex;gap:4px;justify-content:flex-end;opacity:0;transition:opacity var(--dur-fast) var(--ease);}
 .track-row:hover .t-actions{opacity:1;}
 
+/* Accent colour picker (Settings → Appearance) */
+.accent-picker{display:flex;gap:12px;flex-wrap:wrap;}
+.accent-swatch{
+  position:relative;width:34px;height:34px;border-radius:50%;background:var(--swatch);
+  border:2px solid transparent;box-shadow:inset 0 0 0 2px var(--bg-canvas);cursor:pointer;
+  transition:transform var(--dur-fast) var(--ease),border-color var(--dur-fast) var(--ease);
+}
+.accent-swatch:hover{transform:scale(1.1);}
+.accent-swatch:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.accent-swatch.selected{border-color:var(--text-primary);}
+.accent-swatch.selected::after{
+  content:"";position:absolute;left:50%;top:48%;width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;
+  transform:translate(-50%,-50%) rotate(45deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));
+}
+.swatch-default{background:conic-gradient(#4EA0FF 0 50%,#1FB87A 0 100%);}
+
 /* Clickable lecture rows (Discover: Most Downloaded / Most Discussed) */
 .track-row.is-link{cursor:pointer;}
 .track-row.is-link:hover .t-num .num{display:block;}          /* these rows have no play icon, so keep the number */
@@ -292,6 +310,19 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 .tab.active{color:var(--accent);border-color:var(--accent);}
 
 /* ===================== FORMS ===================== */
+/* Show / hide password eye (js/password-toggle.js) */
+.pw-wrap{position:relative;display:block;width:100%;}
+.pw-wrap .input{padding-right:46px;}
+.pw-toggle{
+  position:absolute;top:50%;right:6px;transform:translateY(-50%);width:36px;height:36px;border-radius:8px;
+  display:inline-flex;align-items:center;justify-content:center;background:none;border:0;padding:0;
+  color:var(--text-tertiary);cursor:pointer;transition:color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease);
+}
+.pw-toggle svg{width:19px;height:19px;}
+.pw-toggle:hover{color:var(--text-primary);background:var(--surface-2);}
+.pw-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.pw-toggle[aria-pressed="true"]{color:var(--accent);}
+
 .field{display:flex;flex-direction:column;gap:7px;margin-bottom:18px;}
 .field label{font-size:12.5px;font-weight:600;color:var(--text-secondary);}
 .input,.textarea,.select{
@@ -533,6 +564,38 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
 @media (max-width:520px){
   .grid-3,.grid-2{grid-template-columns:1fr 1fr;}
   .hero-actions .btn span{display:none;}
+}
+
+/* ===================== LECTURE PAGE (track.html) HERO =====================
+   Layout lives here (not in inline styles) so it can respond to screen size.
+   Desktop/tablet: art on the left, details on the right.
+   Phone: one tidy centred column — compact art, then title and the
+   Play / Download / Like buttons, all visible without scrolling. */
+.track-hero{grid-template-columns:280px 1fr;padding:32px;}
+.track-title{font-size:2.2rem;margin:8px 0 6px;}
+.track-meta{margin-bottom:18px;}
+.track-actions{margin-bottom:22px;}
+.track-wave{margin:28px 0;}
+@media (max-width:860px){
+  .track-hero{grid-template-columns:1fr;gap:18px;padding:20px 18px 22px;}
+  .track-hero .hero-art{
+    /* as big as 208px, shrinking on short screens so Play / Download / Like stay above the mini-player */
+    width:min(100%,clamp(120px,calc(100vh - 490px),208px));
+    width:min(100%,clamp(120px,calc(100svh - 490px),208px));
+    max-width:none;margin:0 auto;
+  }
+  .track-hero-copy{text-align:center;}
+  .track-title{font-size:1.55rem;line-height:1.2;margin:6px 0 8px;}
+  .track-meta{justify-content:center;margin-bottom:14px;}
+  .track-actions{justify-content:center;gap:8px;margin-bottom:14px;}
+  .track-stats{justify-content:center;gap:12px;font-size:12.5px;}
+  .track-wave{margin:18px 0;}
+}
+@media (max-width:520px){
+  /* the global rule hides button labels on phones; the lecture page needs Play / Download / Like spelled out */
+  .track-actions .btn span{display:inline;}
+  .track-actions .btn-play{flex:1 1 100%;justify-content:center;}
+  .track-actions .btn:not(.btn-play):not(.btn-icon-only){flex:1 1 0;justify-content:center;min-width:0;padding-left:10px;padding-right:10px;}
 }
 
 /* ===================== THEME TOGGLE ===================== */

@@ -200,15 +200,29 @@ function wireGlobalSearch() {
 }
 
 /* ---------- Connectivity simulation ---------- */
-function wireConnectivityToggle(btnId) {
-  const btn = document.getElementById(btnId);
-  btn?.addEventListener("click", () => {
-    STATE.online = !STATE.online;
-    renderTopbar();
-    wireGlobalSearch();
-    wireMenu("user-menu-btn", "user-menu");
-    wireMenu("notif-btn", "notif-drawer-btn");
-    toast(STATE.online ? "Back online — syncing library" : "You're offline. Showing downloaded lectures.", STATE.online ? "success" : "warning");
+// The topbar status pill flips STATE.online. It's updated IN PLACE and listened to via ONE
+// delegated handler on document, so it keeps working however many times the topbar is
+// re-rendered (the old per-element listener died with the first re-render, which is why
+// the pill could go Offline but never come back Online).
+function paintStatusPill() {
+  const pill = document.getElementById("status-pill");
+  if (!pill) return;
+  pill.classList.toggle("online", STATE.online);
+  pill.classList.toggle("offline", !STATE.online);
+  pill.setAttribute("aria-label", STATE.online ? "Online — click to simulate offline mode" : "Offline mode — click to go back online");
+  pill.lastChild.textContent = STATE.online ? "Online" : "Offline Mode";
+}
+function toggleConnectivity() {
+  STATE.online = !STATE.online;
+  paintStatusPill();
+  toast(STATE.online ? "Back online — syncing library" : "You're offline. Showing downloaded lectures.", STATE.online ? "success" : "warning");
+}
+function wireConnectivityToggle() {
+  if (wireConnectivityToggle.done) return;
+  wireConnectivityToggle.done = true;
+  document.addEventListener("click", (e) => { if (e.target.closest("#status-pill")) toggleConnectivity(); });
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.closest && e.target.closest("#status-pill")) { e.preventDefault(); toggleConnectivity(); }
   });
 }
 
@@ -263,5 +277,5 @@ function initAppPage(active) {
   wireMenu("notif-btn", "notif-drawer-btn");
   document.getElementById("notif-btn")?.addEventListener("click", () => { ensureOverlay(); openDrawer("notif-drawer"); });
   document.getElementById("create-playlist-btn")?.addEventListener("click", () => { ensureOverlay(); openModal("create-playlist-modal"); });
-  document.getElementById("status-pill")?.addEventListener("click", () => { STATE.online = !STATE.online; renderTopbar(); wireGlobalSearch(); wireMenu("user-menu-btn", "user-menu"); wireMenu("notif-btn", "notif-drawer-btn"); document.getElementById("notif-btn")?.addEventListener("click", () => { ensureOverlay(); openDrawer("notif-drawer"); }); toast(STATE.online ? "Back online — syncing library" : "You're offline. Showing downloaded lectures.", STATE.online ? "success" : "warning"); });
+  wireConnectivityToggle();
 }
