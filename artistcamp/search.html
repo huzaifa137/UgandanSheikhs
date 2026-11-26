@@ -140,6 +140,10 @@
       if (e.target.value.trim()) runSearch(e.target.value.trim());
       else { document.getElementById("empty-search").style.display="block"; document.getElementById("results").style.display="none"; }
     });
+
+    // Opened from the top-bar search (Enter / "See all results"): search.html?q=...
+    const initialQuery = new URLSearchParams(location.search).get("q");
+    if (initialQuery && initialQuery.trim()) runSearch(initialQuery.trim());
   </script>
 </body>
 </html>

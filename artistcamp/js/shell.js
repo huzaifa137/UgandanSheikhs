@@ -64,9 +64,10 @@ function renderTopbar() {
       <button class="icon-btn" onclick="history.back()" aria-label="Back">${ICONS.chevLeft}</button>
       <button class="icon-btn" onclick="history.forward()" aria-label="Forward">${ICONS.chevRight}</button>
     </div>
-    <div class="search-field">
+    <div class="search-field" role="search">
       ${ICONS.search}
-      <input id="global-search" type="text" placeholder="Search sheikhs, series, lectures and collections" autocomplete="off" />
+      <input id="global-search" type="text" placeholder="Search sheikhs, series, lectures and collections" autocomplete="off" enterkeyhint="search" aria-label="Search sheikhs, series, lectures and collections" />
+      <button type="button" class="search-close" id="search-close" aria-label="Close search">${ICONS.x}</button>
       <div class="menu" id="search-autocomplete" style="left:0;right:0;top:44px;"></div>
     </div>
     <div class="topbar-right">

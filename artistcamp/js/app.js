@@ -178,25 +178,56 @@ const Player = {
 };
 
 /* ---------- Search autocomplete (mock, client side) ---------- */
+// One search bar for every screen size. On phones it sits in the top bar next to the icons and,
+// when tapped, grows to the full width of the bar (the icons step aside) with a full-width results panel.
 function wireGlobalSearch() {
   const input = document.getElementById("global-search");
   const box = document.getElementById("search-autocomplete");
   if (!input || !box) return;
-  input.addEventListener("input", () => {
+  const topbar = input.closest(".topbar");
+  const closeBtn = document.getElementById("search-close");
+  const FULL = "Search sheikhs, series, lectures and collections";
+
+  // Placeholder that fits the room: full text on desktop, shorter as the bar gets narrower
+  const mqMid = window.matchMedia("(max-width:860px)");
+  const mqSmall = window.matchMedia("(max-width:600px)");
+  const setPlaceholder = () => { input.placeholder = mqSmall.matches ? "Search…" : mqMid.matches ? "Search sheikhs, series, lectures…" : FULL; };
+  setPlaceholder();
+  [mqMid, mqSmall].forEach((mq) => (mq.addEventListener ? mq.addEventListener("change", setPlaceholder) : mq.addListener(setPlaceholder)));
+
+  const closeBox = () => box.classList.remove("open");
+  const render = () => {
     const q = input.value.trim().toLowerCase();
-    if (!q) { box.classList.remove("open"); return; }
+    if (!q) { closeBox(); return; }
     const artists = ARTISTS.filter((a) => a.name.toLowerCase().includes(q)).slice(0, 3);
     const tracks = TRACKS.filter((t) => t.title.toLowerCase().includes(q)).slice(0, 3);
     const albums = ALBUMS.filter((a) => a.title.toLowerCase().includes(q)).slice(0, 2);
-    if (!artists.length && !tracks.length && !albums.length) { box.classList.remove("open"); return; }
+    if (!artists.length && !tracks.length && !albums.length) {
+      box.innerHTML = `<div class="nav-group-label">No quick matches</div><a class="menu-item" href="search.html?q=${encodeURIComponent(input.value.trim())}">${ICONS.search}Search all for “${escapeHTML(input.value.trim())}”</a>`;
+      box.classList.add("open");
+      return;
+    }
     box.innerHTML = [
       artists.length ? `<div class="nav-group-label">Sheikhs</div>${artists.map((a) => `<a class="menu-item" href="artist.html?id=${a.id}">${ICONS.users}${a.name}</a>`).join("")}` : "",
       tracks.length ? `<div class="nav-group-label">Lectures</div>${tracks.map((t) => `<a class="menu-item" href="track.html?id=${t.id}">${ICONS.disc}${t.title}</a>`).join("")}` : "",
       albums.length ? `<div class="nav-group-label">Series</div>${albums.map((a) => `<a class="menu-item" href="album.html?id=${a.id}">${ICONS.disc}${a.title}</a>`).join("")}` : "",
+      `<a class="menu-item" href="search.html?q=${encodeURIComponent(input.value.trim())}">${ICONS.search}See all results for “${escapeHTML(input.value.trim())}”</a>`,
     ].join("");
     box.classList.add("open");
+  };
+  input.addEventListener("input", render);
+  input.addEventListener("focus", () => { topbar?.classList.add("search-open"); render(); });
+  // Enter (or the phone keyboard's Search key) opens the full results page
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && input.value.trim()) location.href = "search.html?q=" + encodeURIComponent(input.value.trim());
+    if (e.key === "Escape") { input.value = ""; closeBox(); input.blur(); }
   });
-  document.addEventListener("click", (e) => { if (!input.contains(e.target)) box.classList.remove("open"); });
+  // keep focus in the field while a result is being tapped, so the panel doesn't vanish before the tap lands
+  box.addEventListener("mousedown", (e) => e.preventDefault());
+  input.addEventListener("blur", () => { topbar?.classList.remove("search-open"); closeBox(); });
+  closeBtn?.addEventListener("mousedown", (e) => e.preventDefault());
+  closeBtn?.addEventListener("click", () => { input.value = ""; closeBox(); input.blur(); });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".search-field")) closeBox(); });
 }
 
 /* ---------- Connectivity simulation ---------- */
