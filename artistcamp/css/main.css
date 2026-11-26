@@ -601,6 +601,15 @@ h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:var(--lh
   .home-hero .hero-actions .btn{width:100%;justify-content:center;text-align:center;padding-top:13px;padding-bottom:13px;}
 }
 
+/* ===================== SERIES PAGE (album.html) BUTTONS ON PHONES =====================
+   Play Series / Shuffle / Download Series: one per row, each the full width of the section;
+   the heart / share / more icons then share a row evenly underneath. */
+@media (max-width:640px){
+  .album-actions{flex-wrap:wrap;align-items:stretch;gap:10px;padding:16px 0 0;}
+  .album-actions .btn:not(.btn-icon-only){flex:1 1 100%;width:100%;justify-content:center;text-align:center;padding-top:13px;padding-bottom:13px;}
+  .album-actions .icon-btn.btn-icon-only{flex:1 1 0;min-width:0;width:auto;height:44px;border-radius:var(--radius-pill);}
+}
+
 /* ===================== LECTURE PAGE (track.html) HERO =====================
    Layout lives here (not in inline styles) so it can respond to screen size.
    Desktop/tablet: art on the left, details on the right.
