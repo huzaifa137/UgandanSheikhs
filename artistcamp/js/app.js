@@ -592,10 +592,34 @@ document.addEventListener("click", (e) => {
   openReport({ kind: "Comment", id, title: c ? `Comment by ${c.user}` : "Comment", sub: c ? `“${c.body.slice(0, 80)}${c.body.length > 80 ? "…" : ""}”` : "", source: "Comments" + (lecture ? ` on “${lecture.title}”` : "") });
 });
 
+/* ---------- Desktop rails: click-and-drag with a hand cursor (scrollbar hidden in CSS) ---------- */
+function wireRailDrag() {
+  if (!matchMedia("(min-width:1025px) and (hover:hover)").matches) return;
+  document.querySelectorAll(".rail").forEach((rail) => {
+    if (rail.dataset.drag) return;
+    rail.dataset.drag = "1";
+    let down = false, moved = false, startX = 0, startLeft = 0;
+    rail.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || e.target.closest("button, input, select, textarea")) return;
+      down = true; moved = false; startX = e.clientX; startLeft = rail.scrollLeft;
+    });
+    window.addEventListener("pointermove", (e) => {
+      if (!down) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 5 && !moved) { moved = true; rail.classList.add("is-dragging"); }
+      if (moved) rail.scrollLeft = startLeft - dx;
+    });
+    window.addEventListener("pointerup", () => { down = false; rail.classList.remove("is-dragging"); });
+    rail.addEventListener("click", (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    rail.addEventListener("dragstart", (e) => e.preventDefault());
+  });
+}
+
 /* ---------- Init hook every page calls ---------- */
 function initAppPage(active) {
   renderShell(active);
   Player.init();
+  setTimeout(wireRailDrag, 0);   // rails are filled by the page script after this call
   wireGlobalSearch();
   wireMenu("user-menu-btn", "user-menu");
   wireMenu("notif-btn", "notif-drawer-btn");

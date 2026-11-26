@@ -1074,3 +1074,22 @@ a.hist-title:hover,.hist-sub a:hover,.hist-series a:hover{color:var(--accent);te
 .chip-grid .chip{width:100%;min-width:0;justify-content:flex-start;}
 .chip-grid .chip svg{flex-shrink:0;}
 .chip-grid .chip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;}
+
+/* Desktop rails: hand cursor + drag instead of a scrollbar */
+@media (min-width:1025px) and (hover:hover){
+  .rail{scrollbar-width:none;cursor:grab;}
+  .rail::-webkit-scrollbar{display:none;}
+  .rail.is-dragging{cursor:grabbing;scroll-snap-type:none;user-select:none;}
+  .rail.is-dragging *{pointer-events:none;}
+  .rail img{-webkit-user-drag:none;user-select:none;}
+}
+
+/* Home: Featured Series carousel */
+.home-hero{position:relative;}
+.home-hero .hero-copy,.home-hero .hero-art{transition:opacity .22s var(--ease);}
+.home-hero.is-swapping .hero-copy,.home-hero.is-swapping .hero-art{opacity:0;}
+.hero-dots{position:absolute;left:0;right:0;bottom:14px;display:flex;justify-content:center;gap:8px;z-index:2;grid-column:1/-1;}
+.hero-dots button{width:8px;height:8px;border-radius:99px;background:var(--border-strong);transition:width var(--dur-base) var(--ease),background var(--dur-base) var(--ease);padding:0;}
+.hero-dots button.active{width:24px;background:var(--accent);}
+.hero-dots button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.home-hero{padding-bottom:56px;}

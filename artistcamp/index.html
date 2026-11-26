@@ -20,6 +20,13 @@
             <header class="topbar" id="shell-topbar"></header>
             <main class="content" id="content">
 
+                <section>
+                    <div class="section-header">
+                        <h2>Featured Sheikhs</h2><a class="see-all" href="discover.html">See all</a>
+                    </div>
+                    <div class="rail" id="featured-artists-rail"></div>
+                </section>
+
                 <section class="hero home-hero">
                     <div class="hero-copy">
                         <span class="eyebrow">Featured Series</span>
@@ -33,6 +40,7 @@
                         </div>
                     </div>
                     <div class="hero-art"><img id="hero-img" src="" alt="" /></div>
+                    <div class="hero-dots" id="hero-dots" role="tablist" aria-label="Featured series"></div>
                 </section>
 
                 <section id="continue-section">
@@ -79,12 +87,6 @@
                     <div class="grid grid-6" id="new-releases-grid"></div>
                 </section>
 
-                <section>
-                    <div class="section-header">
-                        <h2>Featured Sheikhs</h2><a class="see-all" href="discover.html">See all</a>
-                    </div>
-                    <div class="rail" id="featured-artists-rail"></div>
-                </section>
 
                 <section>
                     <div class="section-header">
@@ -123,17 +125,39 @@
     <script>
         initAppPage("home");
 
-        (function fillHero() {
-            const f = ALBUMS[0],
-                sh = ARTISTS.find((a) => a.id === f.artistId) || ARTISTS[0];
-            document.getElementById("hero-title").textContent = f.title;
-            document.getElementById("hero-sheikh").textContent = sh.name;
-            document.getElementById("hero-desc").textContent = f.description;
-            document.getElementById("hero-view").href = "album.html?id=" + f.id;
-            document.getElementById("hero-play").addEventListener("click", () => toast("Playing " + f.title));
-            const img = document.getElementById("hero-img");
-            img.src = sh.img;
-            img.alt = sh.name;
+        /* Featured Series carousel: 5 series, advances every 7s, pauses on hover/focus,
+           dots to jump, and no auto-advance when the visitor prefers reduced motion. */
+        (function featuredCarousel() {
+            const slides = ALBUMS.slice(0, 5);
+            const hero = document.querySelector(".home-hero");
+            const dots = document.getElementById("hero-dots");
+            let cur = 0, timer = null;
+            dots.innerHTML = slides.map((s, i) => `<button type="button" role="tab" aria-label="Featured series ${i + 1}: ${escapeHTML(s.title)}" data-i="${i}"></button>`).join("");
+            function show(i) {
+                cur = (i + slides.length) % slides.length;
+                const f = slides[cur], sh = ARTISTS.find((a) => a.id === f.artistId) || ARTISTS[0];
+                hero.classList.add("is-swapping");
+                setTimeout(() => {
+                    document.getElementById("hero-title").textContent = f.title;
+                    document.getElementById("hero-sheikh").textContent = sh.name;
+                    document.getElementById("hero-desc").textContent = f.description;
+                    document.getElementById("hero-view").href = "album.html?id=" + f.id;
+                    const img = document.getElementById("hero-img");
+                    img.src = sh.img; img.alt = sh.name;
+                    hero.classList.remove("is-swapping");
+                }, first ? 0 : 220);
+                first = false;
+                dots.querySelectorAll("button").forEach((b, k) => { b.classList.toggle("active", k === cur); b.setAttribute("aria-selected", k === cur); });
+            }
+            let first = true;
+            document.getElementById("hero-play").addEventListener("click", () => toast("Playing " + slides[cur].title));
+            const start = () => { stop(); if (!matchMedia("(prefers-reduced-motion: reduce)").matches) timer = setInterval(() => show(cur + 1), 7000); };
+            const stop = () => { clearInterval(timer); timer = null; };
+            dots.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; show(Number(b.dataset.i)); start(); });
+            hero.addEventListener("mouseenter", stop); hero.addEventListener("mouseleave", start);
+            hero.addEventListener("focusin", stop); hero.addEventListener("focusout", start);
+            document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
+            show(0); start();
         })();
 
         /* Continue Listening: with nothing left, the whole section (heading included) is hidden.
