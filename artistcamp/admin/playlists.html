@@ -28,6 +28,7 @@
           <thead><tr><th>Collection</th><th>Creator</th><th>Lectures</th><th>Privacy</th><th>Updated</th><th></th></tr></thead>
           <tbody id="playlists-table"></tbody>
         </table>
+        <div id="playlists-empty"></div>
 
       </main>
     </div>
@@ -39,9 +40,41 @@
   <script src="../js/app.js"></script>
   <script>
     initAdminPage("playlists", "Collections");
-    wireChips(document.getElementById("pl-chips"));
+
+    // "Featured" = the same five collections shown as Promoted Collections on admin/featured.html
+    const FEATURED = new Set(PLAYLISTS.slice(0, 5).map(p => p.id));
+    const isEditorial = (p) => /editorial/i.test(p.creator);
+
+    const PL_FILTERS = {
+      "All":          () => true,
+      "Editorial":    (tr) => tr.dataset.editorial === "true",
+      "User-Created": (tr) => tr.dataset.editorial !== "true",
+      "Featured":     (tr) => tr.dataset.featured === "true",
+    };
+    let plFilter = "All";
+    function applyPlaylistFilter() {
+      let shown = 0;
+      document.querySelectorAll("#playlists-table tr").forEach(tr => {
+        const show = (PL_FILTERS[plFilter] || PL_FILTERS.All)(tr);
+        tr.style.display = show ? "" : "none";
+        if (show) shown++;
+      });
+      document.getElementById("playlists-empty").innerHTML = shown ? "" : emptyStateHTML({
+        icon: "layers",
+        title: plFilter === "All" ? "No collections" : `No ${plFilter.toLowerCase()} collections`,
+        body: "Nothing to review in this view right now.",
+      });
+    }
+    wireChips(document.getElementById("pl-chips"), { onChange: (value) => { plFilter = value; applyPlaylistFilter(); } });
+
+    function featureCollection(btn) {
+      btn.closest("tr").dataset.featured = "true";
+      applyPlaylistFilter();
+      toast("Collection featured on homepage", "success");
+    }
+
     document.getElementById("playlists-table").innerHTML = PLAYLISTS.map(p => `
-      <tr>
+      <tr data-editorial="${isEditorial(p)}" data-featured="${FEATURED.has(p.id)}">
         <td class="flex items-center gap-8"><img src="${p.art}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;"/>${p.name}</td>
         <td>${p.creator}</td>
         <td>${p.tracks.length}</td>
@@ -49,8 +82,8 @@
         <td class="text-secondary">${p.updated}</td>
         <td><div class="flex gap-8">
           <a class="icon-btn" style="width:30px;height:30px;" href="../playlist.html?id=${p.id}" title="View">${ICONS.eye}</a>
-          <button class="icon-btn" style="width:30px;height:30px;" title="Feature" onclick="toast('Collection featured on homepage','success')">${ICONS.star}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Remove" onclick="this.closest('tr').remove();toast('Collection removed','warning')">${ICONS.trash}</button>
+          <button class="icon-btn" style="width:30px;height:30px;" title="Feature" onclick="featureCollection(this)">${ICONS.star}</button>
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Remove" onclick="this.closest('tr').remove();applyPlaylistFilter();toast('Collection removed','warning')">${ICONS.trash}</button>
         </div></td>
       </tr>`).join("");
   </script>

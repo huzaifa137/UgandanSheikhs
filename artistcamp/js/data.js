@@ -238,17 +238,18 @@ const COMMENTS = Array.from({ length: 20 }, (_, i) => ({
   status: i % 9 === 0 ? "Reported" : i % 6 === 0 ? "Pending" : "Approved",
 }));
 
+/* category groups the notification drawer tabs: lectures | social | system */
 const NOTIFICATIONS = [
-  { id: 1, type: "follower", text: `${COMMENT_NAMES[2]} started following you`, time: "2h ago", unread: true },
-  { id: 2, type: "release", text: `${ARTISTS[0].name} published a new lecture, "${LECTURE_TITLES[0]}"`, time: "5h ago", unread: true },
-  { id: 3, type: "playlist", text: `Your collection "Understanding the Qur'an" was added to 12 libraries`, time: "1d ago", unread: true },
-  { id: 4, type: "reply", text: `${COMMENT_NAMES[1]} replied to your comment on "${LECTURE_TITLES[2]}"`, time: "1d ago", unread: false },
-  { id: 5, type: "download", text: `"${SERIES[0].title}" finished downloading`, time: "2d ago", unread: false },
-  { id: 6, type: "system", text: "Ugandan Sheikhs: scheduled maintenance completed", time: "3d ago", unread: false },
-  { id: 7, type: "follower", text: `${COMMENT_NAMES[3]} started following you`, time: "4d ago", unread: false },
-  { id: 8, type: "release", text: `${ARTISTS[1].name} published a new series, "${SERIES[1].title}"`, time: "5d ago", unread: false },
-  { id: 9, type: "playlist", text: `5 new lectures added to "Daily Reminders"`, time: "6d ago", unread: false },
-  { id: 10, type: "reply", text: `${COMMENT_NAMES[4]} replied to your comment on "${LECTURE_TITLES[5]}"`, time: "1w ago", unread: false },
+  { id: 1, type: "follower", category: "social", text: `${COMMENT_NAMES[2]} started following you`, time: "2h ago", unread: true },
+  { id: 2, type: "release", category: "lectures", text: `${ARTISTS[0].name} published a new lecture, "${LECTURE_TITLES[0]}"`, time: "5h ago", unread: true },
+  { id: 3, type: "playlist", category: "social", text: `Your collection "Understanding the Qur'an" was added to 12 libraries`, time: "1d ago", unread: true },
+  { id: 4, type: "reply", category: "social", text: `${COMMENT_NAMES[1]} replied to your comment on "${LECTURE_TITLES[2]}"`, time: "1d ago", unread: false },
+  { id: 5, type: "download", category: "system", text: `"${SERIES[0].title}" finished downloading`, time: "2d ago", unread: false },
+  { id: 6, type: "system", category: "system", text: "Ugandan Sheikhs: scheduled maintenance completed", time: "3d ago", unread: false },
+  { id: 7, type: "follower", category: "social", text: `${COMMENT_NAMES[3]} started following you`, time: "4d ago", unread: false },
+  { id: 8, type: "release", category: "lectures", text: `${ARTISTS[1].name} published a new series, "${SERIES[1].title}"`, time: "5d ago", unread: false },
+  { id: 9, type: "playlist", category: "lectures", text: `5 new lectures added to "Daily Reminders"`, time: "6d ago", unread: false },
+  { id: 10, type: "reply", category: "social", text: `${COMMENT_NAMES[4]} replied to your comment on "${LECTURE_TITLES[5]}"`, time: "1w ago", unread: false },
 ];
 
 const ADMIN_USERS = Array.from({ length: 10 }, (_, i) => ({

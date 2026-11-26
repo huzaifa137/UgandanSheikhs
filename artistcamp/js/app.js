@@ -36,29 +36,59 @@ function wireMenu(btnId, menuId) {
 }
 document.addEventListener("click", () => document.querySelectorAll(".menu.open").forEach((m) => m.classList.remove("open")));
 
-/* ---------- Tabs ---------- */
-function wireTabs(container) {
+/* ---------- Tabs ----------
+   Two ways to use a tab strip:
+   1. Panels   – give each tab data-target="x" and each panel data-tabpanel="x"
+                 (panels are looked up inside the strip's parent element).
+   2. Callback – pass onChange(value, tab); value is data-filter, else data-target,
+                 else the tab's text. Use this when the tabs re-render a list. */
+function wireTabs(container, onChange) {
+  if (!container) return;
   container.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       container.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       const target = tab.dataset.target;
-      if (!target) return;
-      container.parentElement.querySelectorAll("[data-tabpanel]").forEach((p) => {
-        p.style.display = p.dataset.tabpanel === target ? "" : "none";
-      });
+      if (target) {
+        container.parentElement.querySelectorAll("[data-tabpanel]").forEach((p) => {
+          p.style.display = p.dataset.tabpanel === target ? "" : "none";
+        });
+      }
+      if (typeof onChange === "function") onChange(tab.dataset.filter ?? target ?? tab.textContent.trim(), tab);
     });
   });
 }
 
-/* ---------- Chips (single or multi active) ---------- */
-function wireChips(container, { multi = false } = {}) {
+/* ---------- Chips (single or multi active) ----------
+   onChange(value, chip) fires after every click; value is the chip's
+   data-value, else its text. A chip row with no onChange only changes
+   highlight, so give it one whenever the chips are meant to filter something. */
+function wireChips(container, { multi = false, onChange } = {}) {
+  if (!container) return;
   container.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       if (!multi) container.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
       chip.classList.toggle("active");
+      if (typeof onChange === "function") onChange(chip.dataset.value ?? chip.textContent.trim(), chip);
     });
   });
+}
+
+/* ---------- Small shared helpers ---------- */
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* Icon with an explicit pixel size baked into the SVG itself, so it can never
+   balloon to fill its container even if a stylesheet rule is missing. */
+function sizedIcon(name, px) {
+  return (ICONS[name] || "").replace("<svg", `<svg width="${px}" height="${px}"`);
+}
+
+/* One empty-state implementation for every page (icon in a 64px circle, 28px glyph).
+   icon is a key of ICONS; title/body are HTML, so escape anything user-typed first. */
+function emptyStateHTML({ icon, title, body = "", style = "" } = {}) {
+  return `<div class="empty-state"${style ? ` style="${style}"` : ""}><div class="icon-wrap">${sizedIcon(icon, 28)}</div><h3>${title}</h3>${body ? `<p>${body}</p>` : ""}</div>`;
 }
 
 /* ---------- Modals ---------- */

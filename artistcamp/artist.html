@@ -36,6 +36,8 @@
     const artistTracks = TRACKS.filter(t => t.artistId === artist.id).length ? TRACKS.filter(t => t.artistId === artist.id) : TRACKS.slice(0,8);
     const artistAlbums = ALBUMS.filter(a => a.artistId === artist.id).length ? ALBUMS.filter(a => a.artistId === artist.id) : ALBUMS.slice(0,3);
     const similar = ARTISTS.filter(a => a.genre === artist.genre && a.id !== artist.id).slice(0,6);
+    // only this sheikh's own single lectures (artistAlbums above falls back to sample items, which must not count)
+    const artistSingles = ALBUMS.filter(a => a.artistId === artist.id && a.type === "Single Lecture");
 
     document.getElementById("content").innerHTML = `
       <div class="entity-hero">
@@ -89,7 +91,9 @@
       </div>
 
       <div data-tabpanel="singles" style="display:none;">
-        <div class="empty-state"><div class="icon-wrap">${ICONS.disc}</div><h3>No single lectures yet</h3><p>${artist.name} hasn't published any single lectures on Ugandan Sheikhs.</p></div>
+        ${artistSingles.length
+          ? `<div class="grid grid-6">${artistSingles.map(a=>cardHTML(a,"album")).join("")}</div>`
+          : emptyStateHTML({ icon: "disc", title: "No single lectures yet", body: `${artist.name} hasn't published any single lectures on Ugandan Sheikhs.` })}
       </div>
 
       <div data-tabpanel="playlists" style="display:none;">

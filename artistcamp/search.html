@@ -38,14 +38,23 @@
 
         <div id="results" style="display:none;">
           <div id="top-result"></div>
-          <div class="section-header"><h2>Lectures</h2></div>
-          <table class="track-table"><tbody id="result-songs"></tbody></table>
-          <div class="section-header"><h2>Sheikhs</h2></div>
-          <div class="grid grid-6" id="result-artists"></div>
-          <div class="section-header"><h2>Series</h2></div>
-          <div class="grid grid-6" id="result-albums"></div>
-          <div class="section-header"><h2>Collections</h2></div>
-          <div class="grid grid-5" id="result-playlists"></div>
+          <div id="filter-empty"></div>
+          <div data-group="Lectures">
+            <div class="section-header"><h2>Lectures</h2></div>
+            <table class="track-table"><tbody id="result-songs"></tbody></table>
+          </div>
+          <div data-group="Sheikhs">
+            <div class="section-header"><h2>Sheikhs</h2></div>
+            <div class="grid grid-6" id="result-artists"></div>
+          </div>
+          <div data-group="Series">
+            <div class="section-header"><h2>Series</h2></div>
+            <div class="grid grid-6" id="result-albums"></div>
+          </div>
+          <div data-group="Collections">
+            <div class="section-header"><h2>Collections</h2></div>
+            <div class="grid grid-5" id="result-playlists"></div>
+          </div>
         </div>
 
       </main>
@@ -66,7 +75,25 @@
 
     const filterChips = document.getElementById("filter-chips");
     filterChips.innerHTML = ["All","Lectures","Sheikhs","Series","Collections"].map((f,i)=>`<button class="chip ${i===0?"active":""}">${f}</button>`).join("");
-    wireChips(filterChips);
+
+    /* Type filter: chip text matches the data-group of each result block ("All" shows everything) */
+    let searchFilter = "All", lastQuery = "", lastCounts = {};
+    function applySearchFilter() {
+      const top = document.getElementById("top-result");
+      const noResultsAtAll = !!top.querySelector(".empty-state");
+      document.querySelectorAll("#results [data-group]").forEach(g => {
+        const wanted = searchFilter === "All" || g.dataset.group === searchFilter;
+        g.style.display = wanted && !(searchFilter !== "All" && lastCounts[g.dataset.group] === 0) ? "" : "none";
+      });
+      top.style.display = searchFilter === "All" || noResultsAtAll ? "" : "none";
+      // chosen type has no matches (but other types do): say so instead of leaving the page blank
+      const typeEmpty = searchFilter !== "All" && !noResultsAtAll && lastCounts[searchFilter] === 0;
+      document.getElementById("filter-empty").innerHTML = typeEmpty ? emptyStateHTML({
+        icon: "search", title: `No ${searchFilter.toLowerCase()} found`,
+        body: `Nothing under ${searchFilter} matches "${escapeHTML(lastQuery)}". Try All to see other results.`,
+      }) : "";
+    }
+    wireChips(filterChips, { onChange: (value) => { searchFilter = value; applySearchFilter(); } });
 
     document.getElementById("recent-list").innerHTML = ["Hamza Kayiira","Sincerity in Worship","Daily Reminders","Imaam Kyeyune"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.clock}${q}</button>`).join("");
     document.getElementById("trending-searches").innerHTML = ["Tafsir of Juz Amma","Salim Bbosa","Friday Khutbah","Foundations of Tawheed","Ramadan collections"].map(q=>`<button class="chip" onclick="runSearch('${q}')">${ICONS.trendingUp}${q}</button>`).join("");
@@ -79,12 +106,15 @@
       const tracks = TRACKS.filter(t => t.title.toLowerCase().includes(query));
       const albums = ALBUMS.filter(a => a.title.toLowerCase().includes(query));
       const playlists = PLAYLISTS.filter(p => p.name.toLowerCase().includes(query));
+      lastQuery = q;
+      lastCounts = { Lectures: tracks.length, Sheikhs: artists.length, Series: albums.length, Collections: playlists.length };
 
       if (!artists.length && !tracks.length && !albums.length && !playlists.length) {
         document.getElementById("empty-search").style.display = "none";
         document.getElementById("results").style.display = "block";
         document.getElementById("top-result").innerHTML = `<div class="empty-state"><div class="icon-wrap">${ICONS.search}</div><h3>No results for "${q}"</h3><p>Try checking your spelling or searching for something more general.</p></div>`;
         ["result-songs","result-artists","result-albums","result-playlists"].forEach(id=>document.getElementById(id).innerHTML="");
+        applySearchFilter();
         return;
       }
 
@@ -103,6 +133,7 @@
       document.getElementById("result-artists").innerHTML = artists.slice(0,6).map(a=>cardHTML(a,"artist")).join("");
       document.getElementById("result-albums").innerHTML = albums.slice(0,6).map(a=>cardHTML(a,"album")).join("");
       document.getElementById("result-playlists").innerHTML = playlists.length ? playlists.slice(0,5).map(p=>cardHTML(p,"playlist")).join("") : PLAYLISTS.slice(0,5).map(p=>cardHTML(p,"playlist")).join("");
+      applySearchFilter();
     }
 
     document.getElementById("page-search").addEventListener("input", (e) => {

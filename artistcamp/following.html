@@ -21,8 +21,8 @@
         <div class="page-header">
           <div><h1>Following</h1><p>Sheikhs you follow, and their latest lectures.</p></div>
           <div class="chip-row" id="view-chips">
-            <button class="chip active">Grid</button>
-            <button class="chip">List</button>
+            <button class="chip active" data-view="grid">Grid</button>
+            <button class="chip" data-view="list">List</button>
           </div>
         </div>
 
@@ -43,7 +43,10 @@
   <script src="js/app.js"></script>
   <script>
     initAppPage("following");
-    wireChips(document.getElementById("view-chips"));
+    // Grid = several cards per row, List = one wide row per sheikh
+    wireChips(document.getElementById("view-chips"), {
+      onChange: (_, chip) => { document.getElementById("following-grid").style.gridTemplateColumns = chip.dataset.view === "list" ? "1fr" : ""; },
+    });
 
     document.getElementById("following-grid").innerHTML = ARTISTS.map(a => `
       <div class="card" style="display:flex;gap:14px;align-items:center;padding:16px;">

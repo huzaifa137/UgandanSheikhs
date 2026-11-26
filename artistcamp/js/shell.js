@@ -164,6 +164,40 @@ function renderMobileNav(active) {
   el.innerHTML = items.map((i) => `<a class="${active === i.id ? "active" : ""}" href="${i.href}">${ICONS[i.icon]}<span>${i.label}</span></a>`).join("");
 }
 
+/* ---- Notification drawer: one row, one list per tab (all | lectures | social | system) ---- */
+const NOTIF_ICON = { follower: "userPlus", release: "sparkle", playlist: "layers", reply: "message", download: "download" };
+const NOTIF_EMPTY = {
+  lectures: "No lecture updates right now.",
+  social: "No follows or replies right now.",
+  system: "No system messages right now.",
+  all: "You're all caught up.",
+};
+
+function notifRowHTML(n) {
+  return `
+    <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-subtle);">
+      <span class="icon-btn" style="background:var(--surface-2);flex-shrink:0;">${ICONS[NOTIF_ICON[n.type] || "megaphone"]}</span>
+      <div>
+        <div style="font-size:13.5px;${n.unread ? "font-weight:600;" : "color:var(--text-secondary);"}">${n.text}</div>
+        <div style="font-size:11.5px;color:var(--text-tertiary);margin-top:3px;">${n.time}</div>
+      </div>
+    </div>`;
+}
+
+function notifListHTML(filter = "all") {
+  const items = filter === "all" ? NOTIFICATIONS : NOTIFICATIONS.filter((n) => n.category === filter);
+  return items.length
+    ? items.map(notifRowHTML).join("")
+    : emptyStateHTML({ icon: "bell", title: "Nothing here", body: NOTIF_EMPTY[filter] || NOTIF_EMPTY.all, style: "padding:48px 8px;" });
+}
+
+function wireNotifications() {
+  const tabs = document.getElementById("notif-tabs");
+  const list = document.getElementById("notif-list");
+  if (!tabs || !list) return;
+  wireTabs(tabs, (filter) => { list.innerHTML = notifListHTML(filter); list.scrollTop = 0; });
+}
+
 function renderGlobalOverlays() {
   const el = document.getElementById("shell-overlays");
   if (!el) return;
@@ -175,22 +209,13 @@ function renderGlobalOverlays() {
         <h3 style="font-size:17px;">Notifications</h3>
         <button class="icon-btn" onclick="closeModals()">${ICONS.x}</button>
       </div>
-      <div class="tabs" style="margin:14px 20px 0;">
-        <button class="tab active">All</button>
-        <button class="tab">Lectures</button>
-        <button class="tab">Social</button>
-        <button class="tab">System</button>
+      <div class="tabs" id="notif-tabs" style="margin:14px 20px 0;">
+        <button class="tab active" data-filter="all">All</button>
+        <button class="tab" data-filter="lectures">Lectures</button>
+        <button class="tab" data-filter="social">Social</button>
+        <button class="tab" data-filter="system">System</button>
       </div>
-      <div class="drawer-body">
-        ${NOTIFICATIONS.map((n) => `
-          <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-subtle);">
-            <span class="icon-btn" style="background:var(--surface-2);flex-shrink:0;">${ICONS[n.type === "follower" ? "userPlus" : n.type === "release" ? "sparkle" : n.type === "playlist" ? "layers" : n.type === "reply" ? "message" : n.type === "download" ? "download" : "megaphone"]}</span>
-            <div>
-              <div style="font-size:13.5px;${n.unread ? "font-weight:600;" : "color:var(--text-secondary);"}">${n.text}</div>
-              <div style="font-size:11.5px;color:var(--text-tertiary);margin-top:3px;">${n.time}</div>
-            </div>
-          </div>`).join("")}
-      </div>
+      <div class="drawer-body" id="notif-list">${notifListHTML("all")}</div>
       <div style="padding:14px 20px;border-top:1px solid var(--border-subtle);">
         <button class="btn btn-secondary" style="width:100%;" onclick="toast('All notifications marked as read')">Mark all as read</button>
       </div>
@@ -239,6 +264,7 @@ function renderShell(active) {
   renderPlayer();
   renderMobileNav(active);
   renderGlobalOverlays();
+  wireNotifications();
 }
 
 /* =====================================================================

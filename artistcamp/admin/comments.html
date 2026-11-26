@@ -28,6 +28,7 @@
           <thead><tr><th>User</th><th>Lecture</th><th>Comment</th><th>Date</th><th>Likes</th><th>Reports</th><th>Status</th><th></th></tr></thead>
           <tbody id="comments-table"></tbody>
         </table>
+        <div id="comments-empty"></div>
 
         <div class="drawer" id="comment-drawer">
           <div class="drawer-head"><h3 style="font-size:17px;">Comment Thread</h3><button class="icon-btn" onclick="closeModals()" id="comment-drawer-close"></button></div>
@@ -45,23 +46,52 @@
   <script>
     initAdminPage("comments", "Comments");
     document.getElementById("comment-drawer-close").innerHTML = ICONS.x;
-    wireChips(document.getElementById("status-chips"));
+    const STATUS_BADGE = { Approved: "badge-success", Pending: "badge-warning", Reported: "badge-error", Hidden: "badge-neutral" };
+
+    /* Status chips: show only the rows whose data-status matches ("All" shows everything).
+       Rows are hidden, not re-rendered, so a deleted comment stays deleted. */
+    let statusFilter = "All";
+    function applyStatusFilter() {
+      let shown = 0;
+      document.querySelectorAll("#comments-table tr").forEach(tr => {
+        const show = statusFilter === "All" || tr.dataset.status === statusFilter;
+        tr.style.display = show ? "" : "none";
+        if (show) shown++;
+      });
+      document.getElementById("comments-empty").innerHTML = shown ? "" : emptyStateHTML({
+        icon: "message",
+        title: statusFilter === "All" ? "No comments" : `No ${statusFilter.toLowerCase()} comments`,
+        body: "Nothing to review in this view right now.",
+      });
+    }
+    wireChips(document.getElementById("status-chips"), { onChange: (value) => { statusFilter = value; applyStatusFilter(); } });
+
+    // Approve / Hide change the row's real status, so the chips stay truthful
+    function setStatus(btn, status) {
+      const tr = btn.closest("tr");
+      tr.dataset.status = status;
+      const badge = tr.querySelector(".status-badge");
+      badge.className = `badge status-badge ${STATUS_BADGE[status]}`;
+      badge.textContent = status;
+      applyStatusFilter();
+      toast(status === "Approved" ? "Comment approved" : "Comment hidden", status === "Approved" ? "success" : "warning");
+    }
 
     function row(c) {
       const track = TRACKS.find(t => t.id === c.trackId) || TRACKS[0];
-      const statusBadge = { Approved: "badge-success", Pending: "badge-warning", Reported: "badge-error", Hidden: "badge-neutral" }[c.status];
-      return `<tr>
+      const statusBadge = STATUS_BADGE[c.status];
+      return `<tr data-status="${c.status}">
         <td class="flex items-center gap-8"><img class="avatar" src="${c.avatar}" width="26" height="26"/>${c.user}</td>
         <td class="truncate" style="max-width:120px;">${track.title}</td>
         <td class="truncate" style="max-width:260px;">${c.body}</td>
         <td class="text-secondary">${c.time}</td>
         <td>${c.likes}</td>
         <td>${c.status === "Reported" ? Math.ceil(c.likes/60)+1 : 0}</td>
-        <td><span class="badge ${statusBadge}">${c.status}</span></td>
+        <td><span class="badge status-badge ${statusBadge}">${c.status}</span></td>
         <td><div class="flex gap-8">
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" title="Approve" onclick="toast('Comment approved','success')">${ICONS.check}</button>
-          <button class="icon-btn" style="width:30px;height:30px;" title="Hide" onclick="toast('Comment hidden','warning')">${ICONS.cloudOff}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Comment deleted','warning')">${ICONS.trash}</button>
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" title="Approve" onclick="setStatus(this,'Approved')">${ICONS.check}</button>
+          <button class="icon-btn" style="width:30px;height:30px;" title="Hide" onclick="setStatus(this,'Hidden')">${ICONS.cloudOff}</button>
+          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();applyStatusFilter();toast('Comment deleted','warning')">${ICONS.trash}</button>
           <button class="icon-btn" style="width:30px;height:30px;" title="View Thread" onclick='openThread(${JSON.stringify(c).replace(/'/g,"&apos;")})'>${ICONS.message}</button>
         </div></td>
       </tr>`;

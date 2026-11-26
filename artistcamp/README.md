@@ -103,12 +103,17 @@ Error pages (6): 403, 404, 419, 429, 500, 503.
 `MusicPlayer` `MiniPlayer` `TrackRow` (`trackRowHTML()`) `TrackCard` / `AlbumCard`
 / `ArtistCard` / `PlaylistCard` (`cardHTML()`) `GenreTile` `CommentItem`
 `NotificationItem` `DownloadItem` `SearchAutocomplete` `PageHeader` /
-`SectionHeader` `EmptyState` `ErrorState` `SkeletonLoader` `Modal` `Drawer`
+`SectionHeader` `EmptyState` (`emptyStateHTML()`) `ErrorState` `SkeletonLoader` `Modal` `Drawer`
 `Dropdown/Menu` `ContextMenu` (`t-actions` row) `Toast` (`toast()`) `Badge`
 `Avatar` `Button` variants (`.btn-primary/secondary/ghost/outline/danger`)
-`Tabs` (`wireTabs()`) `FilterChip` (`wireChips()`) `ProgressBar` /
+`Tabs` (`wireTabs(el, onChange?)`) `FilterChip` (`wireChips(el, { onChange })`) `ProgressBar` /
 `AudioProgressBar` `VolumeControl` `UploadDropzone` `DataTable` `StatCard`
 `ActivityItem`.
+
+> **Tabs and chips must do something.** `wireTabs()` swaps `data-tabpanel` panels (via `data-target`) and
+> `wireChips()` only moves the highlight. Anything that filters or sorts content passes an `onChange`
+> callback (see the Comments sort on `track.html`, the notification drawer in `js/shell.js`).
+> Use `emptyStateHTML({ icon, title, body })` for empty states so the icon size cannot drift.
 
 ## 4. Design Tokens (`css/tokens.css`)
 

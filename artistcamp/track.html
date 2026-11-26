@@ -73,8 +73,8 @@
       <div data-tabpanel="about" style="max-width:640px;">
         <p class="text-secondary">${track.title} is a lecture on ${track.genre} by ${artist.name}, taken from ${track.album} (${track.year}). It has quickly become a favorite in listener-curated collections across the platform.</p>
       </div>
-      <div data-tabpanel="lyrics" style="display:none;max-width:640px;">
-        <div class="empty-state"><div class="icon-wrap">${ICONS.mic}</div><h3>Transcript not available</h3><p>${artist.name} hasn't added a transcript for this lecture yet.</p></div>
+      <div data-tabpanel="lyrics" style="display:none;">
+        ${emptyStateHTML({ icon: "mic", title: "Transcript not available", body: `${artist.name} hasn't added a transcript for this lecture yet.` })}
       </div>
       <div data-tabpanel="credits" style="display:none;max-width:480px;">
         <div class="grid grid-2">
@@ -86,32 +86,48 @@
       </div>
 
       <div class="section-header"><h2>Comments</h2></div>
-      <div class="chip-row" style="margin-bottom:16px;">
-        <button class="chip active">Top Comments</button>
-        <button class="chip">Newest</button>
-        <button class="chip">Oldest</button>
+      <div class="chip-row" id="comment-sort" style="margin-bottom:16px;">
+        <button class="chip active" data-sort="top">Top Comments</button>
+        <button class="chip" data-sort="newest">Newest</button>
+        <button class="chip" data-sort="oldest">Oldest</button>
       </div>
       <div class="field" style="max-width:640px;">
         <textarea class="textarea" placeholder="Share your thoughts about this lecture..."></textarea>
         <button class="btn btn-primary" style="align-self:flex-end;" onclick="toast('Comment posted','success')">Post Comment</button>
       </div>
-      <div style="max-width:640px;">
-        ${trackComments.map(c=>`
-        <div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border-subtle);">
-          <img class="avatar" src="${c.avatar}" width="38" height="38" />
-          <div style="flex:1;">
-            <div style="display:flex;gap:8px;align-items:center;"><strong style="font-size:13.5px;">${c.user}</strong><span class="text-tertiary" style="font-size:12px;">${c.time}</span>${c.status!=="Approved"?`<span class="badge badge-warning">${c.status}</span>`:""}</div>
-            <p style="font-size:13.5px;margin:4px 0 8px;">${c.body}</p>
-            <div class="flex gap-16" style="font-size:12px;color:var(--text-secondary);">
-              <button class="flex items-center gap-8" onclick="toast('Liked comment')">${ICONS.heart} ${c.likes}</button>
-              <button onclick="toast('Reply box opened')">Reply</button>
-              <button onclick="toast('Comment reported','warning')">Report</button>
-            </div>
-          </div>
-        </div>`).join("")}
-      </div>
+      <div id="comment-list" style="max-width:640px;"></div>
     `;
     wireTabs(document.getElementById("track-tabs"));
+
+    /* ---- Comments: Top / Newest / Oldest ---- */
+    // "3h ago", "2d ago", "1w ago" -> hours, so comments can be ordered by age
+    const ageInHours = (t) => {
+      const m = /^(\d+)\s*([mhdw])/i.exec(t || "");
+      return m ? Number(m[1]) * { m: 1 / 60, h: 1, d: 24, w: 168 }[m[2].toLowerCase()] : 0;
+    };
+    const COMMENT_ORDER = {
+      top:    (a, b) => b.likes - a.likes || ageInHours(a.time) - ageInHours(b.time),
+      newest: (a, b) => ageInHours(a.time) - ageInHours(b.time) || b.likes - a.likes,
+      oldest: (a, b) => ageInHours(b.time) - ageInHours(a.time) || b.likes - a.likes,
+    };
+    const commentHTML = (c) => `
+      <div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border-subtle);">
+        <img class="avatar" src="${c.avatar}" width="38" height="38" />
+        <div style="flex:1;">
+          <div style="display:flex;gap:8px;align-items:center;"><strong style="font-size:13.5px;">${c.user}</strong><span class="text-tertiary" style="font-size:12px;">${c.time}</span>${c.status!=="Approved"?`<span class="badge badge-warning">${c.status}</span>`:""}</div>
+          <p style="font-size:13.5px;margin:4px 0 8px;">${c.body}</p>
+          <div class="flex gap-16" style="font-size:12px;color:var(--text-secondary);">
+            <button class="flex items-center gap-8" onclick="toast('Liked comment')">${ICONS.heart} ${c.likes}</button>
+            <button onclick="toast('Reply box opened')">Reply</button>
+            <button onclick="toast('Comment reported','warning')">Report</button>
+          </div>
+        </div>
+      </div>`;
+    function renderComments(mode) {
+      document.getElementById("comment-list").innerHTML = [...trackComments].sort(COMMENT_ORDER[mode] || COMMENT_ORDER.top).map(commentHTML).join("");
+    }
+    renderComments("top");
+    wireChips(document.getElementById("comment-sort"), { onChange: (_, chip) => renderComments(chip.dataset.sort) });
     document.getElementById("track-like-btn").addEventListener("click", function(){
       const liked = this.classList.toggle("liked");
       this.innerHTML = liked ? `${ICONS.heartFill}<span>Liked</span>` : `${ICONS.heart}<span>Like</span>`;

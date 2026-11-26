@@ -22,7 +22,7 @@
           <div><h1>Discover Knowledge</h1><p>Find your next beneficial lecture.</p></div>
         </div>
 
-        <div class="chip-row" id="genre-chips" style="margin-bottom:18px;"></div>
+        <div id="genres"><div class="chip-row" id="genre-chips" style="margin-bottom:18px;"></div></div>
 
         <div class="section-header" style="margin-top:8px;"><h2>Listen by Moment</h2></div>
         <div class="chip-row" id="mood-chips" style="margin-bottom:8px;"></div>
@@ -39,6 +39,7 @@
         <section><div class="section-header"><h2>Most Discussed Lectures</h2></div>
           <table class="track-table"><thead><tr><th>#</th><th>Lecture</th><th>Comments</th><th>Time</th><th></th></tr></thead><tbody id="most-discussed"></tbody></table>
         </section>
+        <div id="discover-empty"></div>
 
       </main>
     </div>
@@ -56,30 +57,56 @@
   <script>
     initAppPage("discover");
 
-    const genreChips = document.getElementById("genre-chips");
-    genreChips.innerHTML = ["All", ...GENRES.map(g => g.name)].map((g, i) => `<button class="chip ${i===0?"active":""}">${g}</button>`).join("");
-    wireChips(genreChips);
-
+    /* ---- "Listen by Moment": still highlight-only (needs a rule for what counts as a Commute / Study lecture) ---- */
     const moodChips = document.getElementById("mood-chips");
     moodChips.innerHTML = ["Morning","Commute","Before Sleep","Friday","Ramadan","Study","Reflection","Under 15 min","Long-form"].map(m => `<button class="chip">${m}</button>`).join("");
     wireChips(moodChips);
 
-    document.getElementById("trending-artists").innerHTML = ARTISTS.slice(0, 10).map(a => cardHTML(a, "artist")).join("");
-    document.getElementById("recommended").innerHTML = ALBUMS.slice(0, 6).map(a => cardHTML(a, "album")).join("");
-    document.getElementById("rising-artists").innerHTML = [...ARTISTS].reverse().slice(0, 8).map(a => cardHTML(a, "artist")).join("");
-    document.getElementById("new-week").innerHTML = ALBUMS.slice(6, 12).map(a => cardHTML(a, "album")).join("");
-    document.getElementById("hidden-gems").innerHTML = ARTISTS.filter(a => !a.verified).map(a => cardHTML(a, "artist")).join("");
-    document.getElementById("editor-choice").innerHTML = ALBUMS.slice(12, 15).map(a => `
+    /* ---- Topic chips: filter every section below (topic = null means all topics) ---- */
+    // a sheikh "is on" a topic when at least one of their lectures is
+    const sheikhsOn = (list, topic) => topic ? list.filter(a => TRACKS.some(t => t.artistId === a.id && t.genre === topic)) : list;
+    const byTopic = (list, topic) => topic ? list.filter(x => x.genre === topic) : list;
+
+    const editorCardHTML = a => `
       <a class="card" href="album.html?id=${a.id}" style="display:flex;gap:14px;align-items:center;padding:14px;">
         <img src="${a.art}" style="width:74px;height:74px;border-radius:8px;object-fit:cover;flex-shrink:0;" />
         <div><div class="eyebrow" style="margin-bottom:4px;">Editor's Choice</div><div class="card-title">${a.title}</div><div class="card-sub">${a.artist}</div></div>
-      </a>`).join("");
+      </a>`;
+    const downloadedRowHTML = (t,i) => `<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${fmtCount(t.downloads)}</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Download started')">${ICONS.download}</button></div></td></tr>`;
+    const discussedRowHTML = (t,i) => `<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${(t.likes % 200)+12} comments</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><a class="icon-btn" style="width:30px;height:30px;background:none;" href="track.html?id=${t.id}">${ICONS.message}</a></div></td></tr>`;
 
-    document.getElementById("most-downloaded").innerHTML = [...TRACKS].sort((a,b)=>b.downloads-a.downloads).slice(0,8)
-      .map((t,i)=>`<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${fmtCount(t.downloads)}</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><button class="icon-btn" style="width:30px;height:30px;background:none;" onclick="toast('Download started')">${ICONS.download}</button></div></td></tr>`).join("");
+    function renderDiscover(topic) {
+      const sections = [
+        ["trending-artists", sheikhsOn(ARTISTS.slice(0, 10), topic),                    a => cardHTML(a, "artist")],
+        ["recommended",      byTopic(ALBUMS.slice(0, 6), topic),                         a => cardHTML(a, "album")],
+        ["rising-artists",   sheikhsOn([...ARTISTS].reverse().slice(0, 8), topic),       a => cardHTML(a, "artist")],
+        ["new-week",         byTopic(ALBUMS.slice(6, 12), topic),                        a => cardHTML(a, "album")],
+        ["hidden-gems",      sheikhsOn(ARTISTS.filter(a => !a.verified), topic),         a => cardHTML(a, "artist")],
+        ["editor-choice",    byTopic(ALBUMS.slice(12, 15), topic),                       editorCardHTML],
+        ["most-downloaded",  byTopic([...TRACKS].sort((a,b)=>b.downloads-a.downloads), topic).slice(0,8), downloadedRowHTML],
+        ["most-discussed",   byTopic([...TRACKS].sort((a,b)=>b.likes-a.likes), topic).slice(0,8),         discussedRowHTML],
+      ];
+      let visible = 0;
+      sections.forEach(([id, items, html]) => {
+        const el = document.getElementById(id);
+        el.innerHTML = items.map(html).join("");
+        el.closest("section").style.display = items.length ? "" : "none";   // no empty headings
+        if (items.length) visible++;
+      });
+      document.getElementById("discover-empty").innerHTML = visible ? "" : emptyStateHTML({
+        icon: "compass", title: "Nothing here yet", body: `No lectures on ${escapeHTML(topic)} have been published yet.`,
+      });
+    }
 
-    document.getElementById("most-discussed").innerHTML = [...TRACKS].sort((a,b)=>b.likes-a.likes).slice(0,8)
-      .map((t,i)=>`<tr class="track-row"><td class="t-num"><span class="num">${i+1}</span></td><td><div class="t-title-cell"><img src="${t.art}"/><div><div class="t-title">${t.title}</div><a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a></div></div></td><td class="t-meta">${(t.likes % 200)+12} comments</td><td class="t-meta">${fmtDuration(t.duration)}</td><td><div class="t-actions"><a class="icon-btn" style="width:30px;height:30px;background:none;" href="track.html?id=${t.id}">${ICONS.message}</a></div></td></tr>`).join("");
+    const genreChips = document.getElementById("genre-chips");
+    genreChips.innerHTML = ["All", ...GENRES.map(g => g.name)].map((g, i) =>
+      `<button class="chip ${i===0?"active":""}" data-topic="${i===0 ? "" : escapeHTML(g)}">${g}</button>`).join("");
+    wireChips(genreChips, { onChange: (_, chip) => renderDiscover(chip.dataset.topic || null) });
+    renderDiscover(null);
+
+    // Search page "Browse Topics" tiles link here as discover.html?genre=<slug>
+    const wanted = GENRES.find(g => g.slug === new URLSearchParams(location.search).get("genre"));
+    if (wanted) [...genreChips.children].find(c => c.dataset.topic === wanted.name)?.click();
   </script>
 </body>
 </html>
