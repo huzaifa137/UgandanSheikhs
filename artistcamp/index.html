@@ -157,6 +157,21 @@
             hero.addEventListener("mouseenter", stop); hero.addEventListener("mouseleave", start);
             hero.addEventListener("focusin", stop); hero.addEventListener("focusout", start);
             document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
+            // drag (mouse) or swipe (touch) the hero to move between series, like the Featured Sheikhs rail
+            let dragX = null, dragged = false;
+            hero.addEventListener("pointerdown", (e) => { if (e.button !== 0 || e.target.closest("button, a")) return; dragX = e.clientX; dragged = false; });
+            window.addEventListener("pointermove", (e) => {
+                if (dragX === null) return;
+                if (Math.abs(e.clientX - dragX) > 8) { dragged = true; hero.classList.add("is-dragging"); }
+            });
+            window.addEventListener("pointerup", (e) => {
+                if (dragX === null) return;
+                const dx = e.clientX - dragX; dragX = null; hero.classList.remove("is-dragging");
+                if (Math.abs(dx) > 50) { show(cur + (dx < 0 ? 1 : -1)); start(); }
+            });
+            window.addEventListener("pointercancel", () => { dragX = null; hero.classList.remove("is-dragging"); });
+            hero.addEventListener("dragstart", (e) => e.preventDefault());
+            hero.addEventListener("click", (e) => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
             show(0); start();
         })();
 

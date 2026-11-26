@@ -1093,3 +1093,15 @@ a.hist-title:hover,.hist-sub a:hover,.hist-series a:hover{color:var(--accent);te
 .hero-dots button.active{width:24px;background:var(--accent);}
 .hero-dots button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
 .home-hero{padding-bottom:56px;}
+
+/* Featured Series hero: drag / swipe to change series */
+.home-hero{touch-action:pan-y;}
+.home-hero img{-webkit-user-drag:none;}
+@media (hover:hover){
+  .home-hero{cursor:grab;}
+  .home-hero.is-dragging{cursor:grabbing;user-select:none;}
+  .home-hero .btn,.home-hero a{cursor:pointer;}
+}
+
+/* Sidebar scrolls on its own; wheel over it no longer moves the page behind it */
+.sidebar{overflow-y:auto;overscroll-behavior:contain;padding-bottom:var(--player-h);scrollbar-width:thin;}
