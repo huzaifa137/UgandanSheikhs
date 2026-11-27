@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Book reader — Ugandan Sheikhs</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/theme-ocean.css" />
+<script src="js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+</head>
+<body class="reader-body">
+  <div class="reader" id="reader" data-tone="light" data-panel="closed" data-focus="off" data-lecture="off">
+
+    <header class="rd-bar">
+      <a class="icon-btn" id="rd-back" href="books.html" aria-label="Back to the book page" title="Back to the book page"><span data-ico="chevLeft"></span></a>
+      <div class="rd-title">
+        <span class="t truncate" id="rd-title">Book</span>
+        <span class="s truncate" id="rd-chapter"></span>
+      </div>
+
+      <div class="rd-pager" role="group" aria-label="Page">
+        <button class="icon-btn" id="rd-prev" aria-label="Previous page" title="Previous page (←)"><span data-ico="chevLeft"></span></button>
+        <label class="pg"><input id="rd-page-input" inputmode="numeric" autocomplete="off" aria-label="Go to page" /><span class="of">of <span id="rd-total">–</span></span></label>
+        <button class="icon-btn" id="rd-next" aria-label="Next page" title="Next page (→)"><span data-ico="chevRight"></span></button>
+      </div>
+
+      <div class="rd-tools" id="rd-tools">
+        <button class="icon-btn" id="rd-mark" aria-pressed="false" aria-label="Bookmark this page" title="Bookmark this page (B)"><span data-ico="bookmark"></span></button>
+        <button class="icon-btn rd-more" id="rd-more" aria-label="More tools" aria-expanded="false"><span data-ico="more"></span></button>
+        <div class="rd-extra" id="rd-extra">
+          <button class="icon-btn" id="rd-zoom-out" aria-label="Zoom out" title="Zoom out (−)"><span data-ico="zoomOut"></span><span class="lbl">Zoom out</span></button>
+          <span class="rd-zoom" id="rd-zoom-val" aria-live="polite">100%</span>
+          <button class="icon-btn" id="rd-zoom-in" aria-label="Zoom in" title="Zoom in (+)"><span data-ico="zoomIn"></span><span class="lbl">Zoom in</span></button>
+          <span class="rd-sep"></span>
+          <button class="icon-btn" id="rd-tone-btn" aria-label="Page tone" aria-expanded="false" title="Page tone"><span data-ico="contrast"></span><span class="lbl">Page tone</span></button>
+          <button class="icon-btn" id="rd-share" aria-label="Share this page" title="Share this page"><span data-ico="share"></span><span class="lbl">Share this page</span></button>
+          <button class="icon-btn" id="rd-download" aria-label="Download PDF" title="Download PDF"><span data-ico="download"></span><span class="lbl">Download PDF</span></button>
+          <button class="icon-btn" id="rd-focus" aria-label="Focus mode" title="Focus mode (F)"><span data-ico="expand"></span><span class="lbl">Focus mode</span></button>
+        </div>
+        <span class="rd-sep"></span>
+        <button class="icon-btn" id="rd-panel-btn" aria-pressed="false" aria-label="Contents, bookmarks and notes" title="Contents, bookmarks and notes"><span data-ico="panel"></span></button>
+      </div>
+
+      <div class="rd-pop" id="rd-pop" role="dialog" aria-label="Page tone">
+        <h4>Page tone</h4>
+        <div class="rd-tones">
+          <button class="rd-tone" data-tone="light" aria-pressed="true"><i style="background:#fff"></i>Light</button>
+          <button class="rd-tone" data-tone="sepia" aria-pressed="false"><i style="background:#F2E6C9"></i>Sepia</button>
+          <button class="rd-tone" data-tone="night" aria-pressed="false"><i style="background:#161B18"></i>Night</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="rd-zoom-reset" style="width:100%;justify-content:center;">Fit to width</button>
+      </div>
+    </header>
+
+    <div class="rd-main">
+      <div class="rd-scroll" id="rd-scroll" tabindex="0" aria-label="Book pages">
+        <div class="rd-pages" id="rd-pages"></div>
+      </div>
+
+      <aside class="rd-panel" id="rd-panel" aria-label="Book tools">
+        <div class="rd-ptabs" role="tablist">
+          <button class="rd-ptab active" role="tab" data-ptab="contents"><span data-ico="layers"></span>Contents</button>
+          <button class="rd-ptab" role="tab" data-ptab="listen"><span data-ico="headphones"></span>Lectures</button>
+          <button class="rd-ptab" role="tab" data-ptab="marks"><span data-ico="bookmark"></span>Marks <span class="count" id="cnt-marks">0</span></button>
+          <button class="rd-ptab" role="tab" data-ptab="notes"><span data-ico="note"></span>Notes <span class="count" id="cnt-notes">0</span></button>
+        </div>
+
+        <div class="rd-pbody" data-pbody="contents">
+          <input class="input toc-filter" id="toc-filter" placeholder="Filter contents…" aria-label="Filter contents" />
+          <div class="toc-list" id="toc-list"></div>
+        </div>
+
+        <div class="rd-pbody" data-pbody="listen" hidden>
+          <p class="rd-hint">Pick a lecture to follow along. The book scrolls to the page being taught, and you can sync the audio to any page you open.</p>
+          <div id="listen-list"></div>
+        </div>
+
+        <div class="rd-pbody" data-pbody="marks" hidden>
+          <div id="marks-list"></div>
+        </div>
+
+        <div class="rd-pbody" data-pbody="notes" hidden>
+          <div class="rd-note-form">
+            <textarea class="textarea" id="note-text" maxlength="2000" placeholder="Write a private note…" aria-label="Note text"></textarea>
+            <div class="rd-row" style="margin-bottom:14px;">
+              <button class="btn btn-primary btn-sm" id="note-add"><span data-ico="plus"></span><span id="note-add-label">Add note</span></button>
+              <button class="btn btn-secondary btn-sm" id="notes-export"><span data-ico="download"></span><span>Export notes</span></button>
+              <button class="btn btn-ghost btn-sm" id="notes-copy"><span>Copy all</span></button>
+            </div>
+          </div>
+          <p class="rd-hint">Notes are private to you and attached to a page.</p>
+          <div id="notes-list"></div>
+        </div>
+      </aside>
+
+      <div class="rd-state show" id="rd-state"></div>
+      <button class="btn btn-secondary btn-sm rd-focus-exit" id="rd-focus-exit"><span data-ico="x"></span><span>Exit focus</span></button>
+    </div>
+
+    <div class="rd-lecbar" id="rd-lecbar" role="region" aria-label="Follow along with a lecture">
+      <button class="play" id="lec-play" aria-label="Play lecture"></button>
+      <div class="info">
+        <div class="t truncate" id="lec-title"></div>
+        <div class="m"><span id="lec-pages"></span><span class="badge badge-neutral" id="lec-sync"></span></div>
+      </div>
+      <div class="scrub"><span id="lec-cur">0:00</span><input type="range" id="lec-scrub" min="0" max="100" step="1" value="0" aria-label="Lecture position" /><span id="lec-dur">0:00</span></div>
+      <div class="ctrl">
+        <button class="rd-chipbtn" id="lec-speed" title="Playback speed">1×</button>
+        <button class="rd-chipbtn" id="lec-follow" aria-pressed="true" title="Keep the book on the page being taught">Follow</button>
+        <button class="rd-chipbtn" id="lec-sync-btn" title="Move the audio to the page you are reading">Audio → this page</button>
+        <button class="icon-btn" id="lec-close" aria-label="Stop following this lecture" style="width:32px;height:32px;"><span data-ico="x"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/vendor/pdfjs/pdf.min.js"></script>
+  <script src="js/reader.js"></script>
+</body>
+</html>

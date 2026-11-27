@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Book — Ugandan Sheikhs</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/theme-ocean.css" />
+<script src="js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content" id="content"></main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("books");
+    const params = new URLSearchParams(location.search);
+    const book = bookById(params.get("id"));
+    const root = document.getElementById("content");
+
+    if (!book || book.status !== "Published") {
+      root.innerHTML = emptyStateHTML({ icon: "book", title: "Book not found", body: `It may have been unpublished. <a href="books.html" style="color:var(--accent);">Browse all books</a>.` });
+    } else {
+      document.title = `${book.title} — Ugandan Sheikhs`;
+      const sheikh = ARTISTS.find((a) => a.id === book.sheikhId);
+      const seriesList = ALBUMS.filter((a) => (a.bookIds || []).includes(book.id));
+      const lectures = lecturesOfBook(book);
+      const outline = bookOutline(book);
+
+      function heroActions() {
+        const p = BookShelf.progress(book.id), printed = p ? printedOf(book, p.page) : 0;
+        const pct = p ? Math.min(100, Math.round((p.page / book.pages) * 100)) : 0;
+        document.getElementById("hero-actions").innerHTML = `
+          <a class="btn btn-primary" href="${bookResumeHref(book)}">${ICONS.book}<span>${printed >= 1 ? `Continue reading · p. ${printed}` : "Read now"}</span></a>
+          ${book.downloadable
+            ? `<button type="button" class="btn btn-secondary" id="dl-btn">${ICONS.download}<span>Download PDF · ${fmtBytes(book.fileSize)}</span></button>`
+            : `<button type="button" class="btn btn-secondary" disabled title="The publisher allows reading online only">${ICONS.cloudOff}<span>Read online only</span></button>`}
+          ${shelfButtonHTML(book, "btn btn-outline")}
+          <button class="icon-btn btn-icon-only" id="share-btn" title="Copy link" aria-label="Copy link">${ICONS.share}</button>
+          <button class="icon-btn btn-icon-only" title="More options" aria-label="More options" aria-haspopup="menu" data-menu="book:${book.id}">${ICONS.more}</button>`;
+        document.getElementById("dl-btn")?.addEventListener("click", () => { downloadBook(book); heroActions(); });
+        document.getElementById("share-btn").addEventListener("click", () => copyLink(`book.html?id=${book.id}`));
+        document.getElementById("read-bar").innerHTML = p ? `
+          <div class="meta"><span>${pct}% read · last page p. ${printed >= 1 ? printed : "–"}</span><span>${agoLabel(p.at)}</span></div>
+          <div class="progress-track" style="cursor:default;"><div class="progress-fill" style="width:${pct}%"></div></div>` : "";
+      }
+
+      const fact = (k, v) => `<div><div class="eyebrow">${k}</div><div class="v">${v}</div></div>`;
+      root.innerHTML = `
+        <div class="book-hero">
+          <div class="book-hero-cover"><img src="${book.cover}" alt="Cover of ${escapeHTML(book.title)}" /></div>
+          <div class="book-hero-info">
+            <div class="eyebrow">${book.topic} · ${book.level}</div>
+            <h1>${escapeHTML(book.title)}</h1>
+            <span class="ar-title ar" lang="ar">${book.titleAr}</span>
+            <p class="subtitle">${escapeHTML(book.subtitle)}</p>
+            <div class="entity-hero-meta">
+              <span>${escapeHTML(book.author)}</span><span>·</span>
+              ${sheikh ? `<span>Taught by <a href="artist.html?id=${sheikh.id}" style="color:var(--text-primary);font-weight:600;">${escapeHTML(sheikh.name)}</a></span><span>·</span>` : ""}
+              <span>${lastPrintedPage(book)} pages</span><span>·</span><span>${fmtCount(book.readers)} readers</span>
+            </div>
+            <div class="book-readbar" id="read-bar"></div>
+          </div>
+        </div>
+        <div class="entity-hero-actions" id="hero-actions" style="padding-inline:0;"></div>
+
+        <div class="tabs" id="book-tabs">
+          <button class="tab active" data-target="about">About</button>
+          <button class="tab" data-target="contents">Contents</button>
+          <button class="tab" data-target="lectures">Lectures${lectures.length ? ` (${lectures.length})` : ""}</button>
+          <button class="tab" data-target="study">My study</button>
+        </div>
+
+        <div data-tabpanel="about" style="max-width:760px;">
+          <p class="text-secondary" style="margin-bottom:26px;">${escapeHTML(book.description)}</p>
+          <div class="fact-grid">
+            ${fact("Author", `${escapeHTML(book.author)}<div class="ar" lang="ar" style="color:var(--text-secondary);font-size:15px;">${book.authorAr}</div>`)}
+            ${fact("Publisher", escapeHTML(book.publisher))}
+            ${fact("Edition", escapeHTML(book.edition))}
+            ${fact("Language", book.language)}
+            ${fact("Format", `${book.format} · ${fmtBytes(book.fileSize)}`)}
+            ${fact("Pages", `${lastPrintedPage(book)}${book.scanned ? " · scanned edition" : ""}`)}
+            ${fact("Level", book.level)}
+            ${fact("Added", book.added)}
+            ${fact("Downloads", fmtCount(book.downloads))}
+          </div>
+          ${seriesList.length ? `<div class="section-header"><h2>Taught in</h2></div><div class="rail" style="padding-bottom:0;">${seriesList.map((a) => cardHTML(a, "album")).join("")}</div>` : ""}
+        </div>
+
+        <div data-tabpanel="contents" style="display:none;">
+          <input class="input toc-filter" id="toc-filter" placeholder="Filter contents…" aria-label="Filter contents" />
+          <div class="toc-list" id="toc-list">
+            ${outline.map((c) => `
+              <a class="toc-item ${c.depth ? "sub" : ""}" href="${bookReadHref(book, c.page)}" data-q="${escapeHTML((c.title + " " + c.titleAr).toLowerCase())}">
+                <span class="toc-n">${c.label || ""}</span>
+                <span class="toc-t"><span class="en">${escapeHTML(c.title)}</span><span class="ar" lang="ar">${c.titleAr}</span></span>
+                <span class="toc-p">p. ${c.page}</span>
+              </a>`).join("")}
+          </div>
+        </div>
+
+        <div data-tabpanel="lectures" style="display:none;">
+          ${lectures.length ? lectures.map((t, i) => `
+            <div class="blec-row">
+              <span class="blec-n">${i + 1}</span>
+              <div class="blec-t">
+                <a class="title" href="track.html?id=${t.id}">${escapeHTML(t.title)}</a>
+                <div class="sub"><span>${fmtDuration(t.duration)}</span>${lecturePagesChip(t)}</div>
+              </div>
+              <a class="btn btn-secondary btn-sm" href="${bookReadHref(book, t.bookRef.from, t.id)}">${ICONS.headphones}<span>Follow along</span></a>
+            </div>`).join("")
+            : emptyStateHTML({ icon: "headphones", title: "No lectures linked yet", body: "When a sheikh's lecture is linked to pages of this book, it appears here." })}
+        </div>
+
+        <div data-tabpanel="study" style="display:none;"><div id="study"></div></div>
+      `;
+
+      wireTabs(document.getElementById("book-tabs"));
+      const hashTab = location.hash.slice(1);
+      if (hashTab) document.querySelector(`#book-tabs .tab[data-target="${hashTab}"]`)?.click();
+      document.getElementById("toc-filter").addEventListener("input", (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        document.querySelectorAll("#toc-list .toc-item").forEach((a) => { a.style.display = !q || a.dataset.q.includes(q) ? "" : "none"; });
+      });
+
+      function paintStudy() {
+        const marks = BookShelf.bookmarks(book.id), notes = BookShelf.notes(book.id);
+        const chap = (n) => { const c = chapterAt(book, n); return c ? c.title : "Front matter"; };
+        document.getElementById("study").innerHTML = (marks.length || notes.length) ? `
+          <div class="study-tools">
+            <div class="study-box"><h3>${ICONS.bookmark}Bookmarks (${marks.length})</h3>
+              ${marks.length ? marks.map((m) => `<div class="study-item"><a class="pg" href="${bookReadHref(book, m.page)}">p. ${m.page}</a><span class="txt">${escapeHTML(chap(m.page))}</span></div>`).join("") : `<p class="text-secondary" style="font-size:13px;">None yet.</p>`}
+            </div>
+            <div class="study-box"><h3>${ICONS.note}Notes (${notes.length})</h3>
+              ${notes.length ? notes.map((n) => `<div class="study-item"><a class="pg" href="${bookReadHref(book, n.page)}">p. ${n.page}</a><span class="txt">${escapeHTML(n.text)}</span></div>`).join("") : `<p class="text-secondary" style="font-size:13px;">None yet.</p>`}
+            </div>
+          </div>
+          <div class="flex gap-12" style="margin-top:18px;"><button class="btn btn-secondary" id="export-notes">${ICONS.download}<span>Export notes</span></button><a class="btn btn-ghost" href="${bookResumeHref(book)}">Keep reading</a></div>`
+          : emptyStateHTML({ icon: "note", title: "Nothing here yet", body: "Bookmarks and private notes you make in the reader show up here, and you can export them.", style: "padding:48px 8px;" });
+        document.getElementById("export-notes")?.addEventListener("click", () => exportBookNotes(book));
+      }
+      heroActions(); paintStudy();
+      window.addEventListener("pageshow", () => { heroActions(); paintStudy(); });   // back from the reader
+    }
+  </script>
+</body>
+</html>

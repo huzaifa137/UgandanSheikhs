@@ -238,3 +238,47 @@ Suggested seams:
 Nothing in this prototype talks to a network beyond loading Google Fonts and
 `picsum.photos` placeholder imagery — everything else is local HTML/CSS/JS,
 ready to be dropped into `resources/views` once Blade integration begins.
+
+---
+
+## Books
+
+Sheikhs teach from books, so a book can be attached to a sheikh, to a series and to individual lectures. Listeners read it online, download it, save it to a shelf, keep bookmarks and private notes, and follow the pages while a lecture plays.
+
+**Pages**
+
+| File | Purpose |
+|---|---|
+| `books.html` | Book library: featured book, continue reading, search, filters |
+| `book.html?id=book-1` | Book page: About, Contents, Lectures, My study (bookmarks and notes, export) |
+| `reader.html?id=book-1&page=55&lecture=trk-55` | Reader. `page` is the PRINTED page; `lecture` turns on follow-along |
+| `admin/books.html` | Library table (download switch, publish), lecture page mapper, add-book form |
+
+**Reader:** continuous PDF.js scroll (bundled in `js/vendor/pdfjs`, works offline), zoom, light / sepia / night tones, contents, bookmarks, notes, remembered position, focus mode, "share this page" link. Keys: arrows / PgUp / PgDn, `+` `-`, `B` bookmark, `F` focus, space plays the lecture.
+
+**Page numbers.** Data uses PRINTED page numbers. `pageOffset` is how many PDF pages sit before printed page 1, so PDF page = printed + offset.
+
+**Follow-along.** Each lecture has `bookRef: { bookId, from, to }` and optionally `syncPoints: [{ t, page }]`. Without sync points the page is estimated by spreading the pages evenly across the lecture. The prototype has no audio, so the reader uses a simulated clock (`60x demo` speed); replace it with an `<audio>` element's `timeupdate`.
+
+**Opening from disk.** Browsers block a page opened as `file://` from reading a PDF. The reader then offers "Choose the PDF". For the full experience run `python -m http.server 8000` inside `artistcamp`, or use the Vercel deployment.
+
+**Admin edits** are stored in `localStorage` (`us_book_admin`) and re-applied by `data.js` on every page load. The listener's shelf, position, bookmarks and notes use `us_books`.
+
+**Laravel mapping**
+
+```
+books              id, slug, title, title_ar, author, author_ar, sheikh_id, topic, level, language, page_offset,
+                   pages, file_path, file_size, cover_path, downloadable, status, featured, scanned
+book_chapters      book_id, title, title_ar, page, parent_id, sort
+book_series        book_id, series_id
+book_lecture_links lecture_id, book_id, from_page, to_page, sync_points (json)
+book_user_state    user_id, book_id, last_pdf_page, saved_at, downloaded_at
+book_bookmarks     user_id, book_id, page, created_at
+book_notes         user_id, book_id, page, body, created_at
+```
+
+Serve PDFs with HTTP range support (Nginx, S3 and Vercel do) so the first page opens before the whole file has downloaded. If `downloadable` is false, do not expose the file URL directly: stream it through a controller that checks the book is published.
+
+**Scanned books.** `Bidayat al-Mutafaqqih` is images only, so in-book text search needs OCR first (for example `ocrmypdf -l ara`). Until then the reader offers a contents filter instead.
+
+**Next features that fit:** in-book search after OCR, highlights, flashcards from notes, quizzes per lecture pages, reading streaks, EPUB support, per-chapter audio links, and a "teacher's notes" overlay.

@@ -270,6 +270,7 @@ function trackRowHTML(t, i, opts = {}) {
         <div>
           <div class="t-title">${t.title} ${t.explicit ? '<span class="badge badge-explicit">E</span>' : ""}</div>
           <a class="t-artist" href="artist.html?id=${t.artistId}">${t.artist}</a>
+          ${lecturePagesChip(t)}
         </div>
       </div>
     </td>
@@ -736,6 +737,27 @@ document.addEventListener("click", (e) => {
   document.dispatchEvent(new CustomEvent("shelf:change", { detail: { id: b.id, saved: on } }));
   toast(on ? "Saved to your shelf" : "Removed from your shelf", on ? "success" : "info");
 });
+
+/* ---- Notes + bookmarks as a Markdown file (used by the reader and the book page) ---- */
+function bookNotesMarkdown(b) {
+  const notes = BookShelf.notes(b.id), marks = BookShelf.bookmarks(b.id);
+  const chap = (printed) => { const c = chapterAt(b, printed); return c ? c.title : "Front matter"; };
+  const when = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  let out = `# My notes: ${b.title} (${b.titleAr})\n${b.author}\nExported from Ugandan Sheikhs on ${when}\n\n`;
+  if (marks.length) out += `## Bookmarks\n${marks.map((m) => `- p. ${m.page}: ${chap(m.page)}`).join("\n")}\n\n`;
+  out += notes.length ? `## Notes\n\n` + notes.map((n) => `### Page ${n.page} · ${chap(n.page)}\n${n.text}\n`).join("\n") : "No notes yet.\n";
+  return out;
+}
+function exportBookNotes(b) {
+  if (!BookShelf.notes(b.id).length && !BookShelf.bookmarks(b.id).length) return toast("Nothing to export yet", "warning");
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(new Blob([bookNotesMarkdown(b)], { type: "text/markdown;charset=utf-8" })),
+    download: `${b.slug}-notes.md`,
+  });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast("Notes exported", "success");
+}
 
 /* ---- Book card (portrait cover). Use in .rail or .grid like the other cards. ---- */
 function bookCardHTML(b) {

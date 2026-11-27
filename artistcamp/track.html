@@ -65,6 +65,8 @@
         ${bars.map((h,i)=>`<span style="height:${h}px;" class="${i<26?'played':''}"></span>`).join("")}
       </div>
 
+      ${followAlongHTML(track)}
+
       <div class="tabs" id="track-tabs">
         <button class="tab active" data-target="about">About</button>
         <button class="tab" data-target="lyrics">Transcript</button>

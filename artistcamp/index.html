@@ -54,6 +54,20 @@
                     <div class="rail" id="continue-rail"></div>
                 </section>
 
+                <section id="reading-section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Continue Reading</h2><a class="see-all" href="library.html#books">My books</a>
+                    </div>
+                    <div class="rail" id="reading-rail"></div>
+                </section>
+
+                <section id="books-section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Study With the Book</h2><a class="see-all" href="books.html">See all</a>
+                    </div>
+                    <div class="rail" id="books-rail"></div>
+                </section>
+
                 <section>
                     <div class="section-header">
                         <h2>Made For You</h2><a class="see-all" href="library.html#playlists">See all</a>
@@ -202,6 +216,18 @@
             toast("Continue Listening cleared");
         });
         renderContinue();
+
+        /* Books: "Continue Reading" only when there is something to continue; the books rail hides when empty */
+        function renderBooksHome() {
+            const reading = BookShelf.continueReading();
+            document.getElementById("reading-section").style.display = reading.length ? "" : "none";
+            document.getElementById("reading-rail").innerHTML = reading.map((x) => bookCardHTML(x.book)).join("");
+            const books = publishedBooks();
+            document.getElementById("books-section").style.display = books.length ? "" : "none";
+            document.getElementById("books-rail").innerHTML = books.map((b) => bookCardHTML(b)).join("");
+        }
+        renderBooksHome();
+        window.addEventListener("pageshow", renderBooksHome);   // coming back from the reader
 
         document.getElementById("madeforyou-rail").innerHTML = visibleCollections().slice(0, 6).map((p) => cardHTML(p, "playlist")).join("");
 

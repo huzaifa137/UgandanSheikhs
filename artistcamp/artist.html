@@ -77,6 +77,9 @@
         <div class="section-header"><h2>Discography</h2></div>
         <div class="grid grid-6">${artistAlbums.map(a=>cardHTML(a,"album")).join("")}</div>
 
+        ${booksOfSheikh(artist.id).length ? `<div class="section-header"><h2>Books</h2><a class="see-all" href="books.html">All books</a></div>
+        <div class="rail">${booksOfSheikh(artist.id).map(b=>cardHTML(b,"book")).join("")}</div>` : ""}
+
         <div class="section-header"><h2>Similar Sheikhs</h2></div>
         <div class="rail">${similar.map(a=>cardHTML(a,"artist")).join("")}</div>
       </div>

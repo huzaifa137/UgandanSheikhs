@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Books — Ugandan Sheikhs Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+<link rel="stylesheet" href="../css/theme-ocean.css" />
+<script src="../js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Books</h1><p>Upload a book, attach it to a sheikh and series, and map each lecture to its pages.</p></div>
+          <button class="btn btn-primary" id="add-book-btn"></button>
+        </div>
+
+        <div class="tabs admin-tabs" id="admin-book-tabs">
+          <button class="tab active" data-target="library">Library</button>
+          <button class="tab" data-target="mapper">Lecture page mapper</button>
+        </div>
+
+        <div data-tabpanel="library">
+          <table class="data-table">
+            <thead><tr><th>Cover</th><th>Book</th><th>Sheikh</th><th>Series</th><th>Pages</th><th>Readers</th><th>Download</th><th>Status</th><th></th></tr></thead>
+            <tbody id="books-table"></tbody>
+          </table>
+        </div>
+
+        <div data-tabpanel="mapper" style="display:none;">
+          <p class="text-secondary" style="max-width:720px;margin-bottom:16px;">Choose a book and a series. For each lecture, enter the <strong>printed</strong> pages it covers (the numbers on the paper pages). Leave both blank to unlink a lecture. Optional sync points make the follow-along exact: <code>mm:ss=page</code>, separated by commas.</p>
+          <div class="table-toolbar">
+            <select class="select" id="map-book" style="width:auto;" aria-label="Book"></select>
+            <select class="select" id="map-series" style="width:auto;max-width:100%;" aria-label="Series"></select>
+          </div>
+          <table class="data-table map-table">
+            <thead><tr><th>#</th><th>Lecture</th><th>From page</th><th>To page</th><th>Sync points (optional)</th></tr></thead>
+            <tbody id="map-table"></tbody>
+          </table>
+          <div class="flex gap-12" style="margin-top:16px;align-items:center;">
+            <button class="btn btn-primary" id="map-save">Save mapping</button>
+            <button class="btn btn-ghost" id="map-reset">Reset all book edits</button>
+            <span class="text-secondary" id="map-msg" style="font-size:12.5px;"></span>
+          </div>
+        </div>
+
+        <div class="modal" id="add-book-modal" style="width:min(620px,94vw);max-height:90vh;overflow-y:auto;">
+          <div class="modal-head"><h3>Add Book</h3><button class="icon-btn" id="add-book-close" onclick="closeModals()"></button></div>
+          <div class="field"><label>Book file (PDF)</label>
+            <label class="dropzone" id="book-dz" style="padding:22px;display:block;cursor:pointer;">
+              <div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;" id="book-dz-icon"></div>
+              <p style="font-size:12.5px;" id="book-dz-text">Drag a PDF here or click to choose</p>
+              <input type="file" id="book-file" accept="application/pdf,.pdf" hidden />
+            </label>
+            <div class="upload-summary" id="book-summary" style="display:none;"><canvas id="book-cover-canvas"></canvas><div id="book-summary-text"></div></div>
+          </div>
+          <div class="grid grid-2">
+            <div class="field"><label>Title</label><input class="input" id="bk-title" placeholder="e.g. Bidayat al-Mutafaqqih" /></div>
+            <div class="field"><label>Arabic title</label><input class="input ar" id="bk-title-ar" dir="rtl" lang="ar" /></div>
+          </div>
+          <div class="grid grid-2">
+            <div class="field"><label>Author</label><input class="input" id="bk-author" /></div>
+            <div class="field"><label>Sheikh who teaches it</label><select class="select" id="bk-sheikh"></select></div>
+          </div>
+          <div class="grid grid-2">
+            <div class="field"><label>Series</label><select class="select" id="bk-series"></select></div>
+            <div class="field"><label>Topic</label><select class="select" id="bk-topic"></select></div>
+          </div>
+          <div class="grid grid-2">
+            <div class="field"><label>Level</label><select class="select"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></div>
+            <div class="field"><label>Pages before printed page 1</label><input class="input" id="bk-offset" type="number" min="0" value="0" /><span class="field-hint">Cover and front pages in the file. Example: 2 means printed page 1 is PDF page 3.</span></div>
+          </div>
+          <div class="field"><label>Description</label><textarea class="textarea"></textarea></div>
+          <div class="flex gap-16" style="margin-bottom:8px;flex-wrap:wrap;">
+            <label class="checkbox-row"><input type="checkbox" id="bk-download" checked /> Allow download</label>
+            <label class="checkbox-row"><input type="checkbox" checked /> Published</label>
+            <label class="checkbox-row"><input type="checkbox" /> Featured</label>
+          </div>
+          <p class="private-note" id="bk-note"></p>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
+            <button class="btn btn-primary" id="bk-create">Create Book</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/vendor/pdfjs/pdf.min.js"></script>
+  <script>
+    initAdminPage("books", "Books");
+    // admin pages sit one folder down, so asset paths from data.js (cover/file) are already absolute via ASSET_BASE
+    document.getElementById("add-book-btn").innerHTML = ICONS.plus + "<span>Add Book</span>";
+    document.getElementById("add-book-close").innerHTML = ICONS.x;
+    document.getElementById("book-dz-icon").innerHTML = ICONS.upload;
+    document.getElementById("bk-note").innerHTML = ICONS.lock + "<span>Prototype: the PDF is read in your browser to count pages and make a cover, but nothing is uploaded or stored. In Laravel this form posts to <code>POST /admin/books</code> and saves the file to disk or S3.</span>";
+    wireTabs(document.getElementById("admin-book-tabs"));
+
+    const store = BookAdminStore;
+    const seriesOfBook = (b) => ALBUMS.filter((a) => (a.bookIds || []).includes(b.id));
+    const sheikhName = (id) => ARTISTS.find((a) => a.id === id)?.name || "—";
+
+    /* ---------------- Library table ---------------- */
+    function paintBooks() {
+      document.getElementById("books-table").innerHTML = BOOKS.map((b) => `
+        <tr>
+          <td><img src="${b.cover}" style="width:34px;height:46px;border-radius:4px;object-fit:cover;" alt="" /></td>
+          <td><div style="font-weight:600;">${escapeHTML(b.title)}</div><div class="ar text-secondary" lang="ar" style="font-size:14px;direction:ltr;text-align:left;">${b.titleAr}</div></td>
+          <td>${escapeHTML(sheikhName(b.sheikhId))}</td>
+          <td>${seriesOfBook(b).map((a) => `<a href="../album.html?id=${a.id}" style="color:var(--accent);">${escapeHTML(a.title)}</a>`).join("<br>") || '<span class="text-tertiary">None</span>'}</td>
+          <td>${lastPrintedPage(b)} <span class="text-tertiary">· ${fmtBytes(b.fileSize)}</span></td>
+          <td>${fmtCount(b.readers)}</td>
+          <td><button type="button" class="switch ${b.downloadable ? "on" : ""}" data-dl="${b.id}" role="switch" aria-checked="${b.downloadable}" aria-label="Allow download of ${escapeHTML(b.title)}"></button></td>
+          <td><button type="button" class="badge ${b.status === "Published" ? "badge-success" : "badge-neutral"}" data-status="${b.id}" title="Click to ${b.status === "Published" ? "unpublish" : "publish"}">${b.status}</button></td>
+          <td><div class="flex gap-8">
+            <a class="icon-btn" style="width:30px;height:30px;" href="../book.html?id=${b.id}" title="View">${ICONS.eye}</a>
+            <a class="icon-btn" style="width:30px;height:30px;" href="../reader.html?id=${b.id}" title="Open in reader">${ICONS.book}</a>
+            <button class="icon-btn" style="width:30px;height:30px;" title="Map lectures" data-map="${b.id}">${ICONS.edit}</button>
+          </div></td>
+        </tr>`).join("");
+    }
+    document.getElementById("books-table").addEventListener("click", (e) => {
+      const dl = e.target.closest("[data-dl]"), st = e.target.closest("[data-status]"), mp = e.target.closest("[data-map]");
+      const o = store.get();
+      if (dl) {
+        const b = bookById(dl.dataset.dl); b.downloadable = !b.downloadable;
+        o.books[b.id] = { ...(o.books[b.id] || {}), downloadable: b.downloadable }; store.save(); paintBooks();
+        toast(b.downloadable ? "Download allowed" : "Read online only", "success");
+      } else if (st) {
+        const b = bookById(st.dataset.status); b.status = b.status === "Published" ? "Draft" : "Published";
+        o.books[b.id] = { ...(o.books[b.id] || {}), status: b.status }; store.save(); paintBooks();
+        toast(`${b.title} is now ${b.status.toLowerCase()}`, "success");
+      } else if (mp) {
+        document.querySelector('#admin-book-tabs .tab[data-target="mapper"]').click();
+        document.getElementById("map-book").value = mp.dataset.map; fillSeries(); paintMap();
+      }
+    });
+
+    /* ---------------- Mapper ---------------- */
+    const mapBook = document.getElementById("map-book"), mapSeries = document.getElementById("map-series");
+    mapBook.innerHTML = BOOKS.map((b) => `<option value="${b.id}">${escapeHTML(b.title)}</option>`).join("");
+    function fillSeries() {
+      const b = bookById(mapBook.value), linked = seriesOfBook(b).map((a) => a.id);
+      const ordered = [...ALBUMS.filter((a) => linked.includes(a.id)), ...ALBUMS.filter((a) => !linked.includes(a.id) && a.artistId === b.sheikhId), ...ALBUMS.filter((a) => !linked.includes(a.id) && a.artistId !== b.sheikhId)];
+      mapSeries.innerHTML = ordered.map((a) => `<option value="${a.id}">${escapeHTML(a.title)} — ${escapeHTML(a.artist)}${linked.includes(a.id) ? " (attached)" : ""}</option>`).join("");
+    }
+    const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    const parseTime = (x) => { const m = /^(\d+):([0-5]?\d)$/.exec(x.trim()); return m ? Number(m[1]) * 60 + Number(m[2]) : /^\d+$/.test(x.trim()) ? Number(x.trim()) : NaN; };
+    function parseSync(text) {
+      if (!text.trim()) return { ok: true, list: [] };
+      const list = [];
+      for (const part of text.split(",")) {
+        const [t, pg] = part.split("=");
+        const sec = parseTime(t || ""), page = parseInt(pg, 10);
+        if (!Number.isFinite(sec) || !Number.isFinite(page)) return { ok: false };
+        list.push({ t: sec, page });
+      }
+      list.sort((a, z) => a.t - z.t);
+      return { ok: true, list };
+    }
+    function paintMap() {
+      const b = bookById(mapBook.value), a = ALBUMS.find((x) => x.id === mapSeries.value);
+      if (!a) return;
+      document.getElementById("map-table").innerHTML = a.tracks.map((t, i) => {
+        const r = t.bookRef && t.bookRef.bookId === b.id ? t.bookRef : null;
+        const sync = r && t.syncPoints ? t.syncPoints.map((s) => `${mmss(s.t)}=${s.page}`).join(", ") : "";
+        const other = t.bookRef && t.bookRef.bookId !== b.id ? bookById(t.bookRef.bookId) : null;
+        return `<tr data-t="${t.id}">
+          <td>${i + 1}</td>
+          <td>${escapeHTML(t.title)}<div class="text-tertiary" style="font-size:12px;">${fmtDuration(t.duration)}${other ? ` · currently linked to ${escapeHTML(other.title)}` : ""}</div><div class="map-warn" hidden></div></td>
+          <td><input class="input" type="number" min="${1 - b.pageOffset}" max="${lastPrintedPage(b)}" data-f="from" value="${r ? r.from : ""}" aria-label="From page" /></td>
+          <td><input class="input" type="number" min="${1 - b.pageOffset}" max="${lastPrintedPage(b)}" data-f="to" value="${r ? r.to : ""}" aria-label="To page" /></td>
+          <td><input class="input sync" data-f="sync" value="${sync}" placeholder="0:00=48, 12:30=49" aria-label="Sync points" /></td>
+        </tr>`;
+      }).join("");
+      document.getElementById("map-msg").textContent = "";
+    }
+    mapBook.addEventListener("change", () => { fillSeries(); paintMap(); });
+    mapSeries.addEventListener("change", paintMap);
+    document.getElementById("map-save").addEventListener("click", () => {
+      const b = bookById(mapBook.value), a = ALBUMS.find((x) => x.id === mapSeries.value), o = store.get();
+      const last = lastPrintedPage(b), rows = [...document.querySelectorAll("#map-table tr")];
+      let bad = 0, prevTo = null;
+      const updates = [];
+      rows.forEach((tr) => {
+        const warn = tr.querySelector(".map-warn"); warn.hidden = true; tr.classList.remove("map-bad");
+        const f = tr.querySelector('[data-f="from"]').value.trim(), t = tr.querySelector('[data-f="to"]').value.trim(), syncTxt = tr.querySelector('[data-f="sync"]').value;
+        const tid = tr.dataset.t, track = TRACKS.find((x) => x.id === tid);
+        const fail = (msg) => { bad++; tr.classList.add("map-bad"); warn.textContent = msg; warn.hidden = false; };
+        if (!f && !t) { updates.push([tid, track.bookRef && track.bookRef.bookId === b.id ? null : undefined]); return; }
+        const from = parseInt(f, 10), to = parseInt(t, 10);
+        if (!Number.isFinite(from) || !Number.isFinite(to)) return fail("Enter both pages, or clear both to unlink.");
+        if (from < 1 - b.pageOffset || to > last) return fail(`Pages must be between ${1 - b.pageOffset} and ${last}.`);
+        if (to < from) return fail("“To” can't be before “From”.");
+        const s = parseSync(syncTxt);
+        if (!s.ok) return fail("Sync points look like 0:00=48, 12:30=49.");
+        if (s.list.some((x) => x.page < from || x.page > to || x.t > track.duration)) return fail("Each sync point must sit inside the lecture's pages and time.");
+        updates.push([tid, { bookId: b.id, from, to, sync: s.list }]);
+      });
+      if (bad) { document.getElementById("map-msg").textContent = `${bad} row${bad === 1 ? "" : "s"} need attention.`; return toast("Fix the highlighted rows first", "warning"); }
+      updates.forEach(([tid, link]) => { if (link === undefined) return; o.links[tid] = link; });
+      const linkedAny = a.tracks.some((t) => { const l = o.links[t.id]; return l ? l.bookId === b.id : t.bookRef && t.bookRef.bookId === b.id; });
+      const cur = new Set(a.bookIds || []); linkedAny ? cur.add(b.id) : cur.delete(b.id);
+      o.seriesBooks[a.id] = [...cur];
+      store.save();
+      location.reload();   // re-apply the overrides to the demo data, exactly like every other page does on load
+    });
+    document.getElementById("map-reset").addEventListener("click", () => {
+      if (!confirm("Remove every book edit made in this browser and go back to the demo data?")) return;
+      store.reset(); location.reload();
+    });
+
+    /* ---------------- Add book (reads the PDF in the browser) ---------------- */
+    document.getElementById("add-book-btn").addEventListener("click", () => { ensureOverlay(); openModal("add-book-modal"); });
+    document.getElementById("bk-sheikh").innerHTML = ARTISTS.map((a) => `<option value="${a.id}">${escapeHTML(a.name)}</option>`).join("");
+    document.getElementById("bk-series").innerHTML = `<option value="">No series yet</option>` + ALBUMS.map((a) => `<option value="${a.id}">${escapeHTML(a.title)}</option>`).join("");
+    document.getElementById("bk-topic").innerHTML = GENRES.map((g) => `<option>${escapeHTML(g.name)}</option>`).join("");
+
+    let picked = null;
+    async function readPdf(file) {
+      if (!file) return;
+      const sum = document.getElementById("book-summary"), txt = document.getElementById("book-summary-text");
+      sum.style.display = "flex"; txt.textContent = "Reading the file…";
+      picked = { name: file.name, size: file.size, pages: 0 };
+      try {
+        const lib = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
+        lib.GlobalWorkerOptions.workerSrc = `${ASSET_BASE}js/vendor/pdfjs/pdf.worker.min.js`;
+        const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+        picked.pages = doc.numPages;
+        const page = await doc.getPage(1), vp0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: 160 / vp0.width });
+        const c = document.getElementById("book-cover-canvas"); c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+        txt.innerHTML = `<strong>${escapeHTML(file.name)}</strong><br>${doc.numPages} pages · ${fmtBytes(file.size)}`;
+        const t = document.getElementById("bk-title");
+        if (!t.value) t.value = file.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ");
+        document.getElementById("book-dz-text").textContent = "Choose a different PDF";
+      } catch (err) { picked = null; txt.textContent = "That file couldn't be read as a PDF."; console.warn(err); }
+    }
+    const fileInput = document.getElementById("book-file"), dz = document.getElementById("book-dz");
+    fileInput.addEventListener("change", () => readPdf(fileInput.files[0]));
+    ["dragover", "dragenter"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("drag"); }));
+    ["dragleave", "drop"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("drag"); }));
+    dz.addEventListener("drop", (e) => readPdf(e.dataTransfer.files[0]));
+    document.getElementById("bk-create").addEventListener("click", () => {
+      const title = document.getElementById("bk-title").value.trim();
+      if (!picked) return toast("Choose the book's PDF first", "warning");
+      if (!title) { document.getElementById("bk-title").focus(); return toast("Give the book a title", "warning"); }
+      closeModals();
+      toast(`“${title}” would be created with ${picked.pages} pages. Nothing is stored in this prototype.`, "success");
+    });
+
+    fillSeries(); paintBooks(); paintMap();
+  </script>
+</body>
+</html>

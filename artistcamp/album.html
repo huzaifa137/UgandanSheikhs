@@ -66,13 +66,15 @@
 
       <p class="text-secondary" style="max-width:640px;margin:20px 0;">${album.description}</p>
 
+      ${seriesBookHTML(album)}
+
       <table class="track-table">
         <thead><tr><th>#</th><th>Lecture</th><th>Plays</th><th></th><th>Time</th><th></th></tr></thead>
         <tbody>
           ${albumTracks.map((t,i)=>`
           <tr class="track-row">
             <td class="t-num"><span class="num">${i+1}</span><button class="icon-btn play-ico" style="background:none;width:18px;height:18px;">${ICONS.play}</button></td>
-            <td><div class="t-title-cell"><div><div class="t-title">${t.title} ${t.explicit?'<span class="badge badge-explicit">E</span>':''}</div><a class="t-artist" href="artist.html?id=${artist.id}">${artist.name}</a></div></div></td>
+            <td><div class="t-title-cell"><div><div class="t-title">${t.title} ${t.explicit?'<span class="badge badge-explicit">E</span>':''}</div><a class="t-artist" href="artist.html?id=${artist.id}">${artist.name}</a>${lecturePagesChip(t)}</div></div></td>
             <td class="t-meta">${fmtCount(t.plays)}</td>
             <td>${t.downloadable ? '<span class="badge badge-success">Downloadable</span>' : '<span class="badge badge-neutral">Streaming Only</span>'}</td>
             <td class="t-meta">${fmtDuration(t.duration)}</td>

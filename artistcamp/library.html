@@ -35,6 +35,7 @@
           <button class="tab active" data-target="overview">Overview</button>
           <button class="tab" data-target="playlists">Collections</button>
           <button class="tab" data-target="albums">Series</button>
+          <button class="tab" data-target="books">Books</button>
           <button class="tab" data-target="artists">Sheikhs</button>
           <button class="tab" data-target="liked">Liked Lectures</button>
           <button class="tab" data-target="downloads">Downloads</button>
@@ -49,6 +50,8 @@
           <div class="grid grid-6" id="lib-official"></div>
           <div class="section-header"><h2>Series</h2></div>
           <div class="grid grid-6" id="lib-albums"></div>
+          <div class="section-header"><h2>Books</h2><a class="see-all" href="books.html">Browse books</a></div>
+          <div class="grid grid-6" id="lib-books-ov"></div>
           <div class="section-header"><h2>Sheikhs You Follow</h2></div>
           <div class="grid grid-6" id="lib-artists"></div>
         </div>
@@ -63,6 +66,14 @@
         </div>
         <div data-tabpanel="albums" style="display:none;">
           <div class="grid grid-6" id="lib-albums-2"></div>
+        </div>
+        <div data-tabpanel="books" style="display:none;">
+          <div class="section-header" style="margin-top:0;"><h2>Continue Reading</h2></div>
+          <div class="grid grid-6" id="lib-books-reading"></div>
+          <div class="section-header"><h2>On Your Shelf</h2><a class="see-all" href="books.html">Browse books</a></div>
+          <div class="grid grid-6" id="lib-books-shelf"></div>
+          <div class="section-header"><h2>Downloaded Books</h2></div>
+          <div class="grid grid-6" id="lib-books-dl"></div>
         </div>
         <div data-tabpanel="artists" style="display:none;">
           <div class="grid grid-6" id="lib-artists-2"></div>
@@ -102,7 +113,7 @@
     /* ---------- sorting + grid/list view (applies to every tab) ---------- */
     let sortBy = "Recently Added", view = "grid";
     const nameOf = (x) => x.name || x.title;
-    const creatorOf = (x) => x.creator || x.artist || x.name;      // collection → creator, series/lecture → sheikh, sheikh → self
+    const creatorOf = (x) => x.creator || x.artist || x.author || x.name;      // collection → creator, series/lecture → sheikh, sheikh → self
     const SORTERS = {
       "Recently Added":  (items) => items,                           // data order = newest first
       "Recently Played": (items) => [...items].reverse(),            // placeholder until real play history exists
@@ -110,8 +121,8 @@
       "Creator":         (items) => [...items].sort((a, b) => creatorOf(a).localeCompare(creatorOf(b)) || nameOf(a).localeCompare(nameOf(b))),
     };
 
-    const hrefOf = (item, kind) => kind === "artist" ? `artist.html?id=${item.id}` : kind === "album" ? `album.html?id=${item.id}` : kind === "track" ? `track.html?id=${item.id}` : `playlist.html?id=${item.id}`;
-    const subOf = (item, kind) => kind === "artist" ? `${item.followers} followers` : kind === "album" ? `${item.artist} · ${item.type}` : kind === "track" ? item.artist : `${item.kind === "personal" ? "Private" : "By " + item.creator} · ${item.tracks.length} lectures`;
+    const hrefOf = (item, kind) => kind === "book" ? `book.html?id=${item.id}` : kind === "artist" ? `artist.html?id=${item.id}` : kind === "album" ? `album.html?id=${item.id}` : kind === "track" ? `track.html?id=${item.id}` : `playlist.html?id=${item.id}`;
+    const subOf = (item, kind) => kind === "book" ? `${item.author} · ${item.level}` : kind === "artist" ? `${item.followers} followers` : kind === "album" ? `${item.artist} · ${item.type}` : kind === "track" ? item.artist : `${item.kind === "personal" ? "Private" : "By " + item.creator} · ${item.tracks.length} lectures`;
     const cardFor = (item, kind) => kind === "track" ? `
       <a class="card card-w" href="${hrefOf(item, kind)}">
         <div class="card-art"><img src="${item.art}" alt="${item.title}" loading="lazy" /></div>
@@ -119,9 +130,9 @@
       </a>` : cardHTML(item, kind);
     const rowFor = (item, kind) => `
       <a class="lib-row" href="${hrefOf(item, kind)}">
-        <img class="${kind === "artist" ? "round" : ""}" src="${item.img || item.art}" alt="" loading="lazy" />
+        <img class="${kind === "artist" ? "round" : ""}" src="${item.img || item.art || item.cover}" alt="" loading="lazy" />
         <span class="lib-row-text"><span class="lib-row-title truncate">${nameOf(item)}</span><span class="lib-row-sub truncate">${subOf(item, kind)}</span></span>
-        <span class="lib-row-play" role="button" aria-label="Play" onclick="event.preventDefault();event.stopPropagation();toast('Playing ${nameOf(item).replace(/'/g, "")}')">${ICONS.play}</span>
+        <span class="lib-row-play" role="button" aria-label="Play" onclick="event.preventDefault();event.stopPropagation();${kind === "book" ? `location.href='${bookResumeHref(item)}'` : `toast('Playing ${nameOf(item).replace(/'/g, "")}')`}">${kind === "book" ? ICONS.book : ICONS.play}</span>
       </a>`;
 
     const SECTIONS = [
@@ -133,6 +144,10 @@
       { id: "lib-official-2",  kind: "playlist", items: () => officialCollections() },
       { id: "lib-albums-2",    kind: "album",    items: () => ALBUMS },
       { id: "lib-artists-2",   kind: "artist",   items: () => ARTISTS },
+      { id: "lib-books-ov",      kind: "book", items: () => publishedBooks(), limit: 6 },
+      { id: "lib-books-reading", kind: "book", items: () => BookShelf.continueReading().map((x) => x.book), empty: { icon: "book", title: "Nothing in progress", body: "Open a book and it will wait for you here, right on the page you stopped." } },
+      { id: "lib-books-shelf",   kind: "book", items: () => BookShelf.state().saved.map(bookById).filter(Boolean), empty: { icon: "library", title: "Your shelf is empty", body: "Save a book to keep it close. Use “Save to shelf” on any book." } },
+      { id: "lib-books-dl",      kind: "book", items: () => BookShelf.state().downloaded.map(bookById).filter(Boolean), empty: { icon: "download", title: "No downloaded books", body: "Books you download as PDF are listed here." } },
       { id: "lib-liked",       kind: "track",    items: () => TRACKS.slice(0, 10), table: true },
       { id: "lib-downloads",   kind: "track",    items: () => TRACKS.filter(t => t.downloadable).slice(0, 10), table: true },
     ];
@@ -163,6 +178,8 @@
     document.getElementById("view-grid").addEventListener("click", () => { view = "grid"; renderLibrary(); });
     document.getElementById("view-list").addEventListener("click", () => { view = "list"; renderLibrary(); });
     document.querySelectorAll("[data-new-collection]").forEach(b => b.addEventListener("click", () => { ensureOverlay(); openModal("create-playlist-modal"); }));
+    document.addEventListener("shelf:change", renderLibrary);
+    window.addEventListener("pageshow", renderLibrary);
     renderLibrary();
   </script>
 </body>

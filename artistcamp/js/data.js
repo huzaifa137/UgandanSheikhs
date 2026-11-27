@@ -531,3 +531,40 @@ const STATE = {
   online: true,
   queue: TRACKS.slice(4, 10),
 };
+
+/* =====================================================================
+   Books: admin overrides
+   The admin Books page edits links in the browser (localStorage "us_book_admin") because this prototype
+   has no database. This block applies those edits to the demo data on every page load, so a change made
+   in admin/books.html shows up on the series, lecture, book and reader pages.
+   Laravel: the same shape comes from the database instead (see README, section "Books").
+   Shape: { links: { <lectureId>: { bookId, from, to, sync: [{ t, page }] } | null },
+            seriesBooks: { <seriesId>: [bookId] }, books: { <bookId>: { downloadable, status, featured } } }
+   ===================================================================== */
+const BOOK_ADMIN_KEY = "us_book_admin";
+const BookAdminStore = {
+  _o: null,
+  get() {
+    if (!this._o) {
+      let o = null;
+      try { o = JSON.parse(localStorage.getItem(BOOK_ADMIN_KEY) || "null"); } catch { o = null; }
+      this._o = { links: {}, seriesBooks: {}, books: {}, ...(o || {}) };
+    }
+    return this._o;
+  },
+  save() { try { localStorage.setItem(BOOK_ADMIN_KEY, JSON.stringify(this._o)); return true; } catch { return false; } },
+  reset() { this._o = { links: {}, seriesBooks: {}, books: {} }; try { localStorage.removeItem(BOOK_ADMIN_KEY); } catch {} },
+};
+(function applyBookAdminOverrides() {
+  const o = BookAdminStore.get();
+  Object.entries(o.books).forEach(([id, patch]) => { const b = bookById(id); if (b) Object.assign(b, patch); });
+  Object.entries(o.seriesBooks).forEach(([sid, ids]) => { const a = ALBUMS.find((x) => x.id === sid); if (a) a.bookIds = ids.filter((id) => bookById(id)); });
+  Object.entries(o.links).forEach(([tid, link]) => {
+    const t = TRACKS.find((x) => x.id === tid);
+    if (!t) return;
+    if (!link || !bookById(link.bookId)) { delete t.bookRef; delete t.syncPoints; return; }
+    t.bookRef = { bookId: link.bookId, from: link.from, to: link.to };
+    if (link.sync && link.sync.length) t.syncPoints = link.sync; else delete t.syncPoints;
+  });
+  BOOKS.forEach((b) => { b.seriesIds = ALBUMS.filter((a) => (a.bookIds || []).includes(b.id)).map((a) => a.id); });
+})();

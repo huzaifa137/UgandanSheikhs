@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Books — Ugandan Sheikhs</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/theme-ocean.css" />
+<script src="js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="shell-sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="shell-topbar"></header>
+      <main class="content" id="content"></main>
+    </div>
+  </div>
+
+  <div class="player" id="shell-player"></div>
+  <div class="mini-player" id="shell-mini-player"></div>
+  <nav class="mobile-nav" id="shell-mobilenav"></nav>
+  <div id="shell-overlays"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initAppPage("books");
+    const all = publishedBooks();
+    const featured = all.find((b) => b.featured) || all[0];
+    const uniq = (xs) => [...new Set(xs)].sort();
+    const sheikhOf = (b) => ARTISTS.find((a) => a.id === b.sheikhId);
+
+    document.getElementById("content").innerHTML = `
+      <div class="page-header">
+        <div><h1>Books</h1><p>Open the book your sheikh is teaching, read it beside the lecture, and keep your own notes.</p></div>
+      </div>
+
+      ${featured ? `
+      <section class="books-feature" aria-label="Featured book">
+        <a class="books-feature-cover" href="book.html?id=${featured.id}"><img src="${featured.cover}" alt="Cover of ${escapeHTML(featured.title)}" /></a>
+        <div>
+          <div class="eyebrow">Featured book</div>
+          <h2>${escapeHTML(featured.title)}</h2>
+          <span class="ar-title ar" lang="ar">${featured.titleAr}</span>
+          <p>${escapeHTML(featured.subtitle)}. Taught by ${escapeHTML(sheikhOf(featured)?.name || "")}${featured.seriesIds.length ? ` in the series “${escapeHTML(ALBUMS.find((a) => a.id === featured.seriesIds[0]).title)}”` : ""}.</p>
+          <div class="follow-actions">
+            <a class="btn btn-primary" id="feat-read" href="${bookResumeHref(featured)}">${ICONS.book}<span></span></a>
+            <a class="btn btn-secondary" href="book.html?id=${featured.id}">About this book</a>
+            ${shelfButtonHTML(featured, "btn btn-ghost")}
+          </div>
+        </div>
+      </section>` : ""}
+
+      <section id="reading-section" style="display:none;">
+        <div class="section-header"><h2>Continue Reading</h2></div>
+        <div class="rail" id="reading-rail"></div>
+      </section>
+
+      <div class="section-header" style="margin-bottom:0;"><h2>All Books</h2><span class="text-secondary" id="books-count" style="font-size:13px;"></span></div>
+      <div class="books-toolbar">
+        <input class="input" id="b-q" type="search" placeholder="Search by title, author or Arabic title" aria-label="Search books" />
+        <select class="select" id="b-topic" aria-label="Topic"><option value="">All topics</option>${uniq(all.map((b) => b.topic)).map((t) => `<option>${t}</option>`).join("")}</select>
+        <select class="select" id="b-level" aria-label="Level"><option value="">All levels</option>${uniq(all.map((b) => b.level)).map((t) => `<option>${t}</option>`).join("")}</select>
+        <select class="select" id="b-sheikh" aria-label="Sheikh"><option value="">All sheikhs</option>${uniq(all.map((b) => b.sheikhId)).map((id) => `<option value="${id}">${escapeHTML(ARTISTS.find((a) => a.id === id)?.name || id)}</option>`).join("")}</select>
+        <select class="select" id="b-sort" aria-label="Sort"><option value="popular">Most read</option><option value="new">Newest</option><option value="title">Title A–Z</option></select>
+      </div>
+      <div class="books-grid" id="books-grid"></div>
+    `;
+
+    function paintFeatured() {
+      const p = BookShelf.progress(featured.id);
+      document.querySelector("#feat-read span").textContent = p && printedOf(featured, p.page) >= 1 ? `Continue reading · p. ${printedOf(featured, p.page)}` : "Read now";
+    }
+    function paintReading() {
+      const items = BookShelf.continueReading();
+      document.getElementById("reading-section").style.display = items.length ? "" : "none";
+      document.getElementById("reading-rail").innerHTML = items.map((x) => bookCardHTML(x.book)).join("");
+    }
+    function paintGrid() {
+      const q = document.getElementById("b-q").value.trim().toLowerCase();
+      const topic = document.getElementById("b-topic").value, level = document.getElementById("b-level").value;
+      const sheikh = document.getElementById("b-sheikh").value, sort = document.getElementById("b-sort").value;
+      let list = all.filter((b) =>
+        (!q || `${b.title} ${b.titleAr} ${b.author} ${b.authorAr} ${b.subtitle}`.toLowerCase().includes(q)) &&
+        (!topic || b.topic === topic) && (!level || b.level === level) && (!sheikh || b.sheikhId === sheikh));
+      list = [...list].sort(sort === "title" ? (a, z) => a.title.localeCompare(z.title) : sort === "new" ? (a, z) => all.indexOf(z) - all.indexOf(a) : (a, z) => z.readers - a.readers);
+      document.getElementById("books-count").textContent = `${list.length} book${list.length === 1 ? "" : "s"}`;
+      document.getElementById("books-grid").innerHTML = list.length
+        ? list.map(bookCardHTML).join("")
+        : emptyStateHTML({ icon: "book", title: "No books match", body: "Try a different word, or clear the filters.", style: "grid-column:1/-1;" });
+    }
+    ["b-q", "b-topic", "b-level", "b-sheikh", "b-sort"].forEach((id) => document.getElementById(id).addEventListener(id === "b-q" ? "input" : "change", paintGrid));
+    paintFeatured(); paintReading(); paintGrid();
+    document.addEventListener("shelf:change", () => { paintFeatured(); });
+    window.addEventListener("pageshow", () => { paintFeatured(); paintReading(); paintGrid(); });   // back from the reader
+  </script>
+</body>
+</html>
