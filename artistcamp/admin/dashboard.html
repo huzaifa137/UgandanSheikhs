@@ -16,53 +16,7 @@
     <aside class="admin-sidebar" id="admin-sidebar"></aside>
     <div class="admin-main">
       <header class="admin-topbar" id="admin-topbar"></header>
-      <main class="admin-content">
-
-        <div class="grid grid-4" style="margin-bottom:28px;" id="stat-cards"></div>
-
-        <div class="grid grid-2" style="margin-bottom:28px;">
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Streams Over Time</h2></div>
-            <div class="chart-placeholder" id="chart-streams"></div>
-          </div>
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Downloads Over Time</h2></div>
-            <div class="chart-placeholder" id="chart-downloads"></div>
-          </div>
-        </div>
-
-        <div class="grid grid-2" style="margin-bottom:28px;">
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">New Users</h2></div>
-            <div class="chart-placeholder" id="chart-users"></div>
-          </div>
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Topics</h2></div>
-            <div class="chart-placeholder" id="chart-genres"></div>
-          </div>
-        </div>
-
-        <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Top Lectures</h2></div>
-        <table class="data-table" style="margin-bottom:28px;">
-          <thead><tr><th>Lecture</th><th>Sheikh</th><th>Plays</th><th>Downloads</th></tr></thead>
-          <tbody id="top-tracks-table"></tbody>
-        </table>
-
-        <div class="grid grid-2">
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Recent Users</h2></div>
-            <table class="data-table"><tbody id="recent-users-table"></tbody></table>
-          </div>
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Recent Comments</h2></div>
-            <table class="data-table"><tbody id="recent-comments-table"></tbody></table>
-          </div>
-        </div>
-
-        <div class="section-header"><h2 style="font-size:16px;">Recent Activity</h2></div>
-        <div id="activity-feed"></div>
-
-      </main>
+      <main class="admin-content" id="dash"></main>
     </div>
   </div>
 
@@ -73,56 +27,335 @@
   <script>
     initAdminPage("dashboard", "Dashboard");
 
-    const stats = [
-      { label: "Total Sheikhs", value: ARTISTS.length, delta: "+3 this month", up: true },
-      { label: "Total Series", value: ALBUMS.length, delta: "+5 this month", up: true },
-      { label: "Total Lectures", value: TRACKS.length, delta: "+12 this month", up: true },
-      { label: "Total Users", value: ADMIN_USERS.length * 214, delta: "+8.2%", up: true },
-      { label: "Total Streams", value: fmtCount(TRACKS.reduce((s,t)=>s+t.plays,0)), delta: "+14.1%", up: true },
-      { label: "Total Downloads", value: fmtCount(TRACKS.reduce((s,t)=>s+t.downloads,0)), delta: "+6.4%", up: true },
-      { label: "Comments Today", value: 47, delta: "-2.1%", up: false },
-      { label: "Storage Used", value: "412 GB", delta: "of 1 TB", up: true },
-    ];
-    document.getElementById("stat-cards").innerHTML = stats.slice(0,4).map(s => `
-      <div class="stat-card"><div class="label">${s.label}</div><div class="value">${s.value}</div><div class="delta ${s.up?'up':'down'}">${s.delta}</div></div>`).join("");
-    document.querySelector(".admin-content").insertBefore(
-      Object.assign(document.createElement("div"), { className: "grid grid-4", style: "margin-bottom:28px;", innerHTML: stats.slice(4).map(s => `<div class="stat-card"><div class="label">${s.label}</div><div class="value">${s.value}</div><div class="delta ${s.up?'up':'down'}">${s.delta}</div></div>`).join("") }),
-      document.querySelectorAll(".admin-content .grid.grid-2")[0]
-    );
+    /* ------------------------------------------------------------------
+       Sample analytics. A deterministic generator stands in for the analytics API
+       (Laravel: GET /admin/stats?range=30d). Same range, same numbers, every load.
+       ------------------------------------------------------------------ */
+    const RANGES = { "7d": { n: 7, label: "Last 7 days", unit: "day" }, "30d": { n: 30, label: "Last 30 days", unit: "day" }, "90d": { n: 90, label: "Last 90 days", unit: "day" }, "12m": { n: 12, label: "Last 12 months", unit: "month" } };
+    let range = sessionStorage.getItem("us_dash_range") || "30d";
+    if (!RANGES[range]) range = "30d";
+    const hidden = new Set();
 
-    function bars(id, n, seedMod) {
-      document.getElementById(id).innerHTML = Array.from({length:n},(_,i)=>{
-        const h = 20 + ((i*seedMod)%80);
-        return `<div class="bar" style="height:${h}%;" title="${h}"></div>`;
-      }).join("");
+    const rng = (seed) => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); };
+    const hash = (str) => [...str].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+    const DOW = [0.86, 0.95, 0.97, 1.0, 1.04, 1.38, 1.02];   // Sun..Sat — Friday (Jumu'ah) peaks
+    const METRICS = {
+      streams:       { label: "Streams",           icon: "headphones", href: "tracks.html",    base: 9200, trend: 0.004, fmt: fmtCount },
+      downloads:     { label: "Downloads",         icon: "download",   href: "downloads.html", base: 1450, trend: 0.003, fmt: fmtCount },
+      newUsers:      { label: "New listeners",     icon: "userPlus",   href: "users.html",     base: 74,   trend: 0.005, fmt: fmtCount },
+      active:        { label: "Active listeners",  icon: "users",      href: "users.html",     base: 2150, trend: 0.003, fmt: fmtCount },
+      bookReads:     { label: "Book sessions",     icon: "book",       href: "books.html",     base: 410,  trend: 0.009, fmt: fmtCount },
+      bookDownloads: { label: "Book downloads",    icon: "file",       href: "books.html",     base: 96,   trend: 0.008, fmt: fmtCount },
+      comments:      { label: "Comments",          icon: "message",    href: "comments.html",  base: 47,   trend: 0.002, fmt: fmtCount },
+    };
+    function series(key, r, period /* 0 = current, 1 = previous */) {
+      const m = METRICS[key], cfg = RANGES[r], rand = rng(hash(key + r) + period * 977);
+      const out = [], today = new Date();
+      for (let i = 0; i < cfg.n; i++) {
+        const back = cfg.n - 1 - i + period * cfg.n;
+        const d = new Date(today); cfg.unit === "day" ? d.setDate(d.getDate() - back) : d.setMonth(d.getMonth() - back);
+        const days = cfg.unit === "day" ? 1 : 30;
+        const growth = 1 + m.trend * (cfg.unit === "day" ? -back : -back * 30);
+        const wk = cfg.unit === "day" && key !== "newUsers" ? DOW[d.getDay()] : 1;
+        out.push(Math.max(1, Math.round(m.base * days * Math.max(0.35, growth) * wk * (0.9 + rand() * 0.2))));
+      }
+      return out;
     }
-    bars("chart-streams", 24, 37);
-    bars("chart-downloads", 24, 53);
-    bars("chart-users", 12, 29);
-    bars("chart-genres", 10, 41);
+    function labelsFor(r) {
+      const cfg = RANGES[r], today = new Date();
+      return Array.from({ length: cfg.n }, (_, i) => {
+        const back = cfg.n - 1 - i, d = new Date(today);
+        cfg.unit === "day" ? d.setDate(d.getDate() - back) : d.setMonth(d.getMonth() - back);
+        return cfg.unit === "day" ? d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) : d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+      });
+    }
+    const sum = (a) => a.reduce((x, y) => x + y, 0);
+    const pctChange = (cur, prev) => (prev ? ((cur - prev) / prev) * 100 : 0);
 
-    document.getElementById("top-tracks-table").innerHTML = [...TRACKS].sort((a,b)=>b.plays-a.plays).slice(0,6).map(t => `
-      <tr><td>${t.title}</td><td>${t.artist}</td><td>${fmtCount(t.plays)}</td><td>${fmtCount(t.downloads)}</td></tr>`).join("");
+    /* ---------------- tiny SVG chart helpers ---------------- */
+    const niceMax = (v) => { const p = Math.pow(10, Math.floor(Math.log10(v || 1))), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; };
+    const COLORS = { streams: "#1FB87A", downloads: "#D9B26A", books: "#5AA9FF" };
 
-    document.getElementById("recent-users-table").innerHTML = ADMIN_USERS.slice(0,5).map(u => `
-      <tr><td class="flex items-center gap-8"><img class="avatar" src="${u.avatar}" width="26" height="26"/>${u.name}</td><td><span class="badge ${u.status==='Active'?'badge-success':'badge-error'}">${u.status}</span></td></tr>`).join("");
+    function sparkline(values, up) {
+      const w = 160, h = 34, max = Math.max(...values), min = Math.min(...values), span = max - min || 1;
+      const pts = values.map((v, i) => [(i / (values.length - 1 || 1)) * w, h - 3 - ((v - min) / span) * (h - 8)]);
+      const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+      const c = up ? "var(--success)" : "var(--error)";
+      return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${line} L${w} ${h} L0 ${h} Z" fill="${c}" opacity=".12"/><path d="${line}" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
+    }
 
-    document.getElementById("recent-comments-table").innerHTML = COMMENTS.slice(0,5).map(c => `
-      <tr><td>${c.user}</td><td class="truncate" style="max-width:220px;">${c.body}</td></tr>`).join("");
+    function lineChart(el, labels, list) {
+      const W = 760, H = 270, L = 46, R = 12, T = 12, B = 28;
+      const vis = list.filter((s) => !hidden.has(s.key));
+      const max = niceMax(Math.max(1, ...vis.flatMap((s) => s.values)) * 1.05);
+      const x = (i) => L + (i / (labels.length - 1 || 1)) * (W - L - R), y = (v) => T + (1 - v / max) * (H - T - B);
+      const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * max);
+      const every = Math.max(1, Math.ceil(labels.length / 7));
+      let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Line chart">`;
+      ticks.forEach((t) => { svg += `<line class="grid-l" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 8}" y="${y(t) + 3.5}" text-anchor="end">${fmtCount(Math.round(t))}</text>`; });
+      labels.forEach((lb, i) => { if (i % every === 0 || i === labels.length - 1) svg += `<text class="ax" x="${x(i)}" y="${H - 8}" text-anchor="${i === 0 ? "start" : i === labels.length - 1 ? "end" : "middle"}">${lb}</text>`; });
+      vis.forEach((s, k) => {
+        const d = s.values.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
+        if (k === 0) svg += `<path d="${d} L${x(labels.length - 1)} ${y(0)} L${x(0)} ${y(0)} Z" fill="${s.color}" opacity=".10"/>`;
+        svg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      });
+      svg += `<line id="cg" class="grid-l" y1="${T}" y2="${H - B}" style="stroke:var(--text-tertiary);display:none"/>`;
+      vis.forEach((s) => { svg += `<circle data-dot="${s.key}" r="4" fill="${s.color}" stroke="var(--bg-base)" stroke-width="2" style="display:none"/>`; });
+      svg += `<rect id="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/></svg><div class="chart-tip"></div>`;
+      el.innerHTML = svg;
+      const tip = el.querySelector(".chart-tip"), hit = el.querySelector("#hit"), svgEl = el.querySelector("svg");
+      const move = (e) => {
+        const r = svgEl.getBoundingClientRect(), px = ((e.clientX - r.left) / r.width) * W;
+        const i = Math.max(0, Math.min(labels.length - 1, Math.round(((px - L) / (W - L - R)) * (labels.length - 1))));
+        const g = el.querySelector("#cg"); g.setAttribute("x1", x(i)); g.setAttribute("x2", x(i)); g.style.display = "";
+        vis.forEach((s) => { const c = el.querySelector(`[data-dot="${s.key}"]`); c.setAttribute("cx", x(i)); c.setAttribute("cy", y(s.values[i])); c.style.display = ""; });
+        tip.innerHTML = `<b>${labels[i]}</b>${vis.map((s) => `<span><i style="background:${s.color}"></i>${s.name}: <strong style="color:var(--text-primary)">${s.values[i].toLocaleString()}</strong></span>`).join("")}`;
+        tip.style.display = "block";
+        const left = (x(i) / W) * r.width; tip.style.left = Math.min(Math.max(left + 12, 0), r.width - tip.offsetWidth) + "px"; tip.style.top = "8px";
+      };
+      const leave = () => { tip.style.display = "none"; el.querySelector("#cg").style.display = "none"; el.querySelectorAll("[data-dot]").forEach((c) => (c.style.display = "none")); };
+      hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move); hit.addEventListener("pointerleave", leave);
+    }
 
-    const activityItems = [
-      "Hamza Kayiira published a new lecture, \"Sincerity in Worship\"",
-      "Admin approved 4 pending comments",
-      "New user Tendai M. registered",
-      "Series \"Foundations of Tawheed\" was featured on the homepage",
-      "Lecture \"Patience in Hardship\" flagged for review",
+    function barChart(el, labels, values, color, { every = 1, hi = [] } = {}) {
+      const W = 360, H = 210, L = 34, R = 6, T = 10, B = 24, max = niceMax(Math.max(...values) * 1.05);
+      const bw = (W - L - R) / values.length, y = (v) => T + (1 - v / max) * (H - T - B);
+      let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar chart">`;
+      [0, 0.5, 1].forEach((f) => { svg += `<line class="grid-l" x1="${L}" x2="${W - R}" y1="${y(f * max)}" y2="${y(f * max)}"/><text class="ax" x="${L - 6}" y="${y(f * max) + 3.5}" text-anchor="end">${fmtCount(Math.round(f * max))}</text>`; });
+      values.forEach((v, i) => {
+        svg += `<rect x="${L + i * bw + bw * 0.14}" y="${y(v)}" width="${bw * 0.72}" height="${H - B - y(v)}" rx="3" fill="${hi.includes(i) ? "var(--accent-2)" : color}" opacity="${hi.length && !hi.includes(i) ? 0.75 : 1}"><title>${labels[i]}: ${v.toLocaleString()}</title></rect>`;
+        if (i % every === 0) svg += `<text class="ax" x="${L + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle">${labels[i]}</text>`;
+      });
+      el.innerHTML = svg + "</svg>";
+    }
+
+    function donut(el, parts) {
+      const total = sum(parts.map((p) => p.value)), r = 46, c = 2 * Math.PI * r;
+      let off = 0;
+      const arcs = parts.map((p) => { const len = (p.value / total) * c, a = `<circle r="${r}" cx="60" cy="60" fill="none" stroke="${p.color}" stroke-width="16" stroke-dasharray="${len} ${c - len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`; off += len; return a; }).join("");
+      el.innerHTML = `<svg viewBox="0 0 120 120" role="img" aria-label="Share by device">${arcs}<text x="60" y="58" text-anchor="middle" font-size="18" font-weight="700" fill="var(--text-primary)">${Math.round((parts[0].value / total) * 100)}%</text><text x="60" y="74" text-anchor="middle" font-size="9" fill="var(--text-tertiary)">${parts[0].name}</text></svg>
+        <div class="donut-leg">${parts.map((p) => `<div><i style="background:${p.color}"></i>${p.name}<b>${Math.round((p.value / total) * 100)}%</b></div>`).join("")}</div>`;
+    }
+    const hbars = (rows, cls = "") => rows.map((r) => `<div class="hbar"><span class="nm" title="${escapeHTML(r.name)}">${escapeHTML(r.name)}</span><span class="tr"><i class="${cls}" style="width:${Math.max(2, r.pct)}%;${r.color ? "background:" + r.color : ""}"></i></span><span class="val">${r.val}</span></div>`).join("");
+
+    /* ---------------- page ---------------- */
+    const hr = new Date().getHours(), greet = hr < 12 ? "Good morning" : hr < 17 ? "Good afternoon" : "Good evening";
+    document.getElementById("dash").innerHTML = `
+      <div class="dash-head">
+        <div><h2>${greet}, ${CURRENT_USER.name.split(" ")[0]}</h2><p>${new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · here is how Ugandan Sheikhs is doing. <span class="sample-tag">Sample data</span></p></div>
+        <div class="dash-tools">
+          <div class="seg" id="range-seg" role="group" aria-label="Date range">${Object.entries(RANGES).map(([k, v]) => `<button type="button" data-r="${k}" aria-pressed="${k === range}">${k === "12m" ? "12 months" : k.replace("d", " days")}</button>`).join("")}</div>
+          <button class="btn btn-secondary btn-sm" id="export-btn">${ICONS.download}<span>Export CSV</span></button>
+        </div>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="dash-row r-21">
+        <div class="panel">
+          <div class="panel-head"><div><h3>Listening and downloads</h3><div class="sub" id="trend-sub"></div></div><div class="legend" id="trend-legend"></div></div>
+          <div class="chart" id="trend-chart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Needs attention</h3><span class="sub" id="attn-sub"></span></div>
+          <div class="attn" id="attn"></div>
+        </div>
+      </div>
+
+      <div class="dash-row r-3">
+        <div class="panel"><div class="panel-head"><h3>New listeners</h3><span class="sub" id="nu-sub"></span></div><div class="chart" id="users-chart"></div></div>
+        <div class="panel"><div class="panel-head"><h3>When people listen</h3><span class="sub">Streams by hour · Uganda time</span></div><div class="chart" id="hour-chart"></div></div>
+        <div class="panel"><div class="panel-head"><h3>Top topics</h3><span class="sub">Share of streams</span></div><div id="topics"></div></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-head"><div><h3>Books</h3><div class="sub">How each book is being read and taught</div></div><a class="btn btn-secondary btn-sm" href="books.html">Manage books</a></div>
+        <div class="scroll-x"><table class="dash-table" id="books-perf"></table></div>
+      </div>
+
+      <div class="dash-row r-2">
+        <div class="panel">
+          <div class="panel-head"><h3>Top lectures</h3><div class="seg" id="tl-seg"><button type="button" data-k="plays" aria-pressed="true">Streams</button><button type="button" data-k="downloads" aria-pressed="false">Downloads</button></div></div>
+          <div class="scroll-x"><table class="dash-table" id="top-lectures"></table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Top sheikhs</h3><span class="sub">By streams</span></div>
+          <div class="scroll-x"><table class="dash-table" id="top-sheikhs"></table></div>
+        </div>
+      </div>
+
+      <div class="dash-row r-3">
+        <div class="panel health"><div class="panel-head"><h3>Content health</h3><span class="sub">Fix gaps listeners would notice</span></div><div id="health"></div></div>
+        <div class="panel">
+          <div class="panel-head"><h3>Audience</h3><span class="sub">Sample split</span></div>
+          <div class="donut-wrap" id="devices"></div>
+          <div style="margin-top:14px;" id="districts"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>System</h3><span class="sub">Sample status</span></div>
+          <div class="hbar" style="grid-template-columns:58px 1fr auto;"><span class="nm">Storage</span><span class="tr"><i class="gold" style="width:41.2%"></i></span><span class="val">412 GB / 1 TB</span></div>
+          <div class="stat-line"><span><span class="dot" style="background:var(--success)"></span>Audio encoding queue</span><span>3 jobs</span></div>
+          <div class="stat-line"><span><span class="dot" style="background:var(--success)"></span>Last backup</span><span>Today, 03:00</span></div>
+          <div class="stat-line"><span><span class="dot" style="background:var(--success)"></span>Search index</span><span>Up to date</span></div>
+          <div class="stat-line"><span><span class="dot" style="background:var(--warning)"></span>Error rate (24 h)</span><span>0.08%</span></div>
+        </div>
+      </div>
+
+      <div class="dash-row r-2">
+        <div class="panel"><div class="panel-head"><h3>Moderation queue</h3><a class="btn btn-ghost btn-sm" href="comments.html">Open comments</a></div><div id="mod"></div></div>
+        <div class="panel"><div class="panel-head"><h3>Recent activity</h3></div><div class="feed" id="feed"></div></div>
+      </div>
+    `;
+
+    /* ---------------- paint everything for the chosen range ---------------- */
+    const cur = {}, prev = {};
+    function paint() {
+      const cfg = RANGES[range], labels = labelsFor(range);
+      Object.keys(METRICS).forEach((k) => { cur[k] = series(k, range, 0); prev[k] = series(k, range, 1); });
+      document.querySelectorAll("#range-seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.r === range));
+
+      // KPI cards: totals for the period, change against the period before it, sparkline
+      const per = (k) => (k === "active" ? Math.round(sum(cur[k]) / cur[k].length) : sum(cur[k]));
+      const perPrev = (k) => (k === "active" ? Math.round(sum(prev[k]) / prev[k].length) : sum(prev[k]));
+      const order = ["streams", "downloads", "newUsers", "active", "bookReads", "bookDownloads", "comments"];
+      document.getElementById("kpis").innerHTML = order.map((k) => {
+        const m = METRICS[k], ch = pctChange(per(k), perPrev(k)), up = ch >= 0;
+        return `<a class="kpi" href="${m.href}"><div class="l">${ICONS[m.icon]}${m.label}${k === "active" ? " (avg/day)" : ""}</div><div class="v">${m.fmt(per(k))}</div><div class="d ${up ? "up" : "down"}">${up ? "▲" : "▼"} ${Math.abs(ch).toFixed(1)}% <small>vs previous ${cfg.unit === "day" ? cfg.n + " days" : "12 months"}</small></div>${sparkline(cur[k], up)}</a>`;
+      }).join("") + `<a class="kpi" href="downloads.html"><div class="l">${ICONS.cloudOff}Storage</div><div class="v">412 GB</div><div class="d" style="color:var(--text-secondary);">41% of 1 TB used</div><div class="mini-bar" style="margin-top:20px;"><i style="width:41%;background:var(--accent-2);"></i></div></a>`;
+
+      // main trend chart with toggles
+      const lines = [{ key: "streams", name: "Streams", color: COLORS.streams, values: cur.streams }, { key: "downloads", name: "Downloads", color: COLORS.downloads, values: cur.downloads }, { key: "bookReads", name: "Book sessions", color: COLORS.books, values: cur.bookReads }];
+      document.getElementById("trend-sub").textContent = `${cfg.label} · ${labels[0]} to ${labels[labels.length - 1]}`;
+      document.getElementById("trend-legend").innerHTML = lines.map((s) => `<button type="button" data-k="${s.key}" aria-pressed="${!hidden.has(s.key)}"><i style="background:${s.color}"></i>${s.name}</button>`).join("");
+      const draw = () => lineChart(document.getElementById("trend-chart"), labels, lines);
+      draw();
+      document.querySelectorAll("#trend-legend button").forEach((b) => b.addEventListener("click", () => {
+        hidden.has(b.dataset.k) ? hidden.delete(b.dataset.k) : (hidden.size < 2 ? hidden.add(b.dataset.k) : toast("Keep at least one line visible", "warning"));
+        b.setAttribute("aria-pressed", !hidden.has(b.dataset.k)); draw();
+      }));
+
+      // new listeners (bars; Fridays highlighted on daily ranges)
+      const hiFri = cfg.unit === "day" ? labels.map((_, i) => i).filter((i) => { const d = new Date(); d.setDate(d.getDate() - (cfg.n - 1 - i)); return d.getDay() === 5; }) : [];
+      document.getElementById("nu-sub").textContent = `${sum(cur.newUsers).toLocaleString()} in ${cfg.label.toLowerCase()}`;
+      barChart(document.getElementById("users-chart"), labels, cur.newUsers, "var(--accent)", { every: Math.max(1, Math.ceil(labels.length / 6)) });
+
+      // hour-of-day profile: peaks around Fajr, after Dhuhr and after Isha
+      const hourW = Array.from({ length: 24 }, (_, h) => 0.25 + 1.0 * Math.exp(-Math.pow(h - 5, 2) / 3) + 0.55 * Math.exp(-Math.pow(h - 13, 2) / 4) + 0.9 * Math.exp(-Math.pow(h - 20.5, 2) / 5));
+      const r = rng(hash("hours" + range)), total = sum(cur.streams), tw = sum(hourW);
+      const hours = hourW.map((w) => Math.round((w / tw) * total * (0.95 + r() * 0.1)));
+      barChart(document.getElementById("hour-chart"), hourW.map((_, h) => String(h).padStart(2, "0")), hours, "var(--info)", { every: 3, hi: [hours.indexOf(Math.max(...hours))] });
+
+      // topics by streams
+      const byTopic = {}; TRACKS.forEach((t) => { byTopic[t.genre] = (byTopic[t.genre] || 0) + t.plays; });
+      const topics = Object.entries(byTopic).sort((a, z) => z[1] - a[1]).slice(0, 6), tmax = topics[0][1], tsum = sum(Object.values(byTopic));
+      document.getElementById("topics").innerHTML = hbars(topics.map(([n, v]) => ({ name: n, pct: (v / tmax) * 100, val: Math.round((v / tsum) * 100) + "%" })));
+
+      paintLists();
+    }
+
+    function paintLists() {
+      const scale = sum(cur.streams) / sum(TRACKS.map((t) => t.plays));
+      const kind = document.querySelector("#tl-seg [aria-pressed=true]").dataset.k;
+      const top = [...TRACKS].sort((a, z) => z[kind] - a[kind]).slice(0, 7), topMax = top[0][kind];
+      document.getElementById("top-lectures").innerHTML = `<thead><tr><th>Lecture</th><th class="num">${kind === "plays" ? "Streams" : "Downloads"}</th><th style="width:90px"></th></tr></thead><tbody>${top.map((t) => `
+        <tr><td><div class="who"><img src="${t.art}" alt="" /><div class="n"><a href="../track.html?id=${t.id}">${escapeHTML(t.title)}</a><small>${escapeHTML(t.artist)}${t.bookRef ? ` · ${pagesLabel(t.bookRef.from, t.bookRef.to)}` : ""}</small></div></div></td>
+        <td class="num">${fmtCount(Math.round(t[kind] * scale))}</td><td><div class="mini-bar"><i style="width:${(t[kind] / topMax) * 100}%"></i></div></td></tr>`).join("")}</tbody>`;
+
+      const sheikhs = ARTISTS.map((a) => { const ts = TRACKS.filter((t) => t.artistId === a.id); return { a, plays: sum(ts.map((t) => t.plays)), n: ts.length, books: booksOfSheikh(a.id).length }; }).sort((x, y) => y.plays - x.plays).slice(0, 7);
+      document.getElementById("top-sheikhs").innerHTML = `<thead><tr><th>Sheikh</th><th class="num">Lectures</th><th class="num">Books</th><th class="num">Streams</th></tr></thead><tbody>${sheikhs.map((s) => `
+        <tr><td><div class="who"><img src="${s.a.img}" alt="" style="border-radius:50%;object-position:center 18%;" /><div class="n">${escapeHTML(s.a.name)}<small>${escapeHTML(s.a.genre)}</small></div></div></td><td class="num">${s.n}</td><td class="num">${s.books || "–"}</td><td class="num">${fmtCount(Math.round(s.plays * scale))}</td></tr>`).join("")}</tbody>`;
+
+      const bscale = sum(cur.bookReads) / 1200;
+      document.getElementById("books-perf").innerHTML = `<thead><tr><th>Book</th><th>Sheikh</th><th class="num">Sessions</th><th class="num">Downloads</th><th>Avg. completion</th><th class="num">Lectures linked</th><th>Status</th><th></th></tr></thead><tbody>${BOOKS.map((b) => {
+        const comp = 38 + (hash(b.id) % 35), linked = lecturesOfBook(b).length, sh = ARTISTS.find((a) => a.id === b.sheikhId);
+        return `<tr><td><div class="who"><img src="${b.cover}" alt="" style="width:30px;height:40px;" /><div class="n"><a href="../book.html?id=${b.id}">${escapeHTML(b.title)}</a><small class="ar" lang="ar" style="direction:ltr;text-align:left;">${b.titleAr}</small></div></div></td>
+          <td>${escapeHTML(sh ? sh.name : "—")}</td><td class="num">${fmtCount(Math.round(b.readers * bscale / 8))}</td><td class="num">${b.downloadable ? fmtCount(Math.round(b.downloads * bscale / 8)) : "—"}</td>
+          <td><div style="display:flex;gap:8px;align-items:center;"><div class="mini-bar"><i style="width:${comp}%"></i></div><span style="font-size:12px;color:var(--text-secondary)">${comp}%</span></div></td>
+          <td class="num">${linked || `<a href="books.html#mapper" style="color:var(--warning)">None</a>`}</td>
+          <td><span class="badge ${b.status === "Published" ? "badge-success" : "badge-neutral"}">${b.status}</span>${b.downloadable ? "" : ` <span class="badge badge-warning">Online only</span>`}</td>
+          <td><a class="btn btn-ghost btn-sm" href="books.html#mapper">Map lectures</a></td></tr>`;
+      }).join("")}</tbody>`;
+    }
+    document.getElementById("tl-seg").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      document.querySelectorAll("#tl-seg button").forEach((x) => x.setAttribute("aria-pressed", x === b)); paintLists();
+    });
+    document.getElementById("range-seg").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      range = b.dataset.r; sessionStorage.setItem("us_dash_range", range); paint();
+    });
+
+    /* ---------------- things that don't depend on the range ---------------- */
+    function paintAttention() {
+      const q = adminQueues();
+      const items = [
+        q.reports && { n: q.reports, t: "Open reports from listeners", s: "Review and resolve", href: "reports.html", cls: "bad", icon: "flag" },
+        q.comments && { n: q.comments, t: "Comments waiting for review", s: "Pending or reported", href: "comments.html", cls: "", icon: "message" },
+        q.draftBooks && { n: q.draftBooks, t: "Books still in draft", s: "Not visible to listeners", href: "books.html", cls: "info", icon: "book" },
+        q.unmappedBooks && { n: q.unmappedBooks, t: "Books with no lectures linked", s: "Follow-along is off for them", href: "books.html#mapper", cls: "info", icon: "headphones" },
+        q.orphanLectures && { n: q.orphanLectures, t: "Lectures not in any series", s: "Harder for listeners to find", href: "tracks.html", cls: "", icon: "layers" },
+        q.emptySeries && { n: q.emptySeries, t: "Series with no lectures", s: "Visible but empty", href: "albums.html", cls: "", icon: "disc" },
+        q.suspended && { n: q.suspended, t: "Suspended accounts", s: "Check if any should return", href: "users.html", cls: "info", icon: "users" },
+      ].filter(Boolean);
+      document.getElementById("attn-sub").textContent = items.length ? `${items.length} item${items.length === 1 ? "" : "s"}` : "";
+      document.getElementById("attn").innerHTML = items.length
+        ? items.map((i) => `<a href="${i.href}"><span class="ic ${i.cls}">${ICONS[i.icon]}</span><span class="t">${i.t}<small>${i.s}</small></span><span class="n">${i.n}</span></a>`).join("")
+        : `<div class="allclear">${ICONS.check} Everything is in order.</div>`;
+    }
+    paintAttention();
+
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+    const health = [
+      ["Lectures in a series", pct(TRACKS.filter((t) => seriesOf(t)).length, TRACKS.length)],
+      ["Lectures that can be downloaded", pct(TRACKS.filter((t) => t.downloadable).length, TRACKS.length)],
+      ["Series with a description", pct(ALBUMS.filter((a) => a.description && a.description.length > 20).length, ALBUMS.length)],
+      ["Series that have lectures", pct(ALBUMS.filter((a) => a.tracks.length).length, ALBUMS.length)],
+      ["Books with lectures linked", pct(BOOKS.filter((b) => lecturesOfBook(b).length).length, BOOKS.length)],
+      ["Books published", pct(BOOKS.filter((b) => b.status === "Published").length, BOOKS.length)],
     ];
-    document.getElementById("activity-feed").innerHTML = activityItems.map((a,i) => `
-      <div class="flex gap-12" style="padding:11px 0;border-bottom:1px solid var(--border-subtle);align-items:center;">
-        <span class="icon-btn" style="background:var(--surface-2);">${ICONS.clock}</span>
-        <div style="font-size:13.5px;">${a}</div>
-        <span class="text-tertiary" style="margin-left:auto;font-size:12px;">${(i+1)*3}h ago</span>
-      </div>`).join("");
+    document.getElementById("health").innerHTML = hbars(health.map(([n, p]) => ({ name: n, pct: p, val: p + "%", color: p >= 90 ? "var(--success)" : p >= 60 ? "var(--accent-2)" : "var(--error)" })));
+
+    donut(document.getElementById("devices"), [{ name: "Phone", value: 71, color: "#1FB87A" }, { name: "Computer", value: 22, color: "#5AA9FF" }, { name: "Tablet", value: 7, color: "#D9B26A" }]);
+    document.getElementById("districts").innerHTML = `<div class="eyebrow" style="margin-bottom:6px;">Top districts</div>` + hbars([["Kampala", 34], ["Wakiso", 18], ["Mbarara", 9], ["Jinja", 7], ["Gulu", 6]].map(([n, v]) => ({ name: n, pct: v * 2.6, val: v + "%" })), "gold");
+
+    function paintMod() {
+      const rows = COMMENTS.filter((c) => c.status !== "Approved").slice(0, 4);
+      document.getElementById("mod").innerHTML = rows.length ? rows.map((c) => `
+        <div class="mod-row" data-id="${c.id}"><img src="${c.avatar}" alt="" />
+          <div class="tx"><strong>${escapeHTML(c.user)}</strong> <span class="badge ${c.status === "Reported" ? "badge-error" : "badge-warning"}">${c.status}</span> <span class="text-tertiary" style="font-size:11.5px;">${c.time}</span><p>${escapeHTML(c.body)}</p></div>
+          <div class="flex gap-8"><button class="btn btn-secondary btn-sm" data-act="ok">Approve</button><button class="btn btn-ghost btn-sm" data-act="rm" style="color:var(--error)">Remove</button></div></div>`).join("")
+        : `<div class="allclear">${ICONS.check} Nothing to moderate.</div>`;
+    }
+    document.getElementById("mod").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-act]"); if (!b) return;
+      b.closest(".mod-row").remove(); toast(b.dataset.act === "ok" ? "Comment approved" : "Comment removed", b.dataset.act === "ok" ? "success" : "warning");
+      if (!document.querySelector("#mod .mod-row")) document.getElementById("mod").innerHTML = `<div class="allclear">${ICONS.check} Nothing to moderate.</div>`;
+    });
+    paintMod();
+
+    const book = BOOKS[0], ss = ARTISTS.find((a) => a.id === book.sheikhId);
+    const activity = [
+      ["book", `<strong>${escapeHTML(book.title)}</strong> was linked to ${lecturesOfBook(book).length} lectures`, "18 min ago"],
+      ["upload", `${escapeHTML(TRACKS[0].artist)} published “${escapeHTML(TRACKS[0].title)}”`, "1 h ago"],
+      ["check", `Admin approved 4 pending comments`, "3 h ago"],
+      ["userPlus", `${escapeHTML(ADMIN_USERS[1].name)} registered`, "5 h ago"],
+      ["star", `“${escapeHTML(ALBUMS[0].title)}” was featured on the homepage`, "Yesterday"],
+      ["flag", `A lecture was flagged for review`, "Yesterday"],
+      ["download", `${escapeHTML(ss ? ss.name : "A sheikh")}'s series reached ${fmtCount(book.downloads)} book downloads`, "2 days ago"],
+    ];
+    document.getElementById("feed").innerHTML = activity.map(([ic, tx, tm]) => `<div class="feed-i"><span class="ic">${ICONS[ic]}</span><div class="tx">${tx}<div class="tm">${tm}</div></div></div>`).join("");
+
+    document.getElementById("export-btn").addEventListener("click", () => {
+      const rows = [["Metric", RANGES[range].label, "Previous period", "Change %"]];
+      Object.entries(METRICS).forEach(([k, m]) => { const a = k === "active" ? Math.round(sum(cur[k]) / cur[k].length) : sum(cur[k]), p = k === "active" ? Math.round(sum(prev[k]) / prev[k].length) : sum(prev[k]); rows.push([m.label, a, p, pctChange(a, p).toFixed(1)]); });
+      rows.push([], ["Top lectures", "Streams", "Downloads"], ...[...TRACKS].sort((a, z) => z.plays - a.plays).slice(0, 10).map((t) => [t.title, t.plays, t.downloads]));
+      const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" })), download: `ugandan-sheikhs-report-${range}.csv` });
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+      toast("Report exported (sample data)", "success");
+    });
+
+    paint();
   </script>
 </body>
 </html>

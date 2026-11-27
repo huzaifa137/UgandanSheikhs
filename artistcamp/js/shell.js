@@ -289,33 +289,60 @@ function renderShell(active) {
 /* =====================================================================
    Admin Dashboard Shell
    ===================================================================== */
-const ADMIN_NAV = [
-  { id: "dashboard", label: "Dashboard", href: "dashboard.html", icon: "grid" },
-  { id: "artists", label: "Sheikhs", href: "artists.html", icon: "users" },
-  { id: "albums", label: "Series", href: "albums.html", icon: "disc" },
-  { id: "tracks", label: "Lectures", href: "tracks.html", icon: "layers" },
-  { id: "books", label: "Books", href: "books.html", icon: "book" },
-  { id: "genres", label: "Topics", href: "genres.html", icon: "tag" },
-  { id: "playlists", label: "Collections", href: "playlists.html", icon: "library" },
-  { id: "users", label: "Users", href: "users.html", icon: "users" },
-  { id: "comments", label: "Comments", href: "comments.html", icon: "message" },
-  { id: "downloads", label: "Downloads", href: "downloads.html", icon: "download" },
-  { id: "featured", label: "Featured Content", href: "featured.html", icon: "star" },
-  { id: "reports", label: "Reports", href: "reports.html", icon: "flag" },
-  { id: "settings", label: "Settings", href: "settings.html", icon: "settings" },
+/* Admin navigation, grouped. `badge` names a counter from adminQueues() that shows as a pill when above 0. */
+const ADMIN_NAV_GROUPS = [
+  { label: "Overview", items: [
+    { id: "dashboard", label: "Dashboard", href: "dashboard.html", icon: "grid" },
+  ] },
+  { label: "Content", items: [
+    { id: "artists", label: "Sheikhs", href: "artists.html", icon: "users" },
+    { id: "albums", label: "Series", href: "albums.html", icon: "disc" },
+    { id: "tracks", label: "Lectures", href: "tracks.html", icon: "layers" },
+    { id: "books", label: "Books", href: "books.html", icon: "book", badge: "draftBooks" },
+    { id: "genres", label: "Topics", href: "genres.html", icon: "tag" },
+    { id: "playlists", label: "Collections", href: "playlists.html", icon: "library" },
+    { id: "featured", label: "Featured Content", href: "featured.html", icon: "star" },
+  ] },
+  { label: "Community", items: [
+    { id: "users", label: "Users", href: "users.html", icon: "users" },
+    { id: "comments", label: "Comments", href: "comments.html", icon: "message", badge: "comments" },
+    { id: "reports", label: "Reports", href: "reports.html", icon: "flag", badge: "reports" },
+  ] },
+  { label: "Insights & System", items: [
+    { id: "downloads", label: "Downloads", href: "downloads.html", icon: "download" },
+    { id: "settings", label: "Settings", href: "settings.html", icon: "settings" },
+  ] },
 ];
+const ADMIN_NAV = ADMIN_NAV_GROUPS.flatMap((g) => g.items);
+
+/* Work waiting for a human. Used by the sidebar badges, the bell menu and the dashboard "Needs attention" list. */
+function adminQueues() {
+  const flagged = COMMENTS.filter((c) => c.status !== "Approved").length;
+  let stored = [];
+  try { stored = typeof loadReports === "function" ? loadReports() : []; } catch {}
+  const seeded = COMMENTS.filter((c) => c.status === "Reported").filter((_, i) => i % 2 === 0).length;   // same rule as admin/reports.html
+  const openReports = stored.filter((r) => r.status === "Open").length + seeded;
+  const draftBooks = BOOKS.filter((b) => b.status !== "Published").length;
+  const unmappedBooks = BOOKS.filter((b) => !lecturesOfBook(b).length).length;
+  const orphanLectures = TRACKS.filter((t) => !seriesOf(t)).length;
+  const emptySeries = ALBUMS.filter((a) => !a.tracks.length).length;
+  const suspended = ADMIN_USERS.filter((u) => u.status === "Suspended").length;
+  return { comments: flagged, reports: openReports, draftBooks, unmappedBooks, orphanLectures, emptySeries, suspended };
+}
 
 function renderAdminSidebar(active) {
   const el = document.getElementById("admin-sidebar");
   if (!el) return;
+  const q = adminQueues();
+  const link = (i) => `<a class="nav-link ${active === i.id ? "active" : ""}" href="${i.href}">${ICONS[i.icon]}<span>${i.label}</span>${i.badge && q[i.badge] ? `<span class="nav-count" aria-label="${q[i.badge]} waiting">${q[i.badge]}</span>` : ""}</a>`;
   el.innerHTML = `
     <a class="sidebar-logo" href="dashboard.html">
       <span class="logo-mark"><img class="logo-blue" src="../img/logo-mark-blue.png" alt="" width="36" height="36" /><img class="logo-green" src="../img/logo-mark-green.png" alt="" width="36" height="36" /></span>
       <span class="word">Ugandan Sheikhs</span>
       <span class="badge badge-neutral" style="margin-left:auto;">Admin</span>
     </a>
-    <nav class="nav-group" style="flex:1;overflow-y:auto;">
-      ${ADMIN_NAV.map((i) => `<a class="nav-link ${active === i.id ? "active" : ""}" href="${i.href}">${ICONS[i.icon]}<span>${i.label}</span></a>`).join("")}
+    <nav class="nav-group admin-nav" style="flex:1;overflow-y:auto;">
+      ${ADMIN_NAV_GROUPS.map((g) => `<div class="nav-group-label">${g.label}</div>${g.items.map(link).join("")}`).join("")}
     </nav>
     <div class="sidebar-bottom">
       <div class="user-chip" style="width:100%;">
@@ -327,19 +354,84 @@ function renderAdminSidebar(active) {
   `;
 }
 
+/* Everything the admin search box can find: [label, sub, href, icon] */
+function adminSearchIndex() {
+  return [
+    ...ARTISTS.map((a) => [a.name, "Sheikh", `artists.html`, "users"]),
+    ...ALBUMS.map((a) => [a.title, `Series · ${a.artist}`, `../album.html?id=${a.id}`, "disc"]),
+    ...TRACKS.map((t) => [t.title, `Lecture · ${t.artist}`, `../track.html?id=${t.id}`, "layers"]),
+    ...BOOKS.map((b) => [b.title, `Book · ${b.author}`, `books.html`, "book"]),
+    ...ADMIN_USERS.map((u) => [u.name, `User · ${u.email}`, `users.html`, "users"]),
+  ];
+}
+
 function renderAdminTopbar(title) {
   const el = document.getElementById("admin-topbar");
   if (!el) return;
+  const q = adminQueues();
+  const waiting = q.comments + q.reports + q.draftBooks;
+  const alerts = [
+    q.reports ? { icon: "flag", text: `${q.reports} open report${q.reports === 1 ? "" : "s"} from listeners`, href: "reports.html" } : null,
+    q.comments ? { icon: "message", text: `${q.comments} comment${q.comments === 1 ? "" : "s"} waiting for review`, href: "comments.html" } : null,
+    q.draftBooks ? { icon: "book", text: `${q.draftBooks} book${q.draftBooks === 1 ? "" : "s"} still in draft`, href: "books.html" } : null,
+    q.unmappedBooks ? { icon: "headphones", text: `${q.unmappedBooks} book${q.unmappedBooks === 1 ? " has" : "s have"} no lectures linked`, href: "books.html#mapper" } : null,
+  ].filter(Boolean);
   el.innerHTML = `
     <button class="icon-btn admin-menu-btn" data-admin-menu aria-label="Open menu">${ICONS.menu}</button>
-    <h1 style="font-size:18px;font-family:var(--font-display);">${title}</h1>
-    <div class="search-field" style="max-width:340px;margin-left:24px;">${ICONS.search}<input placeholder="Search admin…" /></div>
+    <div class="admin-crumbs"><a href="dashboard.html">Admin</a><span>/</span><h1>${title}</h1></div>
+    <div class="admin-search" style="position:relative;">
+      <div class="search-field" style="max-width:340px;">${ICONS.search}<input id="admin-search" placeholder="Search sheikhs, lectures, books, users…" autocomplete="off" aria-label="Search admin" /></div>
+      <div class="menu" id="admin-search-menu" style="left:0;right:0;top:44px;min-width:320px;"></div>
+    </div>
     <div class="topbar-right">
-      <button class="btn btn-primary btn-sm" onclick="toast('Quick add menu opened')">${ICONS.plus}<span>Quick Add</span></button>
-      <button class="icon-btn" style="position:relative;">${ICONS.bell}<span style="position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--accent);"></span></button>
-      <img class="avatar" src="${CURRENT_USER.avatar}" width="32" height="32" />
+      <div style="position:relative;">
+        <button class="btn btn-primary btn-sm" id="admin-quick-btn" aria-haspopup="menu">${ICONS.plus}<span>Quick Add</span></button>
+        <div class="menu" id="admin-quick-menu" style="right:0;top:42px;min-width:210px;">
+          <a class="menu-item" href="tracks-upload.html">${ICONS.upload}Upload lecture</a>
+          <a class="menu-item" href="albums.html#add">${ICONS.disc}Add series</a>
+          <a class="menu-item" href="books.html#add">${ICONS.book}Add book</a>
+          <a class="menu-item" href="artists.html#add">${ICONS.users}Add sheikh</a>
+          <div class="menu-divider"></div>
+          <a class="menu-item" href="featured.html">${ICONS.star}Feature something</a>
+        </div>
+      </div>
+      <div style="position:relative;">
+        <button class="icon-btn" id="admin-bell-btn" style="position:relative;" aria-label="${waiting} items need attention" aria-haspopup="menu">${ICONS.bell}${waiting ? `<span class="bell-count">${waiting > 9 ? "9+" : waiting}</span>` : ""}</button>
+        <div class="menu" id="admin-bell-menu" style="right:0;top:42px;min-width:290px;">
+          <div class="nav-group-label" style="padding:6px 10px;">Needs attention</div>
+          ${alerts.length ? alerts.map((a) => `<a class="menu-item" href="${a.href}">${ICONS[a.icon]}${a.text}</a>`).join("") : `<div class="menu-item" style="color:var(--text-secondary);">You're all caught up.</div>`}
+        </div>
+      </div>
+      <div style="position:relative;">
+        <button class="user-chip" id="admin-user-btn" aria-haspopup="menu"><img class="avatar" src="${CURRENT_USER.avatar}" width="30" height="30" alt="${CURRENT_USER.name}" /></button>
+        <div class="menu" id="admin-user-menu" style="right:0;top:44px;min-width:200px;">
+          <div class="nav-group-label" style="padding:6px 10px;">${CURRENT_USER.name}</div>
+          <a class="menu-item" href="settings.html">${ICONS.settings}Settings</a>
+          <a class="menu-item" href="../index.html" target="_blank" rel="noopener">${ICONS.eye}View listener site</a>
+          <div class="menu-divider"></div>
+          <a class="menu-item danger" href="../login.html">${ICONS.logout}Sign out</a>
+        </div>
+      </div>
     </div>
   `;
+  wireMenu("admin-quick-btn", "admin-quick-menu");
+  wireMenu("admin-bell-btn", "admin-bell-menu");
+  wireMenu("admin-user-btn", "admin-user-menu");
+  const input = document.getElementById("admin-search"), box = document.getElementById("admin-search-menu");
+  let index = null;
+  input.addEventListener("input", () => {
+    const v = input.value.trim().toLowerCase();
+    if (!v) { box.classList.remove("open"); return; }
+    index = index || adminSearchIndex();
+    const hits = index.filter(([t, sub]) => `${t} ${sub}`.toLowerCase().includes(v)).slice(0, 8);
+    box.innerHTML = hits.length
+      ? hits.map(([t, sub, href, icon]) => `<a class="menu-item" href="${href}">${ICONS[icon]}<span style="min-width:0;"><span class="truncate" style="display:block;">${escapeHTML(t)}</span><span class="truncate" style="display:block;font-size:11.5px;color:var(--text-tertiary);">${escapeHTML(sub)}</span></span></a>`).join("")
+      : `<div class="menu-item" style="color:var(--text-secondary);">No matches for “${escapeHTML(input.value.trim())}”</div>`;
+    box.classList.add("open");
+  });
+  input.addEventListener("click", (e) => e.stopPropagation());
+  box.addEventListener("click", (e) => e.stopPropagation());
+  document.addEventListener("keydown", (e) => { if (e.key === "/" && !e.target.closest("input,textarea,select")) { e.preventDefault(); input.focus(); } });
 }
 
 function initAdminPage(active, title) {

@@ -263,6 +263,8 @@
     });
 
     fillSeries(); paintBooks(); paintMap();
+    if (location.hash === "#mapper") document.querySelector('#admin-book-tabs .tab[data-target="mapper"]').click();
+    if (location.hash === "#add") document.getElementById("add-book-btn").click();
   </script>
 </body>
 </html>
