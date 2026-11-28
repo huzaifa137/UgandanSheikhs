@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Featured Content — Ugandan Sheikhs Admin</title>
+<title>Featured content — Ugandan Sheikhs Admin</title>
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -18,35 +19,30 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Featured Content</h1><p>Curate what listeners see across the homepage.</p></div></div>
+        <div class="page-header"><div><h1 style="font-size:22px;">Featured content</h1><p>Curate what listeners see on the homepage. Drag to reorder, or use the arrows. Changes show on the listener site straight away.</p></div>
+          <button class="btn btn-ghost" id="reset-btn">Reset to default</button></div>
 
-        <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Homepage Hero</h2></div>
-        <div class="card" style="display:flex;gap:16px;align-items:center;padding:16px;max-width:520px;margin-bottom:8px;">
-          <img src="" id="hero-art" style="width:64px;height:64px;border-radius:8px;object-fit:cover;background:var(--surface-3);" />
-          <div style="flex:1;"><div style="font-weight:600;">Foundations of Tawheed</div><div class="text-secondary" style="font-size:12.5px;">Hamza Kayiira</div></div>
-          <button class="btn btn-secondary btn-sm" onclick="toast('Content selection modal opened')">Change</button>
+        <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Homepage hero</h2></div>
+        <div class="card" style="display:flex;gap:16px;align-items:center;padding:16px;max-width:560px;margin-bottom:8px;flex-wrap:wrap;">
+          <img src="" id="hero-art" alt="" style="width:64px;height:64px;border-radius:8px;object-fit:cover;background:var(--surface-3);" />
+          <div style="flex:1;min-width:160px;"><div id="hero-title" style="font-weight:600;"></div><div class="text-secondary" id="hero-sub" style="font-size:12.5px;"></div></div>
+          <button class="btn btn-secondary btn-sm" id="hero-change">Change</button>
         </div>
+        <p class="small muted" style="margin-bottom:8px;">The hero series always shows first in the homepage slider.</p>
 
         <div class="grid grid-2" style="margin-top:28px;">
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Featured Sheikhs</h2></div>
-            <div id="feat-artists"></div>
-          </div>
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Featured Series</h2></div>
-            <div id="feat-albums"></div>
-          </div>
+          <div><div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Featured sheikhs</h2></div><div id="feat-artists"></div></div>
+          <div><div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Featured series (slider)</h2></div><div id="feat-albums"></div></div>
+        </div>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div><div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Editor's picks</h2></div><div id="feat-editor"></div></div>
+          <div><div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Promoted collections</h2></div><div id="feat-playlists"></div></div>
         </div>
 
-        <div class="grid grid-2" style="margin-top:12px;">
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Editor's Picks</h2></div>
-            <div id="feat-editor"></div>
-          </div>
-          <div>
-            <div class="section-header" style="margin-top:0;"><h2 style="font-size:16px;">Promoted Collections</h2></div>
-            <div id="feat-playlists"></div>
-          </div>
+        <div class="modal modal-md" id="pick-modal" role="dialog" aria-modal="true" aria-labelledby="pick-title">
+          <div class="modal-head"><h3 id="pick-title">Choose content</h3><button class="icon-btn" id="pick-close" aria-label="Close" onclick="closeModals()"></button></div>
+          <div class="search-field" style="margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="pick-q" type="search" placeholder="Type to filter…" autocomplete="off" aria-label="Filter" /></div>
+          <div id="pick-list" class="panel-list" style="max-height:48vh;overflow:auto;"></div>
         </div>
 
       </main>
@@ -57,35 +53,77 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
-    initAdminPage("featured", "Featured Content");
-    document.getElementById("hero-art").src = ALBUMS[0].art;
 
-    function draggableList(id, items, labelFn, subFn, imgFn) {
-      document.getElementById(id).innerHTML = items.map((it,i) => `
-        <div class="card" draggable="true" style="display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
-          <span class="text-tertiary">::</span>
-          <img src="${imgFn(it)}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" />
-          <div style="flex:1;min-width:0;"><div class="truncate" style="font-weight:600;font-size:13px;">${labelFn(it)}</div><div class="truncate text-secondary" style="font-size:11.5px;">${subFn(it)}</div></div>
-          <button class="icon-btn" style="width:26px;height:26px;" onclick="this.closest('.card').remove();toast('Removed from featured list')">${ICONS.x}</button>
-        </div>`).join("") + `<button class="btn btn-ghost btn-sm" onclick="toast('Content selection modal opened')">${ICONS.plus}<span>Add item</span></button>`;
-      const cards = document.getElementById(id);
-      let dragged;
-      cards.addEventListener("dragstart", (e) => { if (e.target.classList.contains("card")) dragged = e.target; });
-      cards.addEventListener("dragover", (e) => e.preventDefault());
-      cards.addEventListener("drop", (e) => {
-        e.preventDefault();
-        const target = e.target.closest(".card");
-        if (target && dragged && target !== dragged) {
-          target.before(dragged);
-          toast("Order updated");
-        }
+    initAdminPage("featured", "Featured content");
+    const $ = (id) => document.getElementById(id);
+    $("pick-close").innerHTML = ICONS.x;
+    const live = (arr) => arr.filter((x) => !x._del && (!x.status || x.status === "Published"));
+    const LISTS = {
+      artists: { el: "feat-artists", max: 12, noun: "sheikh", pool: () => live(ARTISTS), def: () => ARTISTS.slice(0, 10), label: (a) => a.name, sub: (a) => a.genre, img: (a) => a.img },
+      albums: { el: "feat-albums", max: 8, noun: "series", pool: () => live(ALBUMS), def: () => ALBUMS.slice(0, 5), label: (a) => a.title, sub: (a) => a.artist, img: (a) => a.art },
+      editor: { el: "feat-editor", max: 6, noun: "series", pool: () => live(ALBUMS), def: () => ALBUMS.slice(6, 9), label: (a) => a.title, sub: (a) => a.artist, img: (a) => a.art },
+      playlists: { el: "feat-playlists", max: 8, noun: "collection", pool: () => officialCollections(), def: () => officialCollections().slice(0, 5), label: (p) => p.name, sub: (p) => p.creator, img: (p) => p.art },
+    };
+    const F = () => { const d = AdminDB.get(); d.featured = d.featured || { hero: null, lists: {} }; d.featured.lists = d.featured.lists || {}; return d.featured; };
+    const ids = (name) => { const f = F(); const L = LISTS[name]; const pool = L.pool(); return (f.lists[name] || L.def().map((x) => x.id)).filter((id) => pool.some((x) => x.id === id)); };
+    const save = (name, list, what) => { F().lists[name] = list; AdminDB.save(); Audit.log({ action: "Changed featured content", kind: "settings", label: `${LISTS[name].noun === "sheikh" ? "Featured sheikhs" : name === "albums" ? "Featured series" : name === "editor" ? "Editor's picks" : "Promoted collections"}`, detail: what }); };
+    const item = (name, id) => LISTS[name].pool().find((x) => x.id === id);
+
+    function paintList(name) {
+      const L = LISTS[name], list = ids(name);
+      $(L.el).innerHTML = list.map((id, i) => { const it = item(name, id); return `
+        <div class="card" draggable="true" data-id="${esc(id)}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
+          <span class="text-tertiary" aria-hidden="true">::</span>
+          <img src="${esc(L.img(it))}" alt="" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" />
+          <div style="flex:1;min-width:0;"><div class="truncate" style="font-weight:600;font-size:13px;">${esc(L.label(it))}</div><div class="truncate text-secondary" style="font-size:11.5px;">${esc(L.sub(it))}</div></div>
+          <button class="icon-btn" style="width:26px;height:26px;" data-mv="-1" ${i === 0 ? "disabled" : ""} aria-label="Move up">▲</button>
+          <button class="icon-btn" style="width:26px;height:26px;" data-mv="1" ${i === list.length - 1 ? "disabled" : ""} aria-label="Move down">▼</button>
+          <button class="icon-btn" style="width:26px;height:26px;" data-rm aria-label="Remove from featured">${ICONS.x}</button>
+        </div>`; }).join("") + (list.length ? "" : `<p class="small muted" style="margin-bottom:10px;">Nothing featured here. The homepage will show this section empty.</p>`) + `<button class="btn btn-ghost btn-sm" data-add ${list.length >= L.max ? "disabled" : ""}>${ICONS.plus}<span>Add ${L.noun}</span></button>${list.length >= L.max ? `<span class="small muted" style="margin-left:8px;">Up to ${L.max}</span>` : ""}`;
+    }
+    function wire(name) {
+      const root = $(LISTS[name].el); let dragged = null;
+      root.addEventListener("click", (e) => {
+        const card = e.target.closest(".card"), list = ids(name);
+        if (e.target.closest("[data-add]")) return pickFor(name);
+        if (!card) return; const id = card.dataset.id, i = list.indexOf(id);
+        if (e.target.closest("[data-rm]")) { list.splice(i, 1); save(name, list, `Removed ${esc(LISTS[name].label(item(name, id)))}`); paintList(name); toast("Removed from featured"); }
+        const mv = e.target.closest("[data-mv]"); if (mv) { const j = i + Number(mv.dataset.mv); if (j < 0 || j >= list.length) return; [list[i], list[j]] = [list[j], list[i]]; save(name, list, "Reordered"); paintList(name); }
+      });
+      root.addEventListener("dragstart", (e) => { dragged = e.target.closest(".card"); });
+      root.addEventListener("dragover", (e) => e.preventDefault());
+      root.addEventListener("drop", (e) => {
+        e.preventDefault(); const target = e.target.closest(".card"); if (!target || !dragged || target === dragged) return;
+        const list = ids(name), from = list.indexOf(dragged.dataset.id), to = list.indexOf(target.dataset.id);
+        list.splice(to, 0, list.splice(from, 1)[0]); save(name, list, "Reordered"); paintList(name); toast("Order updated");
       });
     }
-    draggableList("feat-artists", ARTISTS.slice(0,5), a=>a.name, a=>a.genre, a=>a.img);
-    draggableList("feat-albums", ALBUMS.slice(0,5), a=>a.title, a=>a.artist, a=>a.art);
-    draggableList("feat-editor", ALBUMS.slice(5,9), a=>a.title, a=>a.artist, a=>a.art);
-    draggableList("feat-playlists", officialCollections().slice(0,5), p=>p.name, p=>p.creator, p=>p.art);
+
+    /* ---- picker ---- */
+    let pick = null;
+    function paintPick() {
+      const q = $("pick-q").value.trim().toLowerCase(), L = pick.list ? LISTS[pick.list] : LISTS.albums;
+      const have = pick.list ? new Set(ids(pick.list)) : new Set([ids("albums")[0]]);
+      const rows = L.pool().filter((x) => !q || `${L.label(x)} ${L.sub(x)}`.toLowerCase().includes(q));
+      $("pick-list").innerHTML = rows.length ? rows.map((x) => { const on = pick.list ? have.has(x.id) : false; return `<button type="button" class="panel-list-item" data-id="${esc(x.id)}" ${on ? "disabled" : ""} style="display:flex;align-items:center;gap:12px;text-align:left;width:100%;cursor:${on ? "default" : "pointer"};opacity:${on ? .5 : 1};"><img src="${esc(L.img(x))}" alt="" style="width:38px;height:38px;border-radius:6px;object-fit:cover;" /><span style="flex:1;min-width:0;"><strong class="truncate" style="display:block;">${esc(L.label(x))}</strong><small>${esc(L.sub(x))}</small></span><span class="badge ${on ? "badge-neutral" : "badge-accent"}">${on ? "Added" : pick.list ? "Add" : "Choose"}</span></button>`; }).join("") : '<p class="small muted" style="padding:12px;">Nothing matches.</p>';
+    }
+    function pickFor(name) { pick = { list: name }; $("pick-title").textContent = `Add a ${LISTS[name].noun}`; $("pick-q").value = ""; paintPick(); ensureOverlay(); openModal("pick-modal"); setTimeout(() => $("pick-q").focus(), 80); }
+    $("pick-q").addEventListener("input", paintPick);
+    $("pick-list").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-id]"); if (!b || b.disabled) return;
+      if (pick.list) { const list = ids(pick.list); if (list.length >= LISTS[pick.list].max) return toast(`Up to ${LISTS[pick.list].max} items`, "warning"); list.push(b.dataset.id); save(pick.list, list, `Added ${esc(LISTS[pick.list].label(item(pick.list, b.dataset.id)))}`); paintList(pick.list); toast("Added", "success"); paintPick(); }
+      else { F().hero = b.dataset.id; AdminDB.save(); const a = Admin.find("album", b.dataset.id); Audit.log({ action: "Changed featured content", kind: "settings", label: "Homepage hero", detail: a ? a.title : "" }); paintHero(); closeModals(); toast("Hero changed", "success"); }
+    });
+
+    function heroAlbum() { const f = F(); return live(ALBUMS).find((a) => a.id === f.hero) || live(ALBUMS)[0]; }
+    function paintHero() { const a = heroAlbum(); if (!a) return; $("hero-art").src = a.art; $("hero-title").textContent = a.title; $("hero-sub").textContent = a.artist; }
+    $("hero-change").addEventListener("click", () => { pick = { list: null }; $("pick-title").textContent = "Choose the hero series"; $("pick-q").value = ""; paintPick(); ensureOverlay(); openModal("pick-modal"); setTimeout(() => $("pick-q").focus(), 80); });
+    $("reset-btn").addEventListener("click", async () => { if (await Confirm.ask({ title: "Reset featured content?", body: "All four lists and the hero go back to the default order.", confirmText: "Reset", tone: "danger" })) { AdminDB.get().featured = null; AdminDB.save(); Audit.log({ action: "Changed featured content", kind: "settings", label: "Reset to default" }); Object.keys(LISTS).forEach(paintList); paintHero(); toast("Reset", "success"); } });
+
+    Object.keys(LISTS).forEach((n) => { paintList(n); wire(n); }); paintHero();
+
   </script>
 </body>
 </html>

@@ -112,7 +112,7 @@
     updateVisible();
   }
 
-  function start() { loadingState(); openDocument({ url: book.file }).catch(failureState); }
+  function start() { loadingState(); BookFiles.urlFor(book).then((url) => openDocument({ url })).catch(failureState); }
 
   /* ---------------- Page elements, layout, rendering ---------------- */
   function buildPages() {
@@ -432,7 +432,7 @@
     $("marks-list").innerHTML = list.length ? list.map((m) => `
       <div class="rd-item is-link" data-page="${m.page}">
         <span class="pg">${m.page >= 1 ? "p. " + m.page : "Cover"}</span>
-        <div class="main"><div class="t">${escapeHTML(chapterName(m.page))}</div><div class="m">${agoLabel(m.at)}</div></div>
+        <div class="rd-main"><div class="t">${escapeHTML(chapterName(m.page))}</div><div class="m">${agoLabel(m.at)}</div></div>
         <button class="icon-btn" data-del-mark="${m.page}" aria-label="Remove bookmark">${ICONS.trash}</button>
       </div>`).join("")
       : emptyStateHTML({ icon: "bookmark", title: "No bookmarks yet", body: "Press the bookmark button (or B) on any page to keep your place.", style: "padding:36px 8px;" });
@@ -450,7 +450,7 @@
     $("notes-list").innerHTML = list.length ? list.map((n) => `
       <div class="rd-item is-link" data-page="${n.page}">
         <span class="pg">${n.page >= 1 ? "p. " + n.page : "Cover"}</span>
-        <div class="main"><div class="t">${escapeHTML(n.text)}</div><div class="m">${escapeHTML(chapterName(n.page))} · ${agoLabel(n.at)}</div></div>
+        <div class="rd-main"><div class="t">${escapeHTML(n.text)}</div><div class="m">${escapeHTML(chapterName(n.page))} · ${agoLabel(n.at)}</div></div>
         <button class="icon-btn" data-del-note="${n.id}" aria-label="Delete note">${ICONS.trash}</button>
       </div>`).join("")
       : emptyStateHTML({ icon: "note", title: "No notes yet", body: "Write what you learn beside the page it belongs to. Notes stay private to you.", style: "padding:32px 8px;" });

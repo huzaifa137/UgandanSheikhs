@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -19,14 +20,18 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Topics</h1><p>Manage the topics used across Ugandan Sheikhs.</p></div>
-          <button class="btn btn-primary" id="add-genre-btn" onclick="toast('Add genre form opened')"></button>
+          <div><h1 style="font-size:22px;">Topics</h1><p>The subjects lectures, series and books are filed under. They appear as tiles and filters across the site.</p></div>
+          <button class="btn btn-primary" id="add-btn"></button>
         </div>
+        <div id="table"></div>
 
-        <table class="data-table">
-          <thead><tr><th>Topic</th><th>Slug</th><th>Sheikhs</th><th>Lectures</th><th>Color</th><th></th></tr></thead>
-          <tbody id="genres-table"></tbody>
-        </table>
+        <div class="modal modal-sm" id="add-modal" role="dialog" aria-modal="true" aria-labelledby="add-title">
+          <div class="modal-head"><h3 id="add-title">Add topic</h3><button class="icon-btn" id="add-close" aria-label="Close" onclick="closeModals()"></button></div>
+          <div class="field"><label for="n-name">Name *</label><input class="input" id="n-name" maxlength="40" placeholder="e.g. Family &amp; Marriage" /><span class="field-hint field-err" id="e-name"></span></div>
+          <div class="field"><label for="n-slug">Web address</label><input class="input mono" id="n-slug" maxlength="40" /><span class="field-hint">Made from the name. Used in links like <code>discover.html?genre=<span id="n-slug-ex">…</span></code></span><span class="field-hint field-err" id="e-slug"></span></div>
+          <div class="field"><label>Colour</label><div class="word-chips" id="n-colors" style="margin-top:0;"></div><div class="row-actions" style="margin-top:8px;"><input type="color" id="n-color" value="#0E7F5C" style="width:44px;height:34px;border:none;background:none;padding:0;" aria-label="Pick a colour" /><span class="mono muted" id="n-color-text"></span></div></div>
+          <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModals()">Cancel</button><button class="btn btn-primary" id="n-create">Add topic</button></div>
+        </div>
 
       </main>
     </div>
@@ -36,21 +41,96 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
+
     initAdminPage("genres", "Topics");
-    document.getElementById("add-genre-btn").innerHTML = ICONS.plus + "<span>Add Topic</span>";
-    document.getElementById("genres-table").innerHTML = GENRES.map(g => `
-      <tr>
-        <td style="font-weight:600;">${g.name}</td>
-        <td class="text-secondary">${g.slug}</td>
-        <td>${ARTISTS.filter(a=>a.genre===g.name).length}</td>
-        <td>${TRACKS.filter(t=>t.genre===g.name).length}</td>
-        <td><span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:${g.color};vertical-align:-3px;"></span> <span class="text-secondary">${g.color}</span></td>
-        <td><div class="flex gap-8">
-          <button class="icon-btn" style="width:30px;height:30px;" onclick="toast('Edit genre form opened')">${ICONS.edit}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" onclick="this.closest('tr').remove();toast('Topic deleted','warning')">${ICONS.trash}</button>
-        </div></td>
-      </tr>`).join("");
+    const $ = (id) => document.getElementById(id);
+    const PRESETS = ["#0E7F5C", "#1D5FA8", "#9A7418", "#7B3F9E", "#0B7A75", "#B04A2E", "#B0306A", "#4A5A8A"];
+    $("add-btn").innerHTML = ICONS.plus + "<span>Add topic</span>"; $("add-close").innerHTML = ICONS.x;
+    const use = (g) => ({ sheikhs: ARTISTS.filter((a) => !a._del && a.genre === g.name).length, lectures: TRACKS.filter((t) => !t._del && t.genre === g.name).length, series: ALBUMS.filter((a) => !a._del && a.genre === g.name).length, books: BOOKS.filter((b) => !b._del && b.topic === g.name).length });
+    const total = (g) => { const u = use(g); return u.sheikhs + u.lectures + u.series + u.books; };
+    const dot = (c) => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${esc(c)};vertical-align:-2px;"></span>`;
+    const slugify = (s) => String(s).toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const taken = (key, v, exceptId) => Admin.visible("genre").some((g) => g.id !== exceptId && String(g[key]).toLowerCase() === String(v).toLowerCase());
+
+    const table = new DataTable({
+      el: $("table"), id: "genres", kind: "genre", exportName: "topics",
+      rows: () => Admin.visible("genre"),
+      search: (r) => `${r.name} ${r.slug}`, searchPlaceholder: "Search topics…",
+      defaultSort: { key: "name", dir: "asc" },
+      emptyTitle: "No topics yet", emptyBody: "Add a topic to start organising lectures.",
+      filters: [{ key: "use", label: "Use", all: "Any use", options: [{ v: "used", l: "In use" }, { v: "unused", l: "Not used yet" }], test: (r, v) => (v === "used" ? total(r) > 0 : total(r) === 0) }],
+      columns: [
+        { key: "name", label: "Topic", sort: (r) => r.name, render: (r) => `<div class="dt-cell-main">${dot(r.color)}<span class="t" style="font-weight:600;">${esc(r.name)}</span></div>` },
+        { key: "slug", label: "Address", sort: (r) => r.slug, render: (r) => `<span class="text-secondary mono">${esc(r.slug)}</span>` },
+        { key: "sheikhs", label: "Sheikhs", sort: (r) => use(r).sheikhs, render: (r) => use(r).sheikhs },
+        { key: "series", label: "Series", sort: (r) => use(r).series, render: (r) => use(r).series },
+        { key: "lectures", label: "Lectures", sort: (r) => use(r).lectures, render: (r) => use(r).lectures },
+        { key: "books", label: "Books", sort: (r) => use(r).books, render: (r) => use(r).books },
+        { key: "color", label: "Colour", sort: (r) => r.color, render: (r) => `<span class="text-secondary mono">${esc(r.color)}</span>` },
+      ],
+      actions: [
+        { id: "edit", icon: "edit", title: "Edit topic", run: (r, t) => t.openAt(t._rows.findIndex((x) => x.id === r.id)) },
+        { id: "view", icon: "eye", title: "View on site", href: (r) => `../discover.html?genre=${r.slug}`, blank: true },
+        { id: "del", icon: "trash", title: "Delete", danger: true, perm: "content.delete", run: (r) => del([r.id]) },
+      ],
+      bulk: [{ id: "del", label: "Delete", icon: "trash", danger: true, perm: "content.delete", run: (ids) => del(ids).then((ok) => ok !== false) }],
+      onOpen: (r, ctx) => openPanel(r, ctx),
+    });
+    function del(ids) {
+      const n = ids.reduce((c, id) => c + total(Admin.find("genre", id)), 0);
+      return Admin.deleteFlow("genre", ids, { after: () => table.refresh(), extra: n ? `<p><strong>${n}</strong> sheikh, series, lecture or book item${n === 1 ? " uses" : "s use"} ${ids.length === 1 ? "this topic" : "these topics"}. They keep the name but it will no longer be a filter or tile on the site.</p>` : "" });
+    }
+    /* renaming a topic renames it everywhere it is used */
+    function cascadeRename(from, to) {
+      ARTISTS.forEach((a) => { if (a.genre === from) Admin.patch("artist", a.id, { genre: to }, { audit: false }); });
+      ALBUMS.forEach((a) => { if (a.genre === from) Admin.patch("album", a.id, { genre: to }, { audit: false }); });
+      TRACKS.forEach((a) => { if (a.genre === from) Admin.patch("track", a.id, { genre: to }, { audit: false }); });
+      BOOKS.forEach((b) => { if (b.topic === from) Admin.patch("book", b.id, { topic: to }, { audit: false }); });
+    }
+    function openPanel(r, ctx) {
+      const u = use(r);
+      Panel.open({
+        title: r.name, subtitle: `/${r.slug}`, badges: `<span class="badge badge-neutral">${dot(r.color)}&nbsp;${esc(r.color)}</span>`,
+        nav: { index: ctx.index, count: ctx.count, go: ctx.go },
+        deleteText: "Move to trash", onDelete: AdminAuth.can("content.delete") ? async () => { if (await del([r.id])) Panel.close(true); } : null,
+        intro: `<div class="panel-stats" style="margin-bottom:18px;grid-template-columns:repeat(4,1fr);"><div class="panel-stat"><b>${u.sheikhs}</b><span>Sheikhs</span></div><div class="panel-stat"><b>${u.series}</b><span>Series</span></div><div class="panel-stat"><b>${u.lectures}</b><span>Lectures</span></div><div class="panel-stat"><b>${u.books}</b><span>Books</span></div></div>`,
+        values: { name: r.name, slug: r.slug, color: r.color },
+        sections: [{ title: "Topic", fields: [
+          { key: "name", label: "Name", required: true, hint: "Changing the name updates every sheikh, series, lecture and book that uses it." },
+          { key: "slug", label: "Web address", required: true, hint: "Letters, numbers and dashes. Old links to the previous address stop working." },
+          { key: "color", label: "Colour", type: "color" },
+        ] }],
+        validate: (v) => { const e = {}; if (taken("name", v.name.trim(), r.id)) e.name = "Another topic already has this name."; if (!/^[a-z0-9-]+$/.test(v.slug)) e.slug = "Use lowercase letters, numbers and dashes."; else if (taken("slug", v.slug, r.id)) e.slug = "Another topic already uses this address."; return e; },
+        onSave: (v) => {
+          const name = v.name.trim(); if (name !== r.name) cascadeRename(r.name, name);
+          Admin.patch("genre", r.id, { name, slug: v.slug, color: v.color });
+          toast("Topic saved", "success"); table.refresh(); ctx.go(table._rows.findIndex((x) => x.id === r.id));
+        },
+      });
+    }
+
+    /* ---- add ---- */
+    let color = PRESETS[0], slugTouched = false;
+    const setColor = (c) => { color = c; $("n-color").value = c; $("n-color-text").textContent = c; $("n-colors").querySelectorAll("button").forEach((b) => { b.style.outline = b.dataset.c === c ? "2px solid var(--text-primary)" : "none"; }); };
+    $("n-colors").innerHTML = PRESETS.map((c) => `<button type="button" data-c="${c}" aria-label="Colour ${c}" style="width:28px;height:28px;border-radius:8px;background:${c};border:none;cursor:pointer;outline-offset:2px;"></button>`).join("");
+    $("n-colors").addEventListener("click", (e) => { const b = e.target.closest("[data-c]"); if (b) setColor(b.dataset.c); });
+    $("n-color").addEventListener("input", () => setColor($("n-color").value));
+    $("n-name").addEventListener("input", () => { if (!slugTouched) { $("n-slug").value = slugify($("n-name").value); } $("n-slug-ex").textContent = $("n-slug").value || "…"; });
+    $("n-slug").addEventListener("input", () => { slugTouched = true; $("n-slug-ex").textContent = $("n-slug").value || "…"; });
+    $("add-btn").addEventListener("click", () => { ensureOverlay(); slugTouched = false; $("n-name").value = ""; $("n-slug").value = ""; $("e-name").textContent = $("e-slug").textContent = ""; setColor(PRESETS[Admin.visible("genre").length % PRESETS.length]); openModal("add-modal"); setTimeout(() => $("n-name").focus(), 80); });
+    $("n-create").addEventListener("click", () => {
+      const name = $("n-name").value.trim(), slug = ($("n-slug").value.trim() || slugify(name)); $("e-name").textContent = $("e-slug").textContent = "";
+      if (name.length < 2) { $("e-name").textContent = "Enter the topic name."; return $("n-name").focus(); }
+      if (taken("name", name)) { $("e-name").textContent = "A topic with this name already exists."; return $("n-name").focus(); }
+      if (!/^[a-z0-9-]+$/.test(slug)) { $("e-slug").textContent = "Use lowercase letters, numbers and dashes."; return $("n-slug").focus(); }
+      if (taken("slug", slug)) { $("e-slug").textContent = "That address is already used."; return $("n-slug").focus(); }
+      Admin.create("genre", { id: slug, slug, name, color, status: "Published" });
+      closeModals(); toast(`“${name}” added`, "success"); table.refresh();
+    });
+    if (location.hash === "#add") $("add-btn").click();
+
   </script>
 </body>
 </html>

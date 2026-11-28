@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -19,20 +20,10 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Lectures</h1><p>Manage every lecture in the Ugandan Sheikhs catalog.</p></div>
-          <a class="btn btn-primary" href="tracks-upload.html" id="upload-cta"></a>
+          <div><h1 style="font-size:22px;">Lectures</h1><p>Every lecture in the catalog: drafts, scheduled and published.</p></div>
+          <a class="btn btn-primary" href="lecture-editor.html" id="new-btn" hidden></a>
         </div>
-
-        <div class="table-toolbar">
-          <div class="search-field" style="max-width:280px;" id="track-search-wrap"><input id="track-search" placeholder="Search lectures…" /></div>
-          <select class="select" style="width:auto;" id="genre-filter"><option value="">All Topics</option></select>
-          <select class="select" style="width:auto;"><option>All Status</option><option>Published</option><option>Draft</option></select>
-        </div>
-
-        <table class="data-table">
-          <thead><tr><th>Lecture</th><th>Sheikh</th><th>Series</th><th>Topic</th><th>Duration</th><th>Plays</th><th>Downloads</th><th>Status</th><th></th></tr></thead>
-          <tbody id="tracks-table"></tbody>
-        </table>
+        <div id="table"></div>
 
       </main>
     </div>
@@ -42,33 +33,113 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
-    initAdminPage("tracks", "Lectures");
-    document.getElementById("upload-cta").innerHTML = ICONS.upload + "<span>Upload Lecture</span>";
-    document.getElementById("track-search-wrap").insertAdjacentHTML("afterbegin", ICONS.search);
-    document.getElementById("genre-filter").innerHTML += GENRES.map(g => `<option>${g.name}</option>`).join("");
 
-    function row(t) {
-      return `<tr>
-        <td class="flex items-center gap-8"><img src="${t.art}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;"/>${t.title}</td>
-        <td>${t.artist}</td>
-        <td class="truncate" style="max-width:140px;">${t.album}</td>
-        <td>${t.genre}</td>
-        <td>${fmtDuration(t.duration)}</td>
-        <td>${fmtCount(t.plays)}</td>
-        <td>${fmtCount(t.downloads)}</td>
-        <td><span class="badge badge-success">Published</span></td>
-        <td><div class="flex gap-8">
-          <button class="icon-btn" style="width:30px;height:30px;" title="Edit" onclick="toast('Edit track form opened')">${ICONS.edit}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Lecture deleted','warning')">${ICONS.trash}</button>
-        </div></td>
-      </tr>`;
-    }
-    document.getElementById("tracks-table").innerHTML = TRACKS.map(row).join("");
-    document.getElementById("track-search").addEventListener("input", (e) => {
-      const q = e.target.value.toLowerCase();
-      document.getElementById("tracks-table").innerHTML = TRACKS.filter(t => t.title.toLowerCase().includes(q)).map(row).join("");
+    initAdminPage("tracks", "Lectures");
+    const $ = (id) => document.getElementById(id);
+    const sid = AdminAuth.sheikhScope();
+    const meta = (t) => Admin.lectureMeta(t.id);
+    const sheikhOpts = () => Admin.visible("artist").map((a) => ({ v: a.id, l: a.name }));
+    const when = (t) => { const m = meta(t); return t.status === "Scheduled" && m.publishAt ? ` <span class="text-tertiary" style="font-size:11.5px;">${esc(AdminFmt.when(m.publishAt))}</span>` : ""; };
+    const seriesName = (t) => { const s = seriesOf(t); return s ? s.title : t.album || ""; };
+
+    const table = new DataTable({
+      el: $("table"), id: "tracks", kind: "track", exportName: "lectures", pageSize: 25,
+      rows: () => Admin.visible("track"),
+      search: (r) => `${r.title} ${r.artist} ${seriesName(r)} ${r.genre}`, searchPlaceholder: "Search lectures…",
+      defaultSort: { key: "title", dir: "asc" },
+      emptyTitle: "No lectures yet", emptyBody: "Create the first lecture with the lecture editor.",
+      tabs: { options: [
+        { v: "all", l: "All" }, { v: "pub", l: "Published", test: (r) => r.status === "Published" },
+        { v: "draft", l: "Drafts", test: (r) => r.status === "Draft" }, { v: "sched", l: "Scheduled", test: (r) => r.status === "Scheduled" },
+      ] },
+      filters: [
+        ...(sid ? [] : [{ key: "sheikh", label: "Sheikh", all: "All sheikhs", options: sheikhOpts, test: (r, v) => r.artistId === v }]),
+        { key: "topic", label: "Topic", all: "All topics", options: () => GENRES.map((g) => g.name), test: (r, v) => r.genre === v },
+        { key: "series", label: "Series", all: "All series", options: () => Admin.visible("album").filter((a) => !sid || a.artistId === sid).map((a) => ({ v: a.id, l: a.title })), test: (r, v) => { const s = seriesOf(r); return !!s && s.id === v; } },
+        { key: "book", label: "Book", all: "Book: any", options: [{ v: "linked", l: "Linked to a book" }, { v: "none", l: "No book" }], test: (r, v) => (v === "linked" ? !!r.bookRef : !r.bookRef) },
+        { key: "dl", label: "Download", all: "Download: any", options: [{ v: "on", l: "Download allowed" }, { v: "off", l: "Stream only" }], test: (r, v) => (v === "on" ? !!r.downloadable : !r.downloadable) },
+      ],
+      columns: [
+        { key: "title", label: "Lecture", sort: (r) => r.title, render: (r) => `<div class="dt-cell-main"><img src="${r.art}" alt="" /><div style="min-width:0;"><span class="t">${esc(r.title)}</span><span class="s">${esc(seriesName(r)) || "No series"}</span></div></div>` },
+        { key: "artist", label: "Sheikh", sort: (r) => r.artist, render: (r) => esc(r.artist) },
+        { key: "genre", label: "Topic", sort: (r) => r.genre, render: (r) => esc(r.genre) },
+        { key: "duration", label: "Duration", sort: (r) => r.duration, csv: (r) => fmtDuration(r.duration), render: (r) => fmtDuration(r.duration) },
+        { key: "plays", label: "Plays", sort: (r) => r.plays, render: (r) => fmtCount(r.plays) },
+        { key: "downloads", label: "Downloads", sort: (r) => r.downloads, render: (r) => fmtCount(r.downloads) },
+        { key: "book", label: "Book", sort: (r) => (r.bookRef ? 1 : 0), csv: (r) => (r.bookRef ? (bookById(r.bookRef.bookId) || {}).title : ""), render: (r) => (r.bookRef ? `<span class="badge badge-accent">pp. ${r.bookRef.from}–${r.bookRef.to}</span>` : '<span class="text-tertiary">—</span>') },
+        { key: "status", label: "Status", sort: (r) => r.status, render: (r) => adminBadge(r.status) + when(r) },
+      ],
+      actions: [
+        { id: "edit", icon: "edit", title: "Open editor", href: (r) => `lecture-editor.html?id=${r.id}`, show: (r) => AdminAuth.owns("track", r) },
+        { id: "quick", icon: "panel", title: "Quick view", run: (r, t) => t.openAt(t._rows.findIndex((x) => x.id === r.id)) },
+        { id: "view", icon: "eye", title: "View on site", href: (r) => `../track.html?id=${r.id}`, blank: true, show: (r) => r.status === "Published" },
+        { id: "del", icon: "trash", title: "Delete", danger: true, perm: "content.delete", run: (r) => del([r.id]) },
+      ],
+      bulk: [
+        { id: "pub", label: "Publish", icon: "check", perm: "content.publish", run: (ids) => {
+            const ok = [], bad = [];
+            ids.forEach((id) => { const t = Admin.find("track", id); (Admin.lectureReady(t) ? ok : bad).push(t); });
+            const n = Admin.setStatus("track", ok.map((t) => t.id), "Published");
+            if (bad.length) toast(`${n} published. ${bad.length} skipped because the checklist isn't complete (open them in the editor).`, "warning"); else toast(`${n} published`, "success");
+        } },
+        { id: "unpub", label: "Unpublish", icon: "eye", perm: "content.publish", confirm: (n) => ({ title: `Unpublish ${n} lecture${n === 1 ? "" : "s"}?`, body: "They become drafts and disappear from the listener site." }), run: (ids) => { toast(`${Admin.setStatus("track", ids, "Draft")} unpublished`, "success"); } },
+        { id: "dl", label: "Allow download", icon: "download", perm: "content.edit", run: (ids) => { ids.forEach((id) => Admin.patch("track", id, { downloadable: true })); toast("Downloads allowed", "success"); } },
+        { id: "nodl", label: "Stream only", icon: "cloudOff", perm: "content.edit", run: (ids) => { ids.forEach((id) => Admin.patch("track", id, { downloadable: false })); toast("Downloads switched off", "success"); } },
+        { id: "feat", label: "Feature", icon: "star", perm: "content.delete", run: (ids) => { toast(`${Admin.setFeatured("track", ids, true)} featured`, "success"); } },
+        { id: "unfeat", label: "Unfeature", icon: "star", perm: "content.delete", run: (ids) => { toast(`${Admin.setFeatured("track", ids, false)} unfeatured`, "success"); } },
+        { id: "del", label: "Delete", icon: "trash", danger: true, perm: "content.delete", run: (ids) => del(ids).then((ok) => ok !== false) },
+      ],
+      canSelect: (r) => AdminAuth.owns("track", r),
+      onOpen: (r, ctx) => openPanel(r, ctx),
     });
+    if (sid) table.o.bulk = table.o.bulk.filter((b) => ["pub", "unpub", "dl", "nodl"].includes(b.id));
+    if (AdminAuth.can("content.edit")) { const b = $("new-btn"); b.hidden = false; b.innerHTML = ICONS.plus + "<span>New lecture</span>"; }
+
+    // deep links: tracks.html?sheikh=ssenjala  /  ?status=Draft
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("sheikh") && !sid) { table.s.f.sheikh = qs.get("sheikh"); table._syncControls(); }
+    if (qs.get("status")) { const m = { Draft: "draft", Scheduled: "sched", Published: "pub" }[qs.get("status")]; if (m) { table.s.tab = m; table._syncControls(); } }
+    table.render();
+
+    function del(ids) { return Admin.deleteFlow("track", ids, { after: () => table.refresh() }); }
+
+    function openPanel(r, ctx) {
+      const editable = AdminAuth.can("content.edit") && AdminAuth.owns("track", r);
+      const cl = Admin.lectureChecklist(r), bad = cl.filter((i) => i.state === "bad");
+      const book = r.bookRef && bookById(r.bookRef.bookId);
+      Panel.open({
+        title: r.title, subtitle: `${r.artist} · ${seriesName(r) || "No series"}`, img: r.art,
+        badges: adminBadge(r.status) + (r.featured ? '<span class="badge badge-accent">Featured</span>' : "") + (book ? `<span class="badge badge-neutral">Book: ${esc(book.title)}</span>` : ""),
+        readOnly: !editable, nav: { index: ctx.index, count: ctx.count, go: ctx.go },
+        deleteText: "Move to trash", onDelete: AdminAuth.can("content.delete") ? async () => { if (await del([r.id])) Panel.close(true); } : null,
+        intro: `<div class="panel-stats" style="margin-bottom:14px;"><div class="panel-stat"><b>${fmtCount(r.plays)}</b><span>Plays</span></div><div class="panel-stat"><b>${fmtCount(r.downloads)}</b><span>Downloads</span></div><div class="panel-stat"><b>${fmtCount(r.likes)}</b><span>Likes</span></div></div>${bad.length ? `<div class="hint-box warn">${ICONS.alertTriangle}<div><strong>Not ready to publish.</strong> ${bad.map((i) => esc(i.label)).join(", ")}. <a href="lecture-editor.html?id=${r.id}" style="color:var(--accent);">Open the editor</a></div></div>` : ""}`,
+        values: { title: r.title, genre: r.genre, description: r.description || "", status: r.status === "Scheduled" ? "Scheduled" : r.status, downloadable: !!r.downloadable, featured: !!r.featured },
+        sections: [
+          { title: "Quick edit", fields: [
+            { key: "title", label: "Title", required: true },
+            { key: "genre", label: "Topic", type: "select", options: GENRES.map((g) => g.name) },
+            { key: "description", label: "Description", type: "textarea", rows: 4, max: 800 },
+          ] },
+          { title: "Publishing", fields: [
+            { key: "status", label: "Status", type: "select", options: r.status === "Scheduled" ? ["Published", "Draft", "Scheduled"] : ["Published", "Draft"], hint: r.status === "Scheduled" ? `Scheduled for ${AdminFmt.when(meta(r).publishAt)}. Change the time in the editor.` : "To schedule a lecture for later, use the editor." },
+            { key: "downloadable", label: "Download", type: "toggle", toggleText: "Listeners can download the audio" },
+            ...(sid ? [] : [{ key: "featured", label: "Featured", type: "toggle", toggleText: "Show in featured lectures" }]),
+          ] },
+        ],
+        actions: [{ label: "Full editor", icon: "edit", run: () => { location.href = `lecture-editor.html?id=${r.id}`; } }],
+        validate: (v) => (v.status === "Published" && r.status !== "Published" && bad.length ? { status: "Finish the checklist first (open the full editor)." } : {}),
+        onSave: (v) => {
+          if (v.status !== r.status && v.status !== "Scheduled") Admin.setStatus("track", [r.id], v.status);
+          const patch = { title: v.title.trim(), genre: v.genre, description: v.description, downloadable: !!v.downloadable };
+          if (!sid) patch.featured = !!v.featured;
+          Admin.patch("track", r.id, patch);
+          toast("Lecture saved", "success"); table.refresh(); ctx.go(table._rows.findIndex((x) => x.id === r.id));
+        },
+      });
+    }
+
   </script>
 </body>
 </html>

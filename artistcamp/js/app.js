@@ -95,8 +95,10 @@ function emptyStateHTML({ icon, title, body = "", style = "" } = {}) {
 function openModal(id) {
   document.getElementById("overlay")?.classList.add("open");
   document.getElementById(id)?.classList.add("open");
+  document.body.classList.add("modal-open");
 }
 function closeModals() {
+  document.body.classList.remove("modal-open");
   document.getElementById("overlay")?.classList.remove("open");
   document.querySelectorAll(".modal.open").forEach((m) => m.classList.remove("open"));
   document.querySelectorAll(".drawer.open").forEach((d) => d.classList.remove("open"));
@@ -708,10 +710,12 @@ function bookResumeHref(b) {
 
 function downloadBook(b) {
   if (!b.downloadable) return toast("The publisher allows reading online only", "warning");
-  const a = Object.assign(document.createElement("a"), { href: b.file, download: `${b.slug}.pdf` });
-  document.body.appendChild(a); a.click(); a.remove();
-  BookShelf.markDownloaded(b.id);
-  toast(`Downloading ${b.title} (${fmtBytes(b.fileSize)})`, "success");
+  BookFiles.urlFor(b).then((href) => {
+    const a = Object.assign(document.createElement("a"), { href, download: `${b.slug || b.id}.pdf` });
+    document.body.appendChild(a); a.click(); a.remove();
+    BookShelf.markDownloaded(b.id);
+    toast(`Downloading ${b.title} (${fmtBytes(b.fileSize)})`, "success");
+  }).catch(() => toast("This book's file isn't available", "warning"));
 }
 
 /* ---- Save to shelf button (any element with data-shelf="<book id>" is wired by one delegated handler) ---- */
@@ -868,3 +872,109 @@ function initAppPage(active) {
   document.getElementById("create-playlist-btn")?.addEventListener("click", () => { ensureOverlay(); openModal("create-playlist-modal"); });
   wireConnectivityToggle();
 }
+/* =====================================================================
+   Searchable dropdowns
+   Every <select class="select"> with more than SS_MIN options becomes a dropdown with a search box:
+   type and the list filters as you go. The real <select> stays in the page (hidden), so existing code that
+   reads .value, listens for "change" or sets .value or .innerHTML keeps working.
+   Opt out with data-search="off"; force it on short lists with data-search="on".
+   ===================================================================== */
+(function () {
+  const SS_MIN = 5;
+  const CHEV = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const valueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  let pop = null, current = null;
+
+  function labelOf(sel) { const o = sel.options[sel.selectedIndex]; return o ? o.text : ""; }
+  function sync(sel) {
+    const b = sel._ssBtn; if (!b) return;
+    b.querySelector(".ss-label").textContent = labelOf(sel) || "\u00a0";
+    b.disabled = sel.disabled;
+    b.classList.toggle("ss-placeholder", !!sel.options.length && sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].value === "");
+  }
+  function enhance(sel) {
+    if (sel._ssBtn || sel.multiple || sel.closest(".ss-pop") || sel.dataset.search === "off") return;
+    if (sel.dataset.search !== "on" && sel.options.length <= SS_MIN) return;
+    const b = document.createElement("button");
+    b.type = "button"; b.className = `${sel.className} ss-btn`; b.setAttribute("aria-haspopup", "listbox"); b.setAttribute("aria-expanded", "false");
+    if (sel.getAttribute("style")) b.setAttribute("style", sel.getAttribute("style"));
+    const lab = sel.getAttribute("aria-label") || (sel.id && document.querySelector(`label[for="${sel.id}"]`) && document.querySelector(`label[for="${sel.id}"]`).textContent);
+    if (lab) b.setAttribute("aria-label", lab);
+    b.innerHTML = `<span class="ss-label"></span>${CHEV}`;
+    sel.classList.add("ss-native"); sel.tabIndex = -1; sel.after(b); sel._ssBtn = b;
+    // programmatic sets (select.value = "x") update the visible label too
+    Object.defineProperty(sel, "value", { configurable: true, get() { return valueDesc.get.call(this); }, set(v) { valueDesc.set.call(this, v); sync(this); } });
+    new MutationObserver(() => sync(sel)).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled"] });
+    sel.addEventListener("change", () => sync(sel));
+    b.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); current === sel && pop ? close() : open(sel); });
+    b.addEventListener("keydown", (e) => { if (["ArrowDown", "ArrowUp"].includes(e.key)) { e.preventDefault(); open(sel); } });
+    sync(sel);
+  }
+  function scan(root) { (root || document).querySelectorAll("select.select").forEach(enhance); }
+
+  function items(sel) {
+    const out = []; let group = "";
+    Array.from(sel.children).forEach((c) => {
+      if (c.tagName === "OPTGROUP") { Array.from(c.children).forEach((o) => out.push({ o, group: c.label })); }
+      else if (c.tagName === "OPTION") out.push({ o: c, group });
+    });
+    return out;
+  }
+  function open(sel) {
+    close(); current = sel;
+    const btn = sel._ssBtn, list = items(sel);
+    pop = document.createElement("div"); pop.className = "ss-pop";
+    pop.innerHTML = `<div class="ss-search"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input type="text" class="ss-input" placeholder="Type to search…" autocomplete="off" aria-label="Search options" /></div><div class="ss-list" role="listbox"></div>`;
+    document.body.appendChild(pop);
+    const input = pop.querySelector(".ss-input"), box = pop.querySelector(".ss-list");
+    let shown = [], active = 0;
+    const paint = () => {
+      const q = input.value.trim().toLowerCase(); let lastGroup = null;
+      shown = list.filter((x) => !q || x.o.text.toLowerCase().includes(q));
+      active = Math.max(0, Math.min(active, shown.length - 1));
+      const sIdx = shown.findIndex((x) => x.o === sel.options[sel.selectedIndex]); if (!q && sIdx > -1 && input._first !== false) { active = sIdx; }
+      box.innerHTML = shown.length ? shown.map((x, i) => {
+        let h = ""; if (x.group && x.group !== lastGroup) { h = `<div class="ss-group">${esc(x.group)}</div>`; lastGroup = x.group; }
+        const t = esc(x.o.text), m = q ? t.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/&/g, "&amp;")})`, "ig"), "<mark>$1</mark>") : t;
+        return `${h}<div class="ss-opt ${i === active ? "active" : ""} ${x.o === sel.options[sel.selectedIndex] ? "selected" : ""} ${x.o.disabled ? "disabled" : ""}" role="option" data-i="${i}" aria-selected="${x.o === sel.options[sel.selectedIndex]}"><span>${m}</span><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+      }).join("") : `<div class="ss-empty">No matches</div>`;
+      const a = box.querySelector(".ss-opt.active"); if (a) a.scrollIntoView({ block: "nearest" });
+    };
+    const pick = (i) => {
+      const x = shown[i]; if (!x || x.o.disabled) return;
+      valueDesc.set.call(sel, x.o.value); sync(sel);
+      sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true }));
+      close(); btn.focus();
+    };
+    input.addEventListener("input", () => { input._first = false; active = 0; paint(); });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); active = Math.min(shown.length - 1, active + 1); paint(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(0, active - 1); paint(); }
+      else if (e.key === "Enter") { e.preventDefault(); pick(active); }
+      else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); btn.focus(); }
+      else if (e.key === "Tab") close();
+    });
+    box.addEventListener("mousemove", (e) => { const o = e.target.closest(".ss-opt"); if (o && Number(o.dataset.i) !== active) { box.querySelector(".ss-opt.active")?.classList.remove("active"); active = Number(o.dataset.i); o.classList.add("active"); } });
+    box.addEventListener("click", (e) => { const o = e.target.closest(".ss-opt"); if (o) pick(Number(o.dataset.i)); });
+    pop.addEventListener("mousedown", (e) => { if (e.target !== input) e.preventDefault(); });
+    btn.setAttribute("aria-expanded", "true");
+    paint(); place(); input.focus({ preventScroll: true });
+  }
+  function place() {
+    if (!pop || !current) return;
+    const r = current._ssBtn.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
+    const w = Math.min(Math.max(r.width, 220), vw - 16), left = Math.max(8, Math.min(r.left, vw - w - 8));
+    const below = vh - r.bottom - 12, above = r.top - 12, up = below < 200 && above > below, room = Math.min(340, up ? above : below);
+    pop.style.cssText = `left:${left}px;width:${w}px;max-height:${Math.max(160, room)}px;${up ? `bottom:${vh - r.top + 4}px;top:auto;` : `top:${r.bottom + 4}px;`}`;
+  }
+  function close() { if (!pop) return; if (current && current._ssBtn) current._ssBtn.setAttribute("aria-expanded", "false"); pop.remove(); pop = null; current = null; }
+  document.addEventListener("mousedown", (e) => { if (pop && !e.target.closest(".ss-pop") && !e.target.closest(".ss-btn")) close(); });
+  window.addEventListener("resize", place);
+  window.addEventListener("scroll", (e) => { if (pop && !(e.target.closest && e.target.closest(".ss-pop"))) close(); }, true);
+
+  let t = null;
+  new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => scan(), 30); }).observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => scan()); else scan();
+  window.SearchSelect = { scan, enhance };
+})();

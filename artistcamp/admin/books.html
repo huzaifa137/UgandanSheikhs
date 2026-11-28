@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -19,8 +20,8 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Books</h1><p>Upload a book, attach it to a sheikh and series, and map each lecture to its pages.</p></div>
-          <button class="btn btn-primary" id="add-book-btn"></button>
+          <div><h1 style="font-size:22px;">Books</h1><p>Upload a book, choose its cover, attach it to a sheikh and series, and map each lecture to its pages.</p></div>
+          <button class="btn btn-primary" id="add-book-btn" hidden></button>
         </div>
 
         <div class="tabs admin-tabs" id="admin-book-tabs">
@@ -28,12 +29,7 @@
           <button class="tab" data-target="mapper">Lecture page mapper</button>
         </div>
 
-        <div data-tabpanel="library">
-          <table class="data-table">
-            <thead><tr><th>Cover</th><th>Book</th><th>Sheikh</th><th>Series</th><th>Pages</th><th>Readers</th><th>Download</th><th>Status</th><th></th></tr></thead>
-            <tbody id="books-table"></tbody>
-          </table>
-        </div>
+        <div data-tabpanel="library"><div id="table"></div></div>
 
         <div data-tabpanel="mapper" style="display:none;">
           <p class="text-secondary" style="max-width:720px;margin-bottom:16px;">Choose a book and a series. For each lecture, enter the <strong>printed</strong> pages it covers (the numbers on the paper pages). Leave both blank to unlink a lecture. Optional sync points make the follow-along exact: <code>mm:ss=page</code>, separated by commas.</p>
@@ -45,50 +41,64 @@
             <thead><tr><th>#</th><th>Lecture</th><th>From page</th><th>To page</th><th>Sync points (optional)</th></tr></thead>
             <tbody id="map-table"></tbody>
           </table>
-          <div class="flex gap-12" style="margin-top:16px;align-items:center;">
+          <div class="flex gap-12" style="margin-top:16px;align-items:center;flex-wrap:wrap;">
             <button class="btn btn-primary" id="map-save">Save mapping</button>
-            <button class="btn btn-ghost" id="map-reset">Reset all book edits</button>
+            <button class="btn btn-ghost" id="map-reset">Reset all book links</button>
             <span class="text-secondary" id="map-msg" style="font-size:12.5px;"></span>
           </div>
         </div>
 
-        <div class="modal" id="add-book-modal" style="width:min(620px,94vw);max-height:90vh;overflow-y:auto;">
-          <div class="modal-head"><h3>Add Book</h3><button class="icon-btn" id="add-book-close" onclick="closeModals()"></button></div>
-          <div class="field"><label>Book file (PDF)</label>
-            <label class="dropzone" id="book-dz" style="padding:22px;display:block;cursor:pointer;">
+        <div class="modal modal-lg" id="add-book-modal" role="dialog" aria-modal="true" aria-labelledby="ab-title">
+          <div class="modal-head"><h3 id="ab-title">Upload a book</h3><button class="icon-btn" id="add-book-close" aria-label="Close" onclick="closeModals()"></button></div>
+          <div class="field"><label>1. Book file (PDF) *</label>
+            <label class="dropzone" id="book-dz" style="padding:20px;display:block;cursor:pointer;">
               <div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;" id="book-dz-icon"></div>
               <p style="font-size:12.5px;" id="book-dz-text">Drag a PDF here or click to choose</p>
               <input type="file" id="book-file" accept="application/pdf,.pdf" hidden />
             </label>
-            <div class="upload-summary" id="book-summary" style="display:none;"><canvas id="book-cover-canvas"></canvas><div id="book-summary-text"></div></div>
+            <span class="limit-note" id="u-limit"></span>
+            <div class="field-hint field-err" id="u-file-err"></div>
+            <div class="upload-summary" id="book-summary" style="display:none;"><div id="book-summary-text"></div></div>
+          </div>
+
+          <div class="field"><label>2. Cover</label>
+            <div class="cover-choice" id="u-cover-choice">
+              <button type="button" class="cover-opt selected" data-mode="auto"><span><b>First page of the PDF</b><span>The system makes the cover from page 1 automatically.</span></span></button>
+              <button type="button" class="cover-opt" data-mode="custom"><span><b>Upload my own cover</b><span>Use a separate image. It always wins over the PDF's first page.</span></span></button>
+            </div>
+            <div class="cover-preview"><canvas id="u-cover-canvas" width="110" height="150" aria-label="Cover preview"></canvas>
+              <div style="flex:1;min-width:200px;"><div id="u-cover-note" class="small muted">Choose the PDF to see the cover.</div>
+                <div id="u-cover-custom" hidden style="margin-top:10px;"><label class="btn btn-secondary btn-sm" style="cursor:pointer;">Choose cover image<input type="file" id="u-cover-file" accept="image/png,image/jpeg,image/webp" hidden /></label><div class="limit-note" id="u-cover-limit" style="margin-top:6px;"></div></div></div></div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="field"><label for="bk-title">Title *</label><input class="input" id="bk-title" placeholder="e.g. Bidayat al-Mutafaqqih" /><span class="field-hint field-err" id="e-title"></span></div>
+            <div class="field"><label for="bk-title-ar">Arabic title</label><input class="input ar" id="bk-title-ar" dir="rtl" lang="ar" /></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Title</label><input class="input" id="bk-title" placeholder="e.g. Bidayat al-Mutafaqqih" /></div>
-            <div class="field"><label>Arabic title</label><input class="input ar" id="bk-title-ar" dir="rtl" lang="ar" /></div>
+            <div class="field"><label for="bk-author">Author</label><input class="input" id="bk-author" /></div>
+            <div class="field"><label for="bk-sheikh">Sheikh who teaches it *</label><select class="select" id="bk-sheikh"></select></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Author</label><input class="input" id="bk-author" /></div>
-            <div class="field"><label>Sheikh who teaches it</label><select class="select" id="bk-sheikh"></select></div>
+            <div class="field"><label for="bk-series">Attach to series</label><select class="select" id="bk-series"></select><span class="field-hint">You can attach more series later in the book's side panel.</span></div>
+            <div class="field"><label for="bk-topic">Topic</label><select class="select" id="bk-topic"></select></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Series</label><select class="select" id="bk-series"></select></div>
-            <div class="field"><label>Topic</label><select class="select" id="bk-topic"></select></div>
+            <div class="field"><label for="bk-level">Level</label><select class="select" id="bk-level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></div>
+            <div class="field"><label for="bk-lang">Language</label><select class="select" id="bk-lang"><option>Arabic</option><option>English</option><option>Luganda</option></select></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Level</label><select class="select"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></div>
-            <div class="field"><label>Pages before printed page 1</label><input class="input" id="bk-offset" type="number" min="0" value="0" /><span class="field-hint">Cover and front pages in the file. Example: 2 means printed page 1 is PDF page 3.</span></div>
+            <div class="field"><label for="bk-offset">Pages before printed page 1</label><input class="input" id="bk-offset" type="number" min="0" value="0" /><span class="field-hint">Cover and front pages in the file. Example: 2 means printed page 1 is PDF page 3.</span></div>
+            <div class="field"><label for="bk-publisher">Publisher / edition</label><input class="input" id="bk-publisher" placeholder="e.g. Dar al-Fawa'id · 3rd edition" /></div>
           </div>
-          <div class="field"><label>Description</label><textarea class="textarea"></textarea></div>
+          <div class="field"><label for="bk-desc">Description</label><textarea class="textarea" id="bk-desc" rows="3"></textarea></div>
           <div class="flex gap-16" style="margin-bottom:8px;flex-wrap:wrap;">
             <label class="checkbox-row"><input type="checkbox" id="bk-download" checked /> Allow download</label>
-            <label class="checkbox-row"><input type="checkbox" checked /> Published</label>
-            <label class="checkbox-row"><input type="checkbox" /> Featured</label>
+            <label class="checkbox-row"><input type="checkbox" id="bk-published" checked /> Published</label>
+            <label class="checkbox-row"><input type="checkbox" id="bk-featured" /> Featured</label>
           </div>
           <p class="private-note" id="bk-note"></p>
-          <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-            <button class="btn btn-primary" id="bk-create">Create Book</button>
-          </div>
+          <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModals()">Cancel</button><button class="btn btn-primary" id="bk-create">Upload book</button></div>
         </div>
 
       </main>
@@ -99,62 +109,165 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script src="../js/vendor/pdfjs/pdf.min.js"></script>
   <script>
+
     initAdminPage("books", "Books");
-    // admin pages sit one folder down, so asset paths from data.js (cover/file) are already absolute via ASSET_BASE
-    document.getElementById("add-book-btn").innerHTML = ICONS.plus + "<span>Add Book</span>";
-    document.getElementById("add-book-close").innerHTML = ICONS.x;
-    document.getElementById("book-dz-icon").innerHTML = ICONS.upload;
-    document.getElementById("bk-note").innerHTML = ICONS.lock + "<span>Prototype: the PDF is read in your browser to count pages and make a cover, but nothing is uploaded or stored. In Laravel this form posts to <code>POST /admin/books</code> and saves the file to disk or S3.</span>";
-    wireTabs(document.getElementById("admin-book-tabs"));
+    const $ = (id) => document.getElementById(id);
+    const sid = AdminAuth.sheikhScope();
+    $("add-book-close").innerHTML = ICONS.x;
+    $("book-dz-icon").innerHTML = ICONS.upload;
+    $("bk-note").innerHTML = ICONS.lock + `<span>Prototype: the PDF is stored in this browser (IndexedDB) and the cover is saved with the book, so listener pages and the reader use them. In Laravel this form posts to <code>POST /admin/books</code> and keeps the file on disk or S3.</span>`;
+    wireTabs($("admin-book-tabs"));
 
     const store = BookAdminStore;
-    const seriesOfBook = (b) => ALBUMS.filter((a) => (a.bookIds || []).includes(b.id));
-    const sheikhName = (id) => ARTISTS.find((a) => a.id === id)?.name || "—";
+    const seriesOfBook = (b) => ALBUMS.filter((a) => !a._del && (a.bookIds || []).includes(b.id));
+    const sheikhName = (id) => (ARTISTS.find((a) => a.id === id) || {}).name || "—";
+    const sheikhOpts = () => Admin.visible("artist").filter((a) => !sid || a.id === sid).map((a) => ({ v: a.id, l: a.name }));
+    const seriesOpts = () => Admin.visible("album").filter((a) => !sid || a.artistId === sid);
+    const coverBadge = (b) => (b.coverMode === "custom" ? '<span class="badge badge-accent">Own cover</span>' : b.coverMode === "auto" ? '<span class="badge badge-neutral">First page</span>' : '<span class="badge badge-neutral">Original</span>');
 
-    /* ---------------- Library table ---------------- */
-    function paintBooks() {
-      document.getElementById("books-table").innerHTML = BOOKS.map((b) => `
-        <tr>
-          <td><img src="${b.cover}" style="width:34px;height:46px;border-radius:4px;object-fit:cover;" alt="" /></td>
-          <td><div style="font-weight:600;">${escapeHTML(b.title)}</div><div class="ar text-secondary" lang="ar" style="font-size:14px;direction:ltr;text-align:left;">${b.titleAr}</div></td>
-          <td>${escapeHTML(sheikhName(b.sheikhId))}</td>
-          <td>${seriesOfBook(b).map((a) => `<a href="../album.html?id=${a.id}" style="color:var(--accent);">${escapeHTML(a.title)}</a>`).join("<br>") || '<span class="text-tertiary">None</span>'}</td>
-          <td>${lastPrintedPage(b)} <span class="text-tertiary">· ${fmtBytes(b.fileSize)}</span></td>
-          <td>${fmtCount(b.readers)}</td>
-          <td><button type="button" class="switch ${b.downloadable ? "on" : ""}" data-dl="${b.id}" role="switch" aria-checked="${b.downloadable}" aria-label="Allow download of ${escapeHTML(b.title)}"></button></td>
-          <td><button type="button" class="badge ${b.status === "Published" ? "badge-success" : "badge-neutral"}" data-status="${b.id}" title="Click to ${b.status === "Published" ? "unpublish" : "publish"}">${b.status}</button></td>
-          <td><div class="flex gap-8">
-            <a class="icon-btn" style="width:30px;height:30px;" href="../book.html?id=${b.id}" title="View">${ICONS.eye}</a>
-            <a class="icon-btn" style="width:30px;height:30px;" href="../reader.html?id=${b.id}" title="Open in reader">${ICONS.book}</a>
-            <button class="icon-btn" style="width:30px;height:30px;" title="Map lectures" data-map="${b.id}">${ICONS.edit}</button>
-          </div></td>
-        </tr>`).join("");
+    /* ---------- PDF helpers ---------- */
+    function pdfLib() { const lib = window.pdfjsLib || window["pdfjs-dist/build/pdf"]; lib.GlobalWorkerOptions.workerSrc = `${ASSET_BASE}js/vendor/pdfjs/pdf.worker.min.js`; return lib; }
+    async function openPdf(src) { return pdfLib().getDocument({ ...src, isEvalSupported: false }).promise; }
+    async function firstPage(doc, canvas, width) {
+      const page = await doc.getPage(1), v0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: width / v0.width });
+      canvas.width = vp.width; canvas.height = vp.height;
+      const g = canvas.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: g, viewport: vp }).promise;
     }
-    document.getElementById("books-table").addEventListener("click", (e) => {
-      const dl = e.target.closest("[data-dl]"), st = e.target.closest("[data-status]"), mp = e.target.closest("[data-map]");
-      const o = store.get();
-      if (dl) {
-        const b = bookById(dl.dataset.dl); b.downloadable = !b.downloadable;
-        o.books[b.id] = { ...(o.books[b.id] || {}), downloadable: b.downloadable }; store.save(); paintBooks();
-        toast(b.downloadable ? "Download allowed" : "Read online only", "success");
-      } else if (st) {
-        const b = bookById(st.dataset.status); b.status = b.status === "Published" ? "Draft" : "Published";
-        o.books[b.id] = { ...(o.books[b.id] || {}), status: b.status }; store.save(); paintBooks();
-        toast(`${b.title} is now ${b.status.toLowerCase()}`, "success");
-      } else if (mp) {
-        document.querySelector('#admin-book-tabs .tab[data-target="mapper"]').click();
-        document.getElementById("map-book").value = mp.dataset.map; fillSeries(); paintMap();
-      }
+    async function coverFromPdf(src, width = 420) { const doc = await openPdf(src), c = document.createElement("canvas"); await firstPage(doc, c, width); return { dataUrl: c.toDataURL("image/jpeg", 0.82), pages: doc.numPages }; }
+
+    /* ---------- Library table ---------- */
+    const table = new DataTable({
+      el: $("table"), id: "books", kind: "book", exportName: "books",
+      rows: () => Admin.visible("book"),
+      search: (r) => `${r.title} ${r.titleAr} ${r.author} ${sheikhName(r.sheikhId)} ${r.topic}`, searchPlaceholder: "Search books…",
+      defaultSort: { key: "title", dir: "asc" },
+      emptyTitle: "No books yet", emptyBody: "Upload a PDF to add the first book.",
+      tabs: { options: [{ v: "all", l: "All" }, { v: "pub", l: "Published", test: (r) => r.status === "Published" }, { v: "draft", l: "Drafts", test: (r) => r.status !== "Published" }] },
+      filters: [
+        ...(sid ? [] : [{ key: "sheikh", label: "Sheikh", all: "All sheikhs", options: sheikhOpts, test: (r, v) => r.sheikhId === v }]),
+        { key: "series", label: "Series", all: "All series", options: () => seriesOpts().map((a) => ({ v: a.id, l: a.title })), test: (r, v) => (r.seriesIds || []).includes(v) },
+        { key: "dl", label: "Download", all: "Download: any", options: [{ v: "on", l: "Download allowed" }, { v: "off", l: "Read online only" }], test: (r, v) => (v === "on" ? !!r.downloadable : !r.downloadable) },
+        { key: "cover", label: "Cover", all: "Cover: any", options: [{ v: "auto", l: "First page of PDF" }, { v: "custom", l: "Uploaded cover" }], test: (r, v) => r.coverMode === v },
+        { key: "map", label: "Lectures", all: "Lectures: any", options: [{ v: "mapped", l: "Has lectures linked" }, { v: "unmapped", l: "No lectures linked" }], test: (r, v) => (v === "mapped" ? lecturesOfBook(r).length > 0 : !lecturesOfBook(r).length) },
+      ],
+      columns: [
+        { key: "title", label: "Book", sort: (r) => r.title, render: (r) => `<div class="dt-cell-main"><img src="${r.cover}" alt="" style="width:34px;height:46px;border-radius:4px;" /><div style="min-width:0;"><span class="t">${esc(r.title)}</span><span class="s ar" lang="ar" style="direction:ltr;text-align:left;">${esc(r.titleAr || r.author || "")}</span></div></div>` },
+        { key: "sheikh", label: "Sheikh", sort: (r) => sheikhName(r.sheikhId), render: (r) => esc(sheikhName(r.sheikhId)) },
+        { key: "series", label: "Series", sort: (r) => seriesOfBook(r).length, csv: (r) => seriesOfBook(r).map((a) => a.title).join("; "), render: (r) => seriesOfBook(r).map((a) => `<a href="../album.html?id=${a.id}" style="color:var(--accent);">${esc(a.title)}</a>`).join("<br>") || '<span class="text-tertiary">None</span>' },
+        { key: "pages", label: "Pages", sort: (r) => r.pages, csv: (r) => lastPrintedPage(r), render: (r) => `${lastPrintedPage(r)} <span class="text-tertiary">· ${fmtBytes(r.fileSize)}</span>` },
+        { key: "cover", label: "Cover", sort: (r) => r.coverMode || "", csv: (r) => r.coverMode || "original", render: (r) => coverBadge(r) },
+        { key: "readers", label: "Readers", sort: (r) => r.readers, render: (r) => fmtCount(r.readers) },
+        { key: "dl", label: "Download", sort: (r) => (r.downloadable ? 1 : 0), csv: (r) => (r.downloadable ? "Yes" : "No"), render: (r) => `<button type="button" class="switch ${r.downloadable ? "on" : ""}" data-dl="${r.id}" role="switch" aria-checked="${!!r.downloadable}" aria-label="Allow download of ${esc(r.title)}" ${AdminAuth.owns("book", r) && AdminAuth.can("books.manage") ? "" : "disabled"}></button>` },
+        { key: "status", label: "Status", sort: (r) => r.status, render: (r) => adminBadge(r.status) },
+      ],
+      actions: [
+        { id: "edit", icon: "edit", title: "Edit book", run: (r, t) => t.openAt(t._rows.findIndex((x) => x.id === r.id)) },
+        { id: "map", icon: "headphones", title: "Map lectures", run: (r) => { document.querySelector('#admin-book-tabs .tab[data-target="mapper"]').click(); $("map-book").value = r.id; fillSeries(); paintMap(); } },
+        { id: "read", icon: "book", title: "Open in reader", href: (r) => `../reader.html?id=${r.id}`, blank: true, show: (r) => r.status === "Published" },
+        { id: "del", icon: "trash", title: "Delete", danger: true, perm: "content.delete", run: (r) => del([r.id]) },
+      ],
+      bulk: [
+        { id: "pub", label: "Publish", icon: "check", perm: "books.manage", run: (ids) => { toast(`${Admin.setStatus("book", ids, "Published")} published`, "success"); } },
+        { id: "unpub", label: "Unpublish", icon: "eye", perm: "books.manage", confirm: (n) => ({ title: `Unpublish ${n} book${n === 1 ? "" : "s"}?`, body: "They leave the listener site until you publish them again. Readers lose access to the reader." }), run: (ids) => { toast(`${Admin.setStatus("book", ids, "Draft")} unpublished`, "success"); } },
+        { id: "dl", label: "Allow download", icon: "download", perm: "books.manage", run: (ids) => { ids.forEach((id) => setDl(id, true)); toast("Downloads allowed", "success"); } },
+        { id: "nodl", label: "Read online only", icon: "cloudOff", perm: "books.manage", run: (ids) => { ids.forEach((id) => setDl(id, false)); toast("Read online only", "success"); } },
+        { id: "feat", label: "Feature", icon: "star", perm: "content.delete", run: (ids) => { toast(`${Admin.setFeatured("book", ids, true)} featured`, "success"); } },
+        { id: "del", label: "Delete", icon: "trash", danger: true, perm: "content.delete", run: (ids) => del(ids).then((ok) => ok !== false) },
+      ],
+      canSelect: (r) => AdminAuth.owns("book", r),
+      onOpen: (r, ctx) => openPanel(r, ctx),
     });
+    $("table").addEventListener("click", (e) => { const sw = e.target.closest("[data-dl]"); if (!sw || sw.disabled) return; const b = bookById(sw.dataset.dl); setDl(b.id, !b.downloadable); toast(b.downloadable ? "Download allowed" : "Read online only", "success"); table.refresh(); });
+    function setDl(id, on) { Admin.patch("book", id, { downloadable: on }); const o = store.get(); o.books[id] = { ...(o.books[id] || {}), downloadable: on }; store.save(); }
+    function del(ids) { return Admin.deleteFlow("book", ids, { after: () => { table.refresh(); fillBookSelect(); paintMap(); }, extra: "<p>The PDF file is kept until you delete the book forever from the trash.</p>" }); }
+
+    /* ---------- Edit panel ---------- */
+    function openPanel(r, ctx) {
+      const editable = AdminAuth.can("books.manage") && AdminAuth.owns("book", r);
+      const pend = { cover: null, coverMode: r.coverMode || "", file: null, pages: null };
+      const att = new Set(r.seriesIds || []);
+      const boxesFor = (sh) => seriesOpts().filter((a) => a.artistId === sh || att.has(a.id)).map((a) => `<label class="checkbox-row" style="margin-bottom:8px;"><input type="checkbox" data-ser="${a.id}" ${att.has(a.id) ? "checked" : ""} ${editable ? "" : "disabled"} /> ${esc(a.title)} <span class="text-tertiary">· ${esc(a.artist)}</span></label>`).join("") || '<p class="small muted">This sheikh has no series yet.</p>';
+      const seriesBoxes = `<div id="p-ser-box">${boxesFor(r.sheikhId)}</div>`;
+      Panel.open({
+        title: r.title, subtitle: `${r.author || ""}${r.author ? " · " : ""}${lastPrintedPage(r)} pages`, img: r.cover,
+        badges: adminBadge(r.status) + coverBadge(r) + (r.downloadable ? '<span class="badge badge-neutral">Download on</span>' : '<span class="badge badge-neutral">Read online only</span>'),
+        readOnly: !editable, nav: { index: ctx.index, count: ctx.count, go: ctx.go },
+        deleteText: "Move to trash", onDelete: AdminAuth.can("content.delete") ? async () => { if (await del([r.id])) Panel.close(true); } : null,
+        intro: `<div class="panel-stats" style="margin-bottom:18px;"><div class="panel-stat"><b>${fmtCount(r.readers)}</b><span>Readers</span></div><div class="panel-stat"><b>${fmtCount(r.downloads)}</b><span>Downloads</span></div><div class="panel-stat"><b>${lecturesOfBook(r).length}</b><span>Lectures</span></div></div>`,
+        values: { ...r, publisherLine: r.publisher || "", toc: (r.chapters || []).map((c) => `${c.page} ${c.title}`).join("\n") },
+        sections: [
+          { title: "Details", fields: [
+            { key: "title", label: "Title", required: true }, { key: "titleAr", label: "Arabic title" },
+            { key: "author", label: "Author" },
+            { key: "sheikhId", label: "Sheikh who teaches it", type: "select", options: sheikhOpts(), readOnly: !!sid },
+            { key: "topic", label: "Topic", type: "select", options: GENRES.map((g) => g.name) },
+            { key: "level", label: "Level", type: "select", options: ["Beginner", "Intermediate", "Advanced"] },
+            { key: "publisherLine", label: "Publisher / edition" },
+            { key: "pageOffset", label: "Pages before printed page 1", type: "number", min: 0, hint: "Changing this moves every printed-page link in the book." },
+            { key: "description", label: "Description", type: "textarea", rows: 4, max: 900 },
+          ] },
+          { title: "Cover", html: `<div class="cover-choice" id="p-cover-choice"><button type="button" class="cover-opt ${r.coverMode === "custom" ? "" : r.coverMode === "auto" ? "selected" : ""}" data-mode="auto" ${editable ? "" : "disabled"}><span><b>First page of the PDF</b><span>Made automatically from page 1.</span></span></button><button type="button" class="cover-opt ${r.coverMode === "custom" ? "selected" : ""}" data-mode="custom" ${editable ? "" : "disabled"}><span><b>My own cover</b><span>A separate image you upload.</span></span></button></div><div class="cover-preview"><img id="p-cover-img" src="${r.cover}" alt="Current cover" /><div style="flex:1;min-width:180px;"><div class="small muted" id="p-cover-note">${r.coverMode === "custom" ? "Using your uploaded cover." : r.coverMode === "auto" ? "Made from the first page of the PDF." : "Original cover. Pick an option above to change it."}</div><label class="btn btn-secondary btn-sm" id="p-cover-pick" style="cursor:pointer;margin-top:10px;" hidden>Choose cover image<input type="file" id="p-cover-file" accept="image/png,image/jpeg,image/webp" hidden /></label></div></div>` },
+          { title: "Book file", html: `<div class="small muted" style="margin-bottom:10px;">${lastPrintedPage(r)} printed pages · ${fmtBytes(r.fileSize)} · ${String(r.file).startsWith("idb:") ? "uploaded here" : "bundled with the site"}</div>${editable ? `<label class="btn btn-secondary btn-sm" style="cursor:pointer;">Replace PDF<input type="file" id="p-pdf" accept="application/pdf,.pdf" hidden /></label><div class="limit-note" id="p-pdf-note" style="margin-top:6px;">Up to ${AdminSettings.get().uploads.maxPdfMB} MB.</div>` : ""}` },
+          { title: "Series it is attached to", html: seriesBoxes },
+          { title: "Table of contents", fields: [{ key: "toc", label: "One line per chapter: printed page, then title", type: "textarea", rows: 5, hint: "Example: 48 Purification. Leave empty to keep the current contents." }] },
+          { title: "Visibility", fields: [
+            { key: "status", label: "Status", type: "select", options: ["Published", "Draft"] },
+            { key: "downloadable", label: "Download", type: "toggle", toggleText: "Listeners can download the PDF" },
+            ...(sid ? [] : [{ key: "featured", label: "Featured", type: "toggle", toggleText: "Show in featured books" }]),
+          ] },
+        ],
+        validate: (v) => { const e = {}; if (!Number.isFinite(Number(v.pageOffset)) || v.pageOffset < 0) e.pageOffset = "Enter 0 or more."; return e; },
+        onSave: async (v) => {
+          const o = store.get();
+          const patch = { title: v.title.trim(), titleAr: v.titleAr, author: v.author, sheikhId: v.sheikhId, topic: v.topic, level: v.level, publisher: v.publisherLine, pageOffset: Number(v.pageOffset) || 0, description: v.description, status: v.status, downloadable: !!v.downloadable };
+          if (!sid) patch.featured = !!v.featured;
+          if (pend.cover) { patch.cover = pend.cover; patch.coverMode = pend.coverMode; }
+          if (pend.file) { await BookFiles.put(r.id, pend.file); Object.assign(patch, { file: `idb:${r.id}`, fileSize: pend.file.size, pages: pend.pages }); }
+          const toc = v.toc.trim() ? v.toc.split(/\n/).map((ln) => /^\s*(\d+)\s+(.+)$/.exec(ln)).filter(Boolean).map((m) => ({ title: m[2].trim(), page: Number(m[1]) })) : null;
+          if (toc && toc.length) patch.chapters = toc;
+          Admin.patch("book", r.id, patch);
+          const ids = [...att];
+          ALBUMS.forEach((a) => { const cur = new Set(a.bookIds || []); const was = cur.has(r.id), now = ids.includes(a.id); if (was !== now && (!sid || a.artistId === sid)) { now ? cur.add(r.id) : cur.delete(r.id); a.bookIds = [...cur]; o.seriesBooks[a.id] = a.bookIds; } });
+          store.save(); r.seriesIds = ALBUMS.filter((a) => (a.bookIds || []).includes(r.id)).map((a) => a.id);
+          o.books[r.id] = { ...(o.books[r.id] || {}), downloadable: patch.downloadable, status: patch.status }; store.save();
+          toast("Book saved", "success"); table.refresh(); fillBookSelect(); ctx.go(table._rows.findIndex((x) => x.id === r.id));
+        },
+      });
+      const root = Panel.el, img = $("p-cover-img"), note = $("p-cover-note"), pick = $("p-cover-pick");
+      const setMode = (m) => { root.querySelectorAll("#p-cover-choice .cover-opt").forEach((b) => b.classList.toggle("selected", b.dataset.mode === m)); pick.hidden = m !== "custom"; };
+      setMode(r.coverMode === "custom" ? "custom" : "");
+      root.querySelector("#p-cover-choice").addEventListener("click", async (e) => {
+        const b = e.target.closest(".cover-opt"); if (!b || b.disabled) return;
+        const m = b.dataset.mode; setMode(m); Panel._setDirty(true);
+        if (m === "auto") {
+          note.textContent = "Reading page 1 of the PDF…";
+          try { const src = pend.file ? { data: new Uint8Array(await pend.file.arrayBuffer()) } : String(r.file).startsWith("idb:") ? { data: new Uint8Array(await (await BookFiles.get(r.id)).arrayBuffer()) } : { url: r.file }; const { dataUrl } = await coverFromPdf(src); pend.cover = dataUrl; pend.coverMode = "auto"; img.src = dataUrl; note.textContent = "Made from the first page of the PDF. Save to apply."; }
+          catch (err) { console.warn(err); note.textContent = location.protocol === "file:" ? "The browser blocked reading the bundled PDF from file://. Use “Replace PDF” to choose it, or run the site through a local server." : "The PDF couldn't be read. Try “Replace PDF”."; }
+        } else { note.textContent = "Choose an image to use as the cover."; pend.coverMode = "custom"; }
+      });
+      $("p-cover-file").addEventListener("change", async (e) => { const f = e.target.files[0]; if (!f) return; const err = Upload.checkImage(f); if (err) return toast(err, "warning"); try { pend.cover = await Upload.imageToDataURL(f, { maxSide: 520 }); pend.coverMode = "custom"; img.src = pend.cover; note.textContent = `Your cover is ready: ${f.name}. Save to apply.`; Panel._setDirty(true); } catch (x) { toast(x.message, "warning"); } });
+      const pdf = $("p-pdf");
+      if (pdf) pdf.addEventListener("change", async () => {
+        const f = pdf.files[0]; if (!f) return; const err = Upload.checkPdf(f); if (err) { pdf.value = ""; return toast(err, "warning"); }
+        try { const doc = await openPdf({ data: new Uint8Array(await f.arrayBuffer()) }); pend.file = f; pend.pages = doc.numPages; $("p-pdf-note").textContent = `${f.name}: ${doc.numPages} pages, ${fmtBytes(f.size)}. Save to apply.`; Panel._setDirty(true); } catch (x) { toast("That file couldn't be read as a PDF", "warning"); }
+      });
+      const wireSer = () => root.querySelectorAll("[data-ser]").forEach((c) => c.addEventListener("change", () => { c.checked ? att.add(c.dataset.ser) : att.delete(c.dataset.ser); Panel._setDirty(true); }));
+      wireSer();
+      const shSel = root.querySelector('[data-f="sheikhId"]');
+      if (shSel) shSel.addEventListener("change", () => { $("p-ser-box").innerHTML = boxesFor(shSel.value); wireSer(); });
+    }
 
     /* ---------------- Mapper ---------------- */
     const mapBook = document.getElementById("map-book"), mapSeries = document.getElementById("map-series");
-    mapBook.innerHTML = BOOKS.map((b) => `<option value="${b.id}">${escapeHTML(b.title)}</option>`).join("");
+    function fillBookSelect() { mapBook.innerHTML = BOOKS.filter((b) => !b._del).map((b) => `<option value="${b.id}">${escapeHTML(b.title)}</option>`).join(""); }
+    fillBookSelect();
     function fillSeries() {
-      const b = bookById(mapBook.value), linked = seriesOfBook(b).map((a) => a.id);
-      const ordered = [...ALBUMS.filter((a) => linked.includes(a.id)), ...ALBUMS.filter((a) => !linked.includes(a.id) && a.artistId === b.sheikhId), ...ALBUMS.filter((a) => !linked.includes(a.id) && a.artistId !== b.sheikhId)];
+      const b = bookById(mapBook.value); if (!b) return; const linked = seriesOfBook(b).map((a) => a.id);
+      const ALB = ALBUMS.filter((a) => !a._del); const ordered = [...ALB.filter((a) => linked.includes(a.id)), ...ALB.filter((a) => !linked.includes(a.id) && a.artistId === b.sheikhId), ...ALB.filter((a) => !linked.includes(a.id) && a.artistId !== b.sheikhId)];
       mapSeries.innerHTML = ordered.map((a) => `<option value="${a.id}">${escapeHTML(a.title)} — ${escapeHTML(a.artist)}${linked.includes(a.id) ? " (attached)" : ""}</option>`).join("");
     }
     const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -173,7 +286,7 @@
     }
     function paintMap() {
       const b = bookById(mapBook.value), a = ALBUMS.find((x) => x.id === mapSeries.value);
-      if (!a) return;
+      if (!a || !b) { document.getElementById("map-table").innerHTML = ""; return; }
       document.getElementById("map-table").innerHTML = a.tracks.map((t, i) => {
         const r = t.bookRef && t.bookRef.bookId === b.id ? t.bookRef : null;
         const sync = r && t.syncPoints ? t.syncPoints.map((s) => `${mmss(s.t)}=${s.page}`).join(", ") : "";
@@ -191,7 +304,7 @@
     mapBook.addEventListener("change", () => { fillSeries(); paintMap(); });
     mapSeries.addEventListener("change", paintMap);
     document.getElementById("map-save").addEventListener("click", () => {
-      const b = bookById(mapBook.value), a = ALBUMS.find((x) => x.id === mapSeries.value), o = store.get();
+      const b = bookById(mapBook.value), a = ALBUMS.find((x) => x.id === mapSeries.value), o = store.get(); if (!a || !b) return;
       const last = lastPrintedPage(b), rows = [...document.querySelectorAll("#map-table tr")];
       let bad = 0, prevTo = null;
       const updates = [];
@@ -219,52 +332,80 @@
       location.reload();   // re-apply the overrides to the demo data, exactly like every other page does on load
     });
     document.getElementById("map-reset").addEventListener("click", () => {
-      if (!confirm("Remove every book edit made in this browser and go back to the demo data?")) return;
-      store.reset(); location.reload();
+      Confirm.ask({ title: "Reset all book links?", body: "Removes every book link and attachment made in this browser and goes back to the demo data. Uploaded books are kept.", confirmText: "Reset links", tone: "danger" }).then((ok) => { if (ok) { Audit.log({ action: "Reset book links", kind: "book", label: "All links" }); store.reset(); location.reload(); } });
     });
 
-    /* ---------------- Add book (reads the PDF in the browser) ---------------- */
-    document.getElementById("add-book-btn").addEventListener("click", () => { ensureOverlay(); openModal("add-book-modal"); });
-    document.getElementById("bk-sheikh").innerHTML = ARTISTS.map((a) => `<option value="${a.id}">${escapeHTML(a.name)}</option>`).join("");
-    document.getElementById("bk-series").innerHTML = `<option value="">No series yet</option>` + ALBUMS.map((a) => `<option value="${a.id}">${escapeHTML(a.title)}</option>`).join("");
-    document.getElementById("bk-topic").innerHTML = GENRES.map((g) => `<option>${escapeHTML(g.name)}</option>`).join("");
 
-    let picked = null;
-    async function readPdf(file) {
-      if (!file) return;
-      const sum = document.getElementById("book-summary"), txt = document.getElementById("book-summary-text");
-      sum.style.display = "flex"; txt.textContent = "Reading the file…";
-      picked = { name: file.name, size: file.size, pages: 0 };
-      try {
-        const lib = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
-        lib.GlobalWorkerOptions.workerSrc = `${ASSET_BASE}js/vendor/pdfjs/pdf.worker.min.js`;
-        const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
-        picked.pages = doc.numPages;
-        const page = await doc.getPage(1), vp0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: 160 / vp0.width });
-        const c = document.getElementById("book-cover-canvas"); c.width = vp.width; c.height = vp.height;
-        await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
-        txt.innerHTML = `<strong>${escapeHTML(file.name)}</strong><br>${doc.numPages} pages · ${fmtBytes(file.size)}`;
-        const t = document.getElementById("bk-title");
-        if (!t.value) t.value = file.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ");
-        document.getElementById("book-dz-text").textContent = "Choose a different PDF";
-      } catch (err) { picked = null; txt.textContent = "That file couldn't be read as a PDF."; console.warn(err); }
+    /* ---------- Upload a book ---------- */
+    const U = { file: null, pages: 0, bytes: null, mode: "auto", custom: null, auto: null };
+    $("u-limit").textContent = `PDF up to ${AdminSettings.get().uploads.maxPdfMB} MB.`;
+    $("u-cover-limit").textContent = `PNG, JPG or WebP up to ${AdminSettings.get().uploads.maxImageMB} MB.`;
+    $("bk-sheikh").innerHTML = sheikhOpts().map((o) => `<option value="${o.v}">${esc(o.l)}</option>`).join("");
+    if (sid) { $("bk-sheikh").value = sid; $("bk-sheikh").disabled = true; }
+    /* the series list follows the chosen sheikh: only that sheikh's series can be attached */
+    function fillUploadSeries() {
+      const sh = $("bk-sheikh").value, list = seriesOpts().filter((a) => a.artistId === sh);
+      $("bk-series").innerHTML = `<option value="">${list.length ? "Don't attach yet" : "This sheikh has no series yet"}</option>` + list.map((a) => `<option value="${a.id}">${esc(a.title)}</option>`).join("");
+      $("bk-series").value = "";
     }
-    const fileInput = document.getElementById("book-file"), dz = document.getElementById("book-dz");
+    $("bk-sheikh").addEventListener("change", fillUploadSeries); fillUploadSeries();
+    $("bk-topic").innerHTML = GENRES.map((g) => `<option>${esc(g.name)}</option>`).join("");
+    if (AdminAuth.can("books.manage")) { const b = $("add-book-btn"); b.hidden = false; b.innerHTML = ICONS.plus + "<span>Upload book</span>"; b.addEventListener("click", () => { ensureOverlay(); openModal("add-book-modal"); }); }
+    const cv = $("u-cover-canvas");
+    function paintCoverPreview() {
+      const g = cv.getContext("2d"); g.clearRect(0, 0, cv.width, cv.height);
+      const src = U.mode === "custom" ? U.custom : U.auto;
+      if (!src) { cv.width = 110; cv.height = 150; g.fillStyle = "#9993"; g.fillRect(0, 0, 110, 150); $("u-cover-note").textContent = U.mode === "custom" ? "Choose a cover image." : U.file ? "Making the cover…" : "Choose the PDF to see the cover."; return; }
+      const im = new Image(); im.onload = () => { cv.width = 110; cv.height = Math.round(110 * im.height / im.width); cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height); }; im.src = src;
+      $("u-cover-note").textContent = U.mode === "custom" ? "Your own cover will be used." : "The first page of the PDF will be used.";
+    }
+    $("u-cover-choice").addEventListener("click", (e) => { const b = e.target.closest(".cover-opt"); if (!b) return; U.mode = b.dataset.mode; $("u-cover-choice").querySelectorAll(".cover-opt").forEach((x) => x.classList.toggle("selected", x === b)); $("u-cover-custom").hidden = U.mode !== "custom"; paintCoverPreview(); });
+    $("u-cover-file").addEventListener("change", async (e) => { const f = e.target.files[0]; if (!f) return; const err = Upload.checkImage(f); if (err) { e.target.value = ""; return toast(err, "warning"); } try { U.custom = await Upload.imageToDataURL(f, { maxSide: 520 }); paintCoverPreview(); } catch (x) { toast(x.message, "warning"); } });
+
+    async function readPdf(file) {
+      if (!file) return; $("u-file-err").textContent = "";
+      const err = Upload.checkPdf(file); if (err) { $("u-file-err").textContent = err; return; }
+      const sum = $("book-summary"), txt = $("book-summary-text"); sum.style.display = "flex"; txt.textContent = "Reading the file…";
+      try {
+        const doc = await openPdf({ data: new Uint8Array(await file.arrayBuffer()) });
+        U.file = file; U.pages = doc.numPages;
+        const c = document.createElement("canvas"); await firstPage(doc, c, 420); U.auto = c.toDataURL("image/jpeg", 0.82);
+        txt.innerHTML = `<strong>${esc(file.name)}</strong><br>${doc.numPages} pages · ${fmtBytes(file.size)}`;
+        if (!$("bk-title").value) $("bk-title").value = file.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ");
+        $("book-dz-text").textContent = "Choose a different PDF"; paintCoverPreview();
+      } catch (e) { U.file = null; txt.textContent = ""; sum.style.display = "none"; $("u-file-err").textContent = "That file couldn't be read as a PDF."; console.warn(e); }
+    }
+    const fileInput = $("book-file"), dz = $("book-dz");
     fileInput.addEventListener("change", () => readPdf(fileInput.files[0]));
     ["dragover", "dragenter"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("drag"); }));
     ["dragleave", "drop"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("drag"); }));
     dz.addEventListener("drop", (e) => readPdf(e.dataTransfer.files[0]));
-    document.getElementById("bk-create").addEventListener("click", () => {
-      const title = document.getElementById("bk-title").value.trim();
-      if (!picked) return toast("Choose the book's PDF first", "warning");
-      if (!title) { document.getElementById("bk-title").focus(); return toast("Give the book a title", "warning"); }
+    paintCoverPreview();
+
+    $("bk-create").addEventListener("click", async () => {
+      const title = $("bk-title").value.trim(); $("e-title").textContent = "";
+      if (!U.file) { $("u-file-err").textContent = "Choose the book's PDF first."; return $("book-dz").scrollIntoView({ block: "center" }); }
+      if (!title) { $("e-title").textContent = "Give the book a title."; return $("bk-title").focus(); }
+      if (U.mode === "custom" && !U.custom) return toast("Choose your cover image, or switch to the PDF's first page", "warning");
+      const sh = $("bk-sheikh").value; if (!sh) return toast("Choose a sheikh", "warning");
+      const id = Admin.nextId("book");
+      const review = sid && AdminSettings.get().uploads.requireReview && !AdminAuth.can("content.delete");
+      const status = $("bk-published").checked && !review ? "Published" : "Draft";
+      try { await BookFiles.put(id, U.file); } catch (e) { return toast("This browser couldn't store the PDF (storage may be full)", "warning"); }
+      const arabic = $("bk-lang").value === "Arabic";
+      const b = Admin.create("book", { id, slug: Admin.slug(title), title, titleAr: $("bk-title-ar").value.trim(), subtitle: "", author: $("bk-author").value.trim() || "Unknown", authorAr: "", publisher: $("bk-publisher").value.trim() || "—", edition: "", language: $("bk-lang").value, dir: arabic ? "rtl" : "ltr", topic: $("bk-topic").value, level: $("bk-level").value, format: "PDF", pages: U.pages, pageOffset: Number($("bk-offset").value) || 0, fileSize: U.file.size, file: `idb:${id}`, cover: (U.mode === "custom" ? U.custom : U.auto) || ART(`book-${id}`, 400, 560), coverMode: U.mode, scanned: false, sheikhId: sh, seriesIds: [], downloadable: $("bk-download").checked, status, featured: $("bk-featured").checked && !sid, added: new Date().toLocaleString("en", { month: "short", year: "numeric" }), readers: 0, downloads: 0, description: $("bk-desc").value.trim() || `${title} by ${$("bk-author").value.trim() || "the author"}.`, chapters: [] });
+      const sr = $("bk-series").value; if (sr) { const a = Admin.find("album", sr); if (a) { a.bookIds = [...new Set([...(a.bookIds || []), id])]; const o = store.get(); o.seriesBooks[a.id] = a.bookIds; store.save(); b.seriesIds = [sr]; } }
       closeModals();
-      toast(`“${title}” would be created with ${picked.pages} pages. Nothing is stored in this prototype.`, "success");
+      ["bk-title", "bk-title-ar", "bk-author", "bk-publisher", "bk-desc"].forEach((x) => { $(x).value = ""; });
+      U.file = null; U.auto = null; U.custom = null; U.mode = "auto"; fileInput.value = ""; $("book-summary").style.display = "none"; $("book-dz-text").textContent = "Drag a PDF here or click to choose";
+      $("u-cover-choice").querySelectorAll(".cover-opt").forEach((x) => x.classList.toggle("selected", x.dataset.mode === "auto")); $("u-cover-custom").hidden = true; paintCoverPreview();
+      toast(review ? `“${title}” uploaded as a draft for review` : `“${title}” uploaded`, "success"); table.refresh(); fillBookSelect(); fillSeries(); paintMap();
     });
 
-    fillSeries(); paintBooks(); paintMap();
+    fillSeries(); paintMap();
     if (location.hash === "#mapper") document.querySelector('#admin-book-tabs .tab[data-target="mapper"]').click();
-    if (location.hash === "#add") document.getElementById("add-book-btn").click();
+    if (location.hash === "#add" && !$("add-book-btn").hidden) $("add-book-btn").click();
+
   </script>
 </body>
 </html>

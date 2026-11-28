@@ -7,22 +7,31 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
 <style>
-  .settings-layout{display:grid;grid-template-columns:200px 1fr;gap:36px;align-items:start;}
-  .settings-nav a{display:block;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--text-secondary);}
+  .settings-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:36px;align-items:start;}
+  .settings-nav{position:sticky;top:84px;display:flex;flex-direction:column;gap:2px;}
+  .settings-nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--text-secondary);cursor:pointer;}
+  .settings-nav a svg{width:16px;height:16px;flex-shrink:0;}
   .settings-nav a:hover{background:var(--surface-1);color:var(--text-primary);}
   .settings-nav a.active{background:var(--accent-soft);color:var(--accent);}
-  .settings-section{display:none;max-width:600px;}
+  .settings-section{display:none;max-width:720px;}
   .settings-section.active{display:block;}
   .settings-section h2{font-size:18px;margin-bottom:6px;}
   .settings-section>p.desc{color:var(--text-secondary);font-size:13.5px;margin-bottom:22px;}
+  .logo-prev{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-2);}
+  .logo-prev img{width:48px;height:48px;object-fit:contain;border-radius:8px;}
+  .var-chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px;}
+  .mail-prev{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-2);padding:16px;font-size:13.5px;line-height:1.6;white-space:pre-wrap;}
+  .mail-prev .subj{font-weight:700;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border-subtle);white-space:normal;}
+  .save-bar{display:flex;gap:10px;align-items:center;margin-top:20px;flex-wrap:wrap;}
   @media (max-width:860px){
     .settings-layout{grid-template-columns:1fr;gap:20px;}
-    .settings-nav{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
-    .settings-nav a{background:var(--surface-1);text-align:center;}
+    .settings-nav{position:static;display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+    .settings-nav a{background:var(--surface-1);justify-content:center;}
     .settings-section{max-width:none;}
   }
 </style>
@@ -34,51 +43,103 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Platform Settings</h1><p>Global configuration for Ugandan Sheikhs.</p></div></div>
+        <div class="page-header"><div><h1 style="font-size:22px;">Platform settings</h1><p>Branding, uploads, audio, email, maintenance and security.</p></div></div>
 
         <div class="settings-layout">
-          <nav class="settings-nav" id="settings-nav">
-            <a data-target="general" class="active">General</a>
-            <a data-target="uploads">Uploads</a>
-            <a data-target="moderation">Moderation</a>
-            <a data-target="notifications">Notifications</a>
-            <a data-target="admins">Admin Accounts</a>
+          <nav class="settings-nav" id="settings-nav" aria-label="Settings sections">
+            <a data-target="branding" class="active">General &amp; branding</a>
+            <a data-target="appearance">Appearance</a>
+            <a data-target="uploads">Upload limits</a>
+            <a data-target="audio">Audio quality</a>
+            <a data-target="email">Email templates</a>
+            <a data-target="maintenance">Maintenance mode</a>
+            <a data-target="security">Security &amp; trash</a>
+            <a data-target="data">Backup &amp; reset</a>
           </nav>
           <div>
-            <section class="settings-section active" data-section="general">
-              <h2>General</h2><p class="desc">Basic information about your Ugandan Sheikhs instance.</p>
-              <div class="field"><label>Platform name</label><input class="input" value="Ugandan Sheikhs" /></div>
-              <div class="field"><label>Support email</label><input class="input" value="support@ugandansheikhs.dev" /></div>
-              <div class="field"><label>Default streaming quality</label><select class="select"><option>Normal</option><option>High</option></select></div>
-              <button class="btn btn-primary" onclick="toast('Settings saved','success')">Save Changes</button>
+            <section class="settings-section active" data-section="branding">
+              <h2>General &amp; branding</h2><p class="desc">The name and logo listeners and staff see.</p>
+              <div class="field"><label for="b-name">Platform name</label><input class="input" id="b-name" maxlength="60" /><span class="field-hint field-err" id="e-bname"></span></div>
+              <div class="field"><label for="b-tag">Tagline</label><input class="input" id="b-tag" maxlength="120" /></div>
+              <div class="field"><label for="b-mail">Support email</label><input class="input" id="b-mail" type="email" /><span class="field-hint field-err" id="e-bmail"></span></div>
+              <div class="field"><label>Logo</label>
+                <div class="logo-prev"><img id="b-logo-img" alt="" /><div style="flex:1;min-width:160px;"><div class="small muted" id="b-logo-note">Using the built-in logo.</div><div class="row-actions" style="margin-top:8px;"><label class="btn btn-secondary btn-sm" style="cursor:pointer;">Upload logo<input type="file" id="b-logo" accept="image/png,image/jpeg,image/webp" hidden /></label><button type="button" class="btn btn-ghost btn-sm" id="b-logo-reset">Use built-in logo</button></div></div></div>
+                <span class="limit-note" id="b-logo-limit"></span></div>
+              <div class="save-bar"><button class="btn btn-primary" id="b-save">Save branding</button></div>
             </section>
+
+            <section class="settings-section" data-section="appearance">
+              <h2>Appearance</h2><p class="desc">Pick the theme and accent colour for this browser. The same choice is used on the listener site, and you can also change it any time from the palette button in the top bar.</p>
+              <div class="field"><label>Theme</label>
+                <div class="theme-picker" role="group" aria-label="Theme">
+                  <button type="button" class="theme-card" data-theme-set="ocean" aria-pressed="false"><span class="theme-preview tp-ocean"><i class="tp-side"></i><i class="tp-dot"></i><i class="tp-line l1"></i><i class="tp-line l2"></i><i class="tp-line l3"></i><i class="tp-bar"></i><i class="tp-hero"></i><i class="tp-card c1"></i><i class="tp-card c2"></i><i class="tp-card c3"></i></span><span class="theme-name">Royal Blue<small>Azure glass, calm and modern</small></span><span class="theme-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button><button type="button" class="theme-card" data-theme-set="dark" aria-pressed="false"><span class="theme-preview tp-dark"><i class="tp-side"></i><i class="tp-dot"></i><i class="tp-line l1"></i><i class="tp-line l2"></i><i class="tp-line l3"></i><i class="tp-bar"></i><i class="tp-hero"></i><i class="tp-card c1"></i><i class="tp-card c2"></i><i class="tp-card c3"></i></span><span class="theme-name">Emerald Night<small>Deep green, easy on the eyes</small></span><span class="theme-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button><button type="button" class="theme-card" data-theme-set="light" aria-pressed="false"><span class="theme-preview tp-light"><i class="tp-side"></i><i class="tp-dot"></i><i class="tp-line l1"></i><i class="tp-line l2"></i><i class="tp-line l3"></i><i class="tp-bar"></i><i class="tp-hero"></i><i class="tp-card c1"></i><i class="tp-card c2"></i><i class="tp-card c3"></i></span><span class="theme-name">Ivory Light<small>Warm white, bright and clear</small></span><span class="theme-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+                </div></div>
+              <div class="setting-row"><div><div class="label">Match my device</div><div class="desc">Switch between Royal Blue and Ivory Light with the device's light or dark setting.</div></div><button type="button" class="switch" id="theme-system-switch" role="switch" aria-label="Match my device" onclick="Theme.set(Theme.get()==='system' ? document.documentElement.getAttribute('data-theme') : 'system')"></button></div>
+              <div class="field" style="margin-top:14px;"><label>Accent colour</label>
+                <div class="accent-picker" role="group" aria-label="Accent colour">
+                  <button type="button" class="accent-swatch swatch-default" data-accent-set="default" aria-pressed="false" title="Theme default" aria-label="Theme default"></button>
+                  <button type="button" class="accent-swatch" data-accent-set="coral" aria-pressed="false" title="Coral" aria-label="Coral" style="--swatch:#FF5A4E;"></button>
+                  <button type="button" class="accent-swatch" data-accent-set="gold" aria-pressed="false" title="Gold" aria-label="Gold" style="--swatch:#F6B73C;"></button>
+                  <button type="button" class="accent-swatch" data-accent-set="blue" aria-pressed="false" title="Sky blue" aria-label="Sky blue" style="--swatch:#5AA9FF;"></button>
+                  <button type="button" class="accent-swatch" data-accent-set="green" aria-pressed="false" title="Green" aria-label="Green" style="--swatch:#32C48D;"></button>
+                </div></div>
+            </section>
+
             <section class="settings-section" data-section="uploads">
-              <h2>Uploads</h2><p class="desc">Control what sheikhs and admins can upload.</p>
-              <div class="settings-row"><div><div class="label">Max file size</div><div class="desc">Largest audio file accepted per lecture.</div></div><input class="input" style="width:100px;" value="200 MB" /></div>
-              <div class="settings-row"><div><div class="label">Allowed formats</div><div class="desc">MP3, WAV, FLAC, M4A</div></div><button class="btn btn-secondary btn-sm" onclick="toast('Format list opened')">Edit</button></div>
-              <div class="settings-row"><div><div class="label">Require review before publish</div></div><button class="switch on" data-switch></button></div>
+              <h2>Upload limits</h2><p class="desc">Every upload form (lectures, books, images) checks these limits before accepting a file.</p>
+              <div class="setting-row"><div><div class="label">Largest audio file</div><div class="desc">Per lecture recording.</div></div><div class="row-actions"><input class="input" type="number" id="u-audio" min="1" max="2000" style="width:100px;" aria-label="Audio limit in MB" /><span class="muted">MB</span></div></div>
+              <div class="setting-row"><div><div class="label">Largest book (PDF)</div><div class="desc">Per book file.</div></div><div class="row-actions"><input class="input" type="number" id="u-pdf" min="1" max="500" style="width:100px;" aria-label="PDF limit in MB" /><span class="muted">MB</span></div></div>
+              <div class="setting-row"><div><div class="label">Largest image</div><div class="desc">Covers, photos and logos. Images are shrunk after upload.</div></div><div class="row-actions"><input class="input" type="number" id="u-img" min="1" max="50" style="width:100px;" aria-label="Image limit in MB" /><span class="muted">MB</span></div></div>
+              <div class="field" style="margin-top:14px;"><label>Allowed audio formats</label><div class="word-chips" id="u-formats" style="margin-top:0;"></div></div>
+              <div class="setting-row"><div><div class="label">Review before publishing</div><div class="desc">Lectures and books from sheikh accounts are saved as drafts until an editor publishes them.</div></div><button type="button" class="switch" id="u-review" role="switch" aria-label="Review before publishing"></button></div>
+              <span class="field-hint field-err" id="e-uploads"></span>
+              <div class="save-bar"><button class="btn btn-primary" id="u-save">Save upload limits</button></div>
             </section>
-            <section class="settings-section" data-section="moderation">
-              <h2>Moderation</h2><p class="desc">Automatic and manual moderation rules.</p>
-              <div class="settings-row"><div><div class="label">Auto-hide reported comments</div><div class="desc">Hide after 5 or more reports.</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Profanity filter</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Require verification for sheikh accounts</div></div><button class="switch" data-switch></button></div>
+
+            <section class="settings-section" data-section="audio">
+              <h2>Audio quality</h2><p class="desc">How uploaded lectures are prepared for streaming and download.</p>
+              <div class="setting-row"><div><div class="label">Streaming bitrate</div><div class="desc" id="a-est"></div></div><select class="select" id="a-bitrate"><option value="64">64 kbps (smallest)</option><option value="96">96 kbps</option><option value="128">128 kbps (recommended for speech)</option><option value="192">192 kbps</option><option value="256">256 kbps (largest)</option></select></div>
+              <div class="setting-row"><div><div class="label">Also make a low-data version</div><div class="desc">A 48 kbps copy used automatically on slow connections.</div></div><button type="button" class="switch" id="a-low" role="switch" aria-label="Low data version"></button></div>
+              <div class="setting-row"><div><div class="label">Even out loudness</div><div class="desc">Brings quiet and loud recordings to a similar volume.</div></div><button type="button" class="switch" id="a-norm" role="switch" aria-label="Normalise loudness"></button></div>
+              <div class="setting-row"><div><div class="label">Mono for speech</div><div class="desc">Halves the file size for spoken lectures with no loss in clarity.</div></div><button type="button" class="switch" id="a-mono" role="switch" aria-label="Mono"></button></div>
+              <div class="setting-row"><div><div class="label">Download quality</div><div class="desc">What listeners get when they download a lecture.</div></div><select class="select" id="a-dl"><option value="standard">Same as streaming</option><option value="high">High (256 kbps)</option><option value="original">Original upload</option></select></div>
+              <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div>Prototype: the choice is saved. In Laravel a queued job transcodes each upload with FFmpeg using these values.</div></div>
+              <div class="save-bar"><button class="btn btn-primary" id="a-save">Save audio settings</button></div>
             </section>
-            <section class="settings-section" data-section="notifications">
-              <h2>Notifications</h2><p class="desc">Platform-wide notification defaults.</p>
-              <div class="settings-row"><div><div class="label">Send weekly digest emails</div></div><button class="switch on" data-switch></button></div>
-              <div class="settings-row"><div><div class="label">Notify admins of new reports</div></div><button class="switch on" data-switch></button></div>
+
+            <section class="settings-section" data-section="email">
+              <h2>Email templates</h2><p class="desc">The wording of emails the platform sends. Use the variables in double curly braces.</p>
+              <div class="field"><label for="m-pick">Template</label><select class="select" id="m-pick"></select><span class="field-hint" id="m-when"></span></div>
+              <div class="field"><label for="m-subject">Subject</label><input class="input" id="m-subject" maxlength="140" /></div>
+              <div class="field"><label for="m-body">Message</label><div class="var-chips" id="m-vars"></div><textarea class="textarea" id="m-body" rows="10"></textarea><span class="field-hint field-err" id="e-mail"></span></div>
+              <label>Preview</label><div class="mail-prev" id="m-prev" style="margin-top:6px;"></div>
+              <div class="save-bar"><button class="btn btn-primary" id="m-save">Save template</button><button class="btn btn-ghost" id="m-reset">Reset to default</button><button class="btn btn-secondary" id="m-test">Send a test</button></div>
             </section>
-            <section class="settings-section" data-section="admins">
-              <h2>Admin Accounts</h2><p class="desc">People with access to this dashboard.</p>
-              <table class="data-table">
-                <thead><tr><th>Name</th><th>Role</th><th>Last Active</th><th></th></tr></thead>
-                <tbody>
-                  <tr><td>Amina Nakato</td><td><span class="badge badge-accent">Owner</span></td><td class="text-secondary">Just now</td><td></td></tr>
-                  <tr><td>Kwame O.</td><td><span class="badge badge-neutral">Editor</span></td><td class="text-secondary">2h ago</td><td><button class="icon-btn admin-remove-btn" style="width:28px;height:28px;" onclick="toast('Admin removed','warning')"></button></td></tr>
-                </tbody>
-              </table>
-              <button class="btn btn-secondary btn-sm mt-24" onclick="toast('Invite admin form opened')">Invite Admin</button>
+
+            <section class="settings-section" data-section="maintenance">
+              <h2>Maintenance mode</h2><p class="desc">Show listeners a “back soon” page while you work. Staff who are signed in can still use the site if you allow it.</p>
+              <div class="setting-row"><div><div class="label">Maintenance mode</div><div class="desc" id="mt-state"></div></div><button type="button" class="switch" id="mt-on" role="switch" aria-label="Maintenance mode"></button></div>
+              <div class="field" style="margin-top:14px;"><label for="mt-title">Headline</label><input class="input" id="mt-title" maxlength="80" /></div>
+              <div class="field"><label for="mt-msg">Message</label><textarea class="textarea" id="mt-msg" rows="3" maxlength="300"></textarea></div>
+              <div class="field"><label for="mt-until">Expected back (optional)</label><input class="input" type="datetime-local" id="mt-until" style="max-width:260px;" /></div>
+              <label class="checkbox-row" style="margin-bottom:16px;"><input type="checkbox" id="mt-admins" /> Staff who are signed in can still browse the listener site</label>
+              <div class="save-bar"><button class="btn btn-primary" id="mt-save">Save</button><button class="btn btn-secondary" id="mt-preview">Preview the page</button></div>
+            </section>
+
+            <section class="settings-section" data-section="security">
+              <h2>Security &amp; trash</h2><p class="desc">Protect the admin and decide how long deleted items are kept.</p>
+              <div class="setting-row"><div><div class="label">Sign out after inactivity</div><div class="desc">Staff get a warning one minute before being signed out.</div></div><select class="select" id="s-timeout"><option value="0">Never</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="120">2 hours</option></select></div>
+              <div class="setting-row"><div><div class="label">Keep deleted items for</div><div class="desc">After this time the trash deletes them for good.</div></div><select class="select" id="s-trash"><option value="0">Until emptied by hand</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></div>
+              <div class="setting-row"><div><div class="label">Ask before destructive actions</div><div class="desc">Confirmation dialogs for delete, unpublish and suspend. Large bulk deletes always ask you to type a word.</div></div><button type="button" class="switch" id="s-confirm" role="switch" aria-label="Ask before destructive actions"></button></div>
+              <div class="setting-row"><div><div class="label">Minimum password length</div><div class="desc">For staff accounts.</div></div><input class="input" type="number" id="s-pass" min="8" max="64" style="width:100px;" aria-label="Minimum password length" /></div>
+              <div class="save-bar"><button class="btn btn-primary" id="s-save">Save security settings</button></div>
+            </section>
+
+            <section class="settings-section" data-section="data">
+              <h2>Backup &amp; reset</h2><p class="desc">The prototype keeps admin changes in this browser. Download a copy, restore one, or start again.</p>
+              <div class="a-card"><h3>Download a backup</h3><p class="desc">Everything the admin changed: edits, new items, drafts, settings, staff, audit log and moderation records. Uploaded PDFs are not included.</p><button class="btn btn-secondary" id="d-export">Download backup (.json)</button></div>
+              <div class="a-card"><h3>Restore a backup</h3><p class="desc">Replaces the current admin data with the file's contents.</p><label class="btn btn-secondary" style="cursor:pointer;">Choose backup file<input type="file" id="d-import" accept="application/json,.json" hidden /></label></div>
+              <div class="a-card"><h3 style="color:var(--error);">Reset the admin to the demo data</h3><p class="desc">Removes every admin change, including new lectures and books, settings and the audit log. Staff accounts return to the five demo accounts.</p><button class="btn btn-danger" id="d-reset">Reset admin data</button></div>
             </section>
           </div>
         </div>
@@ -91,17 +152,104 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
+
     initAdminPage("settings", "Settings");
-    document.querySelectorAll("[data-switch]").forEach(sw => sw.addEventListener("click", () => { sw.classList.toggle("on"); toast(sw.classList.contains("on") ? "Setting enabled" : "Setting disabled"); }));
-    document.querySelectorAll("#settings-nav a").forEach(link => {
-      link.addEventListener("click", () => {
-        document.querySelectorAll("#settings-nav a").forEach(l => l.classList.remove("active"));
-        link.classList.add("active");
-        document.querySelectorAll(".settings-section").forEach(s => s.classList.toggle("active", s.dataset.section === link.dataset.target));
-      });
+    if (AdminCore.blocked("settings")) throw new Error("no access");
+    const $ = (id) => document.getElementById(id);
+    const S = () => AdminSettings.get();
+    const sw = (id, on) => { $(id).classList.toggle("on", !!on); $(id).setAttribute("aria-checked", !!on); };
+    const swOn = (id) => $(id).classList.contains("on");
+    document.querySelectorAll(".switch[role=switch]").forEach((b) => { if (b.id !== "theme-system-switch") b.addEventListener("click", () => sw(b.id, !swOn(b.id))); });
+    const log = (label, detail) => Audit.log({ action: "Changed settings", kind: "settings", label, detail: detail || "" });
+
+    /* ---- navigation ---- */
+    function show(name) {
+      document.querySelectorAll("#settings-nav a").forEach((l) => l.classList.toggle("active", l.dataset.target === name));
+      document.querySelectorAll(".settings-section").forEach((s) => s.classList.toggle("active", s.dataset.section === name));
+      if (history.replaceState) history.replaceState(null, "", `#${name}`);
+    }
+    document.querySelectorAll("#settings-nav a").forEach((l) => l.addEventListener("click", () => show(l.dataset.target)));
+    if (location.hash && document.querySelector(`.settings-section[data-section="${location.hash.slice(1)}"]`)) show(location.hash.slice(1));
+
+    /* ---- branding ---- */
+    let logo = S().branding.logo;
+    function paintBranding() { const b = S().branding; $("b-name").value = b.siteName; $("b-tag").value = b.tagline; $("b-mail").value = b.supportEmail; $("b-logo-img").src = logo || "../img/logo-mark-blue.png"; $("b-logo-note").textContent = logo ? "Using your uploaded logo." : "Using the built-in logo."; }
+    $("b-logo-limit").textContent = `PNG, JPG or WebP up to ${S().uploads.maxImageMB} MB. A square image works best.`;
+    $("b-logo").addEventListener("change", async (e) => { const f = e.target.files[0]; if (!f) return; const err = Upload.checkImage(f); if (err) { e.target.value = ""; return toast(err, "warning"); } try { logo = await Upload.imageToDataURL(f, { maxSide: 256 }); $("b-logo-img").src = logo; $("b-logo-note").textContent = `New logo ready: ${f.name}. Save to apply.`; } catch (x) { toast(x.message, "warning"); } });
+    $("b-logo-reset").addEventListener("click", () => { logo = ""; $("b-logo-img").src = "../img/logo-mark-blue.png"; $("b-logo-note").textContent = "Built-in logo. Save to apply."; });
+    $("b-save").addEventListener("click", () => {
+      $("e-bname").textContent = $("e-bmail").textContent = "";
+      const name = $("b-name").value.trim(), mail = $("b-mail").value.trim();
+      if (name.length < 2) { $("e-bname").textContent = "Enter the platform name."; return $("b-name").focus(); }
+      if (mail && !/^\S+@\S+\.\S+$/.test(mail)) { $("e-bmail").textContent = "Enter a valid email."; return $("b-mail").focus(); }
+      AdminSettings.set("branding", { siteName: name, tagline: $("b-tag").value.trim(), supportEmail: mail, logo }); log("Branding", `${name}${logo ? ", custom logo" : ""}`); toast("Branding saved. It shows on every page after a reload.", "success");
     });
-    document.querySelector(".admin-remove-btn").innerHTML = ICONS.trash;
+
+    /* ---- uploads ---- */
+    const FORMATS = ["mp3", "m4a", "wav", "flac", "ogg", "aac", "opus"];
+    let fmts = S().uploads.audioFormats.slice();
+    function paintUploads() { const u = S().uploads; $("u-audio").value = u.maxAudioMB; $("u-pdf").value = u.maxPdfMB; $("u-img").value = u.maxImageMB; sw("u-review", u.requireReview); $("u-formats").innerHTML = FORMATS.map((f) => `<button type="button" class="chip-btn ${fmts.includes(f) ? "on" : ""}" data-f="${f}" aria-pressed="${fmts.includes(f)}">${f.toUpperCase()}</button>`).join(""); }
+    $("u-formats").addEventListener("click", (e) => { const b = e.target.closest("[data-f]"); if (!b) return; fmts = fmts.includes(b.dataset.f) ? fmts.filter((x) => x !== b.dataset.f) : [...fmts, b.dataset.f]; paintUploads(); });
+    $("u-save").addEventListener("click", () => {
+      const a = Number($("u-audio").value), p = Number($("u-pdf").value), i = Number($("u-img").value); $("e-uploads").textContent = "";
+      if (!(a >= 1 && a <= 2000) || !(p >= 1 && p <= 500) || !(i >= 1 && i <= 50)) { $("e-uploads").textContent = "Limits must be whole numbers: audio 1 to 2000, PDF 1 to 500, image 1 to 50."; return; }
+      if (!fmts.length) { $("e-uploads").textContent = "Allow at least one audio format."; return; }
+      AdminSettings.set("uploads", { maxAudioMB: Math.round(a), maxPdfMB: Math.round(p), maxImageMB: Math.round(i), audioFormats: fmts, requireReview: swOn("u-review") }); log("Upload limits", `audio ${a} MB, PDF ${p} MB, image ${i} MB, ${fmts.join("/")}`); toast("Upload limits saved", "success");
+    });
+
+    /* ---- audio ---- */
+    function est() { const k = Number($("a-bitrate").value), mb = (k * 1000 * 3600) / 8 / 1048576 * (swOn("a-mono") ? 0.5 : 1); $("a-est").textContent = `One hour of audio is about ${mb.toFixed(0)} MB at this setting.`; }
+    function paintAudio() { const a = S().audio; $("a-bitrate").value = String(a.bitrate); sw("a-low", a.lowBandwidth); sw("a-norm", a.normalize); sw("a-mono", a.mono); $("a-dl").value = a.downloadQuality; est(); }
+    $("a-bitrate").addEventListener("change", est); $("a-mono").addEventListener("click", est);
+    $("a-save").addEventListener("click", () => { AdminSettings.set("audio", { bitrate: Number($("a-bitrate").value), lowBandwidth: swOn("a-low"), normalize: swOn("a-norm"), mono: swOn("a-mono"), downloadQuality: $("a-dl").value }); log("Audio quality", `${$("a-bitrate").value} kbps`); toast("Audio settings saved", "success"); });
+
+    /* ---- email templates ---- */
+    const SAMPLE = { name: "Aisha", site: S().branding.siteName, link: "https://example.org/…", reason: "Please keep comments respectful.", item: "Sincerity in Worship", sheikh: "Hamza Kayiira", period: "weekly", scope: "by sheikh", table: "Hamza Kayiira   Plays: 12K   Downloads: 1.4K" };
+    $("m-pick").innerHTML = AdminSettings.TEMPLATES.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+    const fillT = (x) => x.replace(/\{\{(\w+)\}\}/g, (_, k) => (SAMPLE[k] != null ? SAMPLE[k] : `{{${k}}}`));
+    function paintMail() {
+      const t = AdminSettings.template($("m-pick").value); $("m-when").textContent = `Sent when: ${t.when.toLowerCase()}.${t.custom ? " (customised)" : ""}`;
+      $("m-subject").value = t.subject; $("m-body").value = t.body; $("m-vars").innerHTML = t.vars.map((v) => `<button type="button" class="chip-btn" data-v="${v}">{{${v}}}</button>`).join(""); prevMail();
+    }
+    function prevMail() { $("m-prev").innerHTML = `<div class="subj">${esc(fillT($("m-subject").value))}</div>${esc(fillT($("m-body").value))}`; }
+    $("m-pick").addEventListener("change", paintMail); $("m-subject").addEventListener("input", prevMail); $("m-body").addEventListener("input", prevMail);
+    $("m-vars").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b) return; const ta = $("m-body"), s = ta.selectionStart, t = `{{${b.dataset.v}}}`; ta.value = ta.value.slice(0, s) + t + ta.value.slice(ta.selectionEnd); ta.focus(); ta.selectionStart = ta.selectionEnd = s + t.length; prevMail(); });
+    $("m-save").addEventListener("click", () => {
+      const t = AdminSettings.TEMPLATES.find((x) => x.id === $("m-pick").value); $("e-mail").textContent = "";
+      if (!$("m-subject").value.trim() || !$("m-body").value.trim()) { $("e-mail").textContent = "Subject and message can't be empty."; return; }
+      const unknown = [...($("m-subject").value + $("m-body").value).matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).filter((v) => !t.vars.includes(v));
+      if (unknown.length) { $("e-mail").textContent = `Unknown variable: {{${unknown[0]}}}. Use the buttons above.`; return; }
+      const all = { ...S().email.templates, [t.id]: { subject: $("m-subject").value.trim(), body: $("m-body").value } }; AdminSettings.set("email", { templates: all }); log("Email template", t.name); toast("Template saved", "success"); paintMail();
+    });
+    $("m-reset").addEventListener("click", async () => { const id = $("m-pick").value; if (!(await Confirm.ask({ title: "Reset this template?", body: "Your wording is replaced by the original text.", confirmText: "Reset", tone: "danger" }))) return; const all = { ...S().email.templates }; delete all[id]; AdminSettings.set("email", { templates: all }); log("Email template reset", id); paintMail(); toast("Template reset", "success"); });
+    $("m-test").addEventListener("click", () => { Audit.log({ action: "Sent a test email", kind: "settings", label: $("m-pick").selectedOptions[0].text, detail: AdminAuth.me().email }); toast(`Test email recorded for ${AdminAuth.me().email} (prototype: nothing is really sent)`, "success"); });
+
+    /* ---- maintenance ---- */
+    const localDT = (iso) => { if (!iso) return ""; const d = new Date(iso); if (isNaN(d)) return ""; const p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+    function paintMaint() { const m = S().maintenance; sw("mt-on", m.on); $("mt-title").value = m.title; $("mt-msg").value = m.message; $("mt-until").value = localDT(m.until); $("mt-admins").checked = m.allowAdmins; $("mt-state").textContent = m.on ? "ON. Listeners currently see the maintenance page." : "OFF. The site is open to everyone."; }
+    $("mt-on").addEventListener("click", async () => { /* the generic handler already toggled it; confirm turning ON */ if (swOn("mt-on") && !S().maintenance.on) { if (!(await Confirm.ask({ title: "Turn maintenance mode on?", body: "Listeners will see a “back soon” page until you turn it off. Save to apply.", confirmText: "Turn on", tone: "danger" }))) sw("mt-on", false); } });
+    $("mt-save").addEventListener("click", () => { const on = swOn("mt-on"), was = S().maintenance.on; AdminSettings.set("maintenance", { on, title: $("mt-title").value.trim() || "We'll be right back", message: $("mt-msg").value.trim(), until: $("mt-until").value ? new Date($("mt-until").value).toISOString() : "", allowAdmins: $("mt-admins").checked }); log("Maintenance mode", on === was ? "Edited message" : on ? "Turned ON" : "Turned OFF"); toast(on ? "Maintenance mode is ON" : "Saved", on ? "warning" : "success"); paintMaint(); });
+    $("mt-preview").addEventListener("click", () => Confirm.ask({ title: $("mt-title").value || "We'll be right back", body: `<p>${esc($("mt-msg").value)}</p>${$("mt-until").value ? `<p class="small muted" style="margin-top:8px;">Expected back: ${esc(new Date($("mt-until").value).toLocaleString())}</p>` : ""}`, confirmText: "Close", tone: "primary" }));
+
+    /* ---- security ---- */
+    function paintSec() { const s = S().security; $("s-timeout").value = String(s.timeoutMin); $("s-trash").value = String(s.trashDays); sw("s-confirm", s.confirmDestructive); $("s-pass").value = s.minPassword; }
+    $("s-save").addEventListener("click", () => { const p = Number($("s-pass").value); if (!(p >= 8 && p <= 64)) return toast("Password length must be 8 to 64", "warning"); AdminSettings.set("security", { timeoutMin: Number($("s-timeout").value), trashDays: Number($("s-trash").value), confirmDestructive: swOn("s-confirm"), minPassword: p }); log("Security", `timeout ${$("s-timeout").value} min, trash ${$("s-trash").value} days`); toast("Security settings saved", "success"); });
+
+    /* ---- backup & reset ---- */
+    $("d-export").addEventListener("click", () => { const o = AdminDB.get(); adminDownload(`ugandan-sheikhs-admin-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ admin: o, books: BookAdminStore.get() }, null, 2), "application/json"); Audit.log({ action: "Exported", kind: "export", label: "Admin backup" }); toast("Backup downloaded", "success"); });
+    $("d-import").addEventListener("change", async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      try { const j = JSON.parse(await f.text()); if (!j.admin || typeof j.admin !== "object") throw new Error("not a backup");
+        if (!(await Confirm.ask({ title: "Restore this backup?", body: "This replaces everything the admin has changed so far.", confirmText: "Restore", tone: "danger" }))) return;
+        AdminDB._o = { ...AdminDB.get(), ...j.admin }; AdminDB.save(); if (j.books) { BookAdminStore._o = j.books; BookAdminStore.save(); } Audit.log({ action: "Restored a backup", kind: "export", label: f.name }); toast("Backup restored. Reloading…", "success"); setTimeout(() => location.reload(), 700);
+      } catch { toast("That file isn't a valid backup", "warning"); } e.target.value = "";
+    });
+    $("d-reset").addEventListener("click", async () => { if (await Confirm.ask({ title: "Reset all admin data?", body: "Edits, new lectures and books, settings, staff and the audit log are removed. You stay signed in as a super admin.", confirmText: "Reset everything", tone: "danger", typeText: "RESET" })) { AdminDB.reset(); BookAdminStore.reset(); try { localStorage.setItem("us_admin_session", JSON.stringify({ staffId: "stf-1", at: Date.now(), last: Date.now() })); } catch {} toast("Reset. Reloading…", "warning"); setTimeout(() => location.reload(), 700); } });
+
+    paintBranding(); paintUploads(); paintAudio(); paintMail(); paintMaint(); paintSec();
+
   </script>
 </body>
 </html>

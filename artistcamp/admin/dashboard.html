@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -24,6 +25,7 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
     initAdminPage("dashboard", "Dashboard");
 
@@ -202,7 +204,7 @@
       </div>
 
       <div class="dash-row r-2">
-        <div class="panel"><div class="panel-head"><h3>Moderation queue</h3><a class="btn btn-ghost btn-sm" href="comments.html">Open comments</a></div><div id="mod"></div></div>
+        <div class="panel"><div class="panel-head"><h3>Moderation queue</h3><a class="btn btn-ghost btn-sm" href="moderation.html">Open moderation</a></div><div id="mod"></div></div>
         <div class="panel"><div class="panel-head"><h3>Recent activity</h3></div><div class="feed" id="feed"></div></div>
       </div>
     `;
@@ -288,15 +290,16 @@
     /* ---------------- things that don't depend on the range ---------------- */
     function paintAttention() {
       const q = adminQueues();
+      const pageOf = (h) => h.split("?")[0].split("#")[0].replace(".html", "");
       const items = [
-        q.reports && { n: q.reports, t: "Open reports from listeners", s: "Review and resolve", href: "reports.html", cls: "bad", icon: "flag" },
-        q.comments && { n: q.comments, t: "Comments waiting for review", s: "Pending or reported", href: "comments.html", cls: "", icon: "message" },
+        q.moderation && { n: q.moderation, t: "Items in the moderation queue", s: "Comments and listener reports", href: "moderation.html", cls: "bad", icon: "flag" },
+        q.draftLectures && { n: q.draftLectures, t: "Lectures that are drafts or scheduled", s: "Not visible to listeners yet", href: "tracks.html?status=Draft", cls: "info", icon: "layers" },
         q.draftBooks && { n: q.draftBooks, t: "Books still in draft", s: "Not visible to listeners", href: "books.html", cls: "info", icon: "book" },
         q.unmappedBooks && { n: q.unmappedBooks, t: "Books with no lectures linked", s: "Follow-along is off for them", href: "books.html#mapper", cls: "info", icon: "headphones" },
         q.orphanLectures && { n: q.orphanLectures, t: "Lectures not in any series", s: "Harder for listeners to find", href: "tracks.html", cls: "", icon: "layers" },
         q.emptySeries && { n: q.emptySeries, t: "Series with no lectures", s: "Visible but empty", href: "albums.html", cls: "", icon: "disc" },
         q.suspended && { n: q.suspended, t: "Suspended accounts", s: "Check if any should return", href: "users.html", cls: "info", icon: "users" },
-      ].filter(Boolean);
+      ].filter(Boolean).filter((i) => AdminAuth.canPage(pageOf(i.href)));
       document.getElementById("attn-sub").textContent = items.length ? `${items.length} item${items.length === 1 ? "" : "s"}` : "";
       document.getElementById("attn").innerHTML = items.length
         ? items.map((i) => `<a href="${i.href}"><span class="ic ${i.cls}">${ICONS[i.icon]}</span><span class="t">${i.t}<small>${i.s}</small></span><span class="n">${i.n}</span></a>`).join("")
@@ -319,17 +322,20 @@
     document.getElementById("districts").innerHTML = `<div class="eyebrow" style="margin-bottom:6px;">Top districts</div>` + hbars([["Kampala", 34], ["Wakiso", 18], ["Mbarara", 9], ["Jinja", 7], ["Gulu", 6]].map(([n, v]) => ({ name: n, pct: v * 2.6, val: v + "%" })), "gold");
 
     function paintMod() {
-      const rows = COMMENTS.filter((c) => c.status !== "Approved").slice(0, 4);
+      const rows = Mod.queue().filter((i) => i.kind === "comment").slice(0, 4).map((i) => i.comment);
       document.getElementById("mod").innerHTML = rows.length ? rows.map((c) => `
         <div class="mod-row" data-id="${c.id}"><img src="${c.avatar}" alt="" />
-          <div class="tx"><strong>${escapeHTML(c.user)}</strong> <span class="badge ${c.status === "Reported" ? "badge-error" : "badge-warning"}">${c.status}</span> <span class="text-tertiary" style="font-size:11.5px;">${c.time}</span><p>${escapeHTML(c.body)}</p></div>
-          <div class="flex gap-8"><button class="btn btn-secondary btn-sm" data-act="ok">Approve</button><button class="btn btn-ghost btn-sm" data-act="rm" style="color:var(--error)">Remove</button></div></div>`).join("")
+          <div class="tx"><strong>${escapeHTML(c.user)}</strong> <span class="badge ${c.status === "Reported" ? "badge-error" : "badge-warning"}">${c.status}</span> <span class="text-tertiary" style="font-size:11.5px;">${c.time}</span><p>${Mod.highlight(c.body)}</p></div>
+          ${AdminAuth.can("comments.moderate") ? `<div class="flex gap-8"><button class="btn btn-secondary btn-sm" data-act="ok">Approve</button><button class="btn btn-ghost btn-sm" data-act="rm" style="color:var(--error)">Reject</button></div>` : ""}</div>`).join("")
         : `<div class="allclear">${ICONS.check} Nothing to moderate.</div>`;
     }
     document.getElementById("mod").addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]"); if (!b) return;
-      b.closest(".mod-row").remove(); toast(b.dataset.act === "ok" ? "Comment approved" : "Comment removed", b.dataset.act === "ok" ? "success" : "warning");
-      if (!document.querySelector("#mod .mod-row")) document.getElementById("mod").innerHTML = `<div class="allclear">${ICONS.check} Nothing to moderate.</div>`;
+      const row = b.closest(".mod-row"), c = COMMENTS.find((x) => x.id === row.dataset.id); if (!c) return;
+      const ok = b.dataset.act === "ok";
+      Admin.patch("comment", c.id, { status: ok ? "Approved" : "Rejected" }, { audit: false }); if (ok) Mod.clear(c.id);
+      Mod.record({ itemKind: "comment", itemId: c.id, itemLabel: Admin.label("comment", c), decision: ok ? "Approved" : "Rejected", reason: "From the dashboard", user: c.user });
+      toast(ok ? "Comment approved" : "Comment rejected", ok ? "success" : "warning"); paintMod(); paintAttention();
     });
     paintMod();
 

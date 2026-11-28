@@ -240,3 +240,7 @@
   :root[data-theme="ocean"] .menu,
   :root[data-theme="ocean"] .sidebar{backdrop-filter:none;}
 }
+
+/* sticky modal header / footer need solid colours that match the gradient at the top and bottom */
+:root[data-theme="ocean"] .modal-head{background:#17408A;border-bottom-color:rgba(190,220,255,.2);}
+:root[data-theme="ocean"] .modal-actions{background:#0C2A66;border-top-color:rgba(190,220,255,.2);}

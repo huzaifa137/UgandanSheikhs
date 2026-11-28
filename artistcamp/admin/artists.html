@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -19,51 +20,26 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Sheikhs</h1><p>Manage every sheikh profile on Ugandan Sheikhs.</p></div>
-          <button class="btn btn-primary" onclick="ensureOverlay();openModal('add-artist-modal')"><span>Add Sheikh</span></button>
+          <div><h1 style="font-size:22px;">Sheikhs</h1><p>Profiles, visibility and who appears on the site.</p></div>
+          <button class="btn btn-primary" id="add-btn" hidden></button>
         </div>
+        <div id="table"></div>
 
-        <div class="table-toolbar">
-          <div class="search-field" style="max-width:280px;"><input id="artist-search" placeholder="Search sheikhs…" /></div>
-          <select class="select" style="width:auto;" id="genre-filter"><option value="">All Topics</option></select>
-          <select class="select" style="width:auto;"><option>All Status</option><option>Active</option><option>Inactive</option></select>
-          <select class="select" style="width:auto;"><option>All Countries</option></select>
-        </div>
-
-        <table class="data-table">
-          <thead><tr><th>Sheikh</th><th>Topic</th><th>Series</th><th>Lectures</th><th>Followers</th><th>Status</th><th>Created</th><th></th></tr></thead>
-          <tbody id="artists-table"></tbody>
-        </table>
-
-        <div class="modal" id="add-artist-modal" style="width:min(620px,92vw);">
-          <div class="modal-head"><h3>Add Sheikh</h3><button class="icon-btn" onclick="closeModals()"></button></div>
+        <div class="modal modal-md" id="add-modal" role="dialog" aria-modal="true" aria-labelledby="add-title">
+          <div class="modal-head"><h3 id="add-title">Add sheikh</h3><button class="icon-btn" id="add-close" aria-label="Close" onclick="closeModals()"></button></div>
+          <div class="field"><label for="n-name">Full name *</label><input class="input" id="n-name" placeholder="e.g. Sheikh Abdul Karim" /><span class="field-hint field-err" id="e-name"></span></div>
           <div class="grid grid-2">
-            <div class="field"><label>Sheikh name</label><input class="input" placeholder="e.g. Hamza Kayiira" /></div>
-            <div class="field"><label>Slug</label><input class="input" placeholder="amara-ndlovu" /></div>
+            <div class="field"><label for="n-city">City</label><input class="input" id="n-city" value="Kampala" /></div>
+            <div class="field"><label for="n-status">Visibility</label><select class="select" id="n-status"><option>Published</option><option>Draft</option></select></div>
           </div>
-          <div class="field"><label>Short description</label><input class="input" placeholder="One line for cards and search results" /></div>
-          <div class="field"><label>Biography</label><textarea class="textarea" placeholder="Full biography…"></textarea></div>
-          <div class="grid grid-2">
-            <div class="field"><label>Country</label><input class="input" placeholder="Nigeria" /></div>
-            <div class="field"><label>City</label><input class="input" placeholder="Kampala" /></div>
+          <div class="field"><label for="n-bio">Short bio</label><textarea class="textarea" id="n-bio" rows="3" maxlength="400" placeholder="A line or two about the sheikh's teaching."></textarea></div>
+          <div class="field"><label>Photo</label>
+            <label class="dropzone" id="n-dz" style="padding:16px;display:block;cursor:pointer;"><p style="font-size:12.5px;" id="n-dz-text">Drop a photo or click to choose</p><input type="file" id="n-photo" accept="image/png,image/jpeg,image/webp" hidden /></label>
+            <span class="limit-note" id="n-limit"></span>
           </div>
-          <div class="grid grid-2">
-            <div class="field"><label>Topics</label><select class="select" multiple style="min-height:80px;" id="modal-genre-select"></select></div>
-            <div class="field"><label>Website / social links</label><input class="input" placeholder="https://" /></div>
-          </div>
-          <div class="grid grid-2">
-            <div class="field"><label>Profile image</label><div class="dropzone" style="padding:20px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
-            <div class="field"><label>Cover image</label><div class="dropzone" style="padding:20px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
-          </div>
-          <div class="flex gap-16" style="margin:8px 0 4px;">
-            <label class="checkbox-row"><input type="checkbox" checked /> Verified</label>
-            <label class="checkbox-row"><input type="checkbox" /> Featured</label>
-            <label class="checkbox-row"><input type="checkbox" checked /> Active</label>
-          </div>
-          <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-            <button class="btn btn-primary" onclick="closeModals();toast('Sheikh created','success')">Create Sheikh</button>
-          </div>
+          <div class="field"><label class="checkbox-row"><input type="checkbox" id="n-login" /> Also create a sheikh login so they can manage their own lectures</label></div>
+          <div class="field" id="n-email-wrap" hidden><label for="n-email">Login email</label><input class="input" id="n-email" type="email" placeholder="name@example.com" /><span class="field-hint field-err" id="e-email"></span></div>
+          <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModals()">Cancel</button><button class="btn btn-primary" id="n-create">Add sheikh</button></div>
         </div>
 
       </main>
@@ -74,40 +50,129 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
-    initAdminPage("artists", "Sheikhs");
-    document.querySelector('.page-header .btn-primary').innerHTML = ICONS.plus + "<span>Add Sheikh</span>";
-    document.querySelector('.search-field svg')?.remove();
-    document.querySelectorAll('.search-field').forEach(f => f.insertAdjacentHTML("afterbegin", ICONS.search));
-    document.querySelector('.modal-head .icon-btn').innerHTML = ICONS.x;
-    document.querySelectorAll('.dropzone .icon-wrap').forEach(w => w.innerHTML = ICONS.upload);
-    document.getElementById("genre-filter").innerHTML += GENRES.map(g => `<option>${g.name}</option>`).join("");
-    document.getElementById("modal-genre-select").innerHTML = GENRES.map(g => `<option>${g.name}</option>`).join("");
 
-    function row(a) {
-      return `<tr>
-        <td class="flex items-center gap-8"><img class="avatar" src="${a.img}" width="32" height="32"/><div><div style="font-weight:600;">${a.name}</div><div class="text-tertiary" style="font-size:11.5px;">${a.city}, ${a.country}</div></div></td>
-        <td>${a.genre}</td>
-        <td>${ALBUMS.filter(al=>al.artistId===a.id).length || 1}</td>
-        <td>${TRACKS.filter(t=>t.artistId===a.id).length || 3}</td>
-        <td>${a.followers}</td>
-        <td><span class="badge badge-success">Active</span></td>
-        <td class="text-secondary">Mar 2025</td>
-        <td>
-          <div class="flex gap-8">
-            <a class="icon-btn" style="width:30px;height:30px;" href="../artist.html?id=${a.id}" title="View">${ICONS.eye}</a>
-            <button class="icon-btn" style="width:30px;height:30px;" title="Edit" onclick="toast('Edit artist form opened')">${ICONS.edit}</button>
-            <button class="icon-btn" style="width:30px;height:30px;" title="Feature" onclick="toast('Sheikh featured on homepage','success')">${ICONS.star}</button>
-            <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Sheikh deleted','warning')">${ICONS.trash}</button>
-          </div>
-        </td>
-      </tr>`;
-    }
-    document.getElementById("artists-table").innerHTML = ARTISTS.map(row).join("");
-    document.getElementById("artist-search").addEventListener("input", (e) => {
-      const q = e.target.value.toLowerCase();
-      document.getElementById("artists-table").innerHTML = ARTISTS.filter(a => a.name.toLowerCase().includes(q)).map(row).join("");
+    initAdminPage("artists", "Sheikhs");
+    const $ = (id) => document.getElementById(id);
+    const isSheikh = AdminAuth.role() === "sheikh";
+    const lecturesOf = (a) => TRACKS.filter((t) => t.artistId === a.id && !t._del);
+    const seriesOf2 = (a) => ALBUMS.filter((x) => x.artistId === a.id && !x._del);
+    const statusTest = (v) => (r) => (v === "Published" ? r.status === "Published" : r.status !== "Published");
+
+    const table = new DataTable({
+      el: $("table"), id: "artists", kind: "artist", exportName: "sheikhs",
+      rows: () => Admin.visible("artist"),
+      search: (r) => `${r.name} ${r.city} ${r.bio}`, searchPlaceholder: "Search sheikhs…",
+      defaultSort: { key: "name", dir: "asc" },
+      emptyTitle: "No sheikhs yet", emptyBody: "Add the first sheikh to get started.",
+      tabs: { options: [{ v: "all", l: "All" }, { v: "pub", l: "Published", test: statusTest("Published") }, { v: "draft", l: "Drafts", test: statusTest("Draft") }] },
+      filters: [
+        { key: "featured", label: "Featured", all: "Featured: any", options: [{ v: "yes", l: "Featured" }, { v: "no", l: "Not featured" }], test: (r, v) => (v === "yes" ? !!r.featured : !r.featured) },
+        { key: "city", label: "City", all: "Any city", options: () => [...new Set(ARTISTS.map((a) => a.city))].sort(), test: (r, v) => r.city === v },
+        { key: "lect", label: "Lectures", all: "Any number of lectures", options: [{ v: "none", l: "No lectures yet" }, { v: "some", l: "Has lectures" }], test: (r, v) => (v === "none" ? !lecturesOf(r).length : lecturesOf(r).length > 0) },
+      ],
+      columns: [
+        { key: "name", label: "Sheikh", sort: (r) => r.name, render: (r) => `<div class="dt-cell-main"><img src="${r.img}" alt="" onerror="this.src='${ASSET_BASE}img/pattern-cover.svg'" /><div style="min-width:0;"><span class="t">${esc(r.name)}</span><span class="s">${esc(r.city)}, ${esc(r.country)}</span></div></div>` },
+        { key: "lectures", label: "Lectures", sort: (r) => lecturesOf(r).length, render: (r) => lecturesOf(r).length },
+        { key: "series", label: "Series", sort: (r) => seriesOf2(r).length, render: (r) => seriesOf2(r).length },
+        { key: "followers", label: "Followers", sort: (r) => parseCount(r.followers), csv: (r) => r.followers, render: (r) => esc(r.followers) },
+        { key: "featured", label: "Featured", sort: (r) => (r.featured ? 1 : 0), csv: (r) => (r.featured ? "Yes" : "No"), render: (r) => (r.featured ? '<span class="badge badge-accent">Featured</span>' : '<span class="text-tertiary">—</span>') },
+        { key: "status", label: "Status", sort: (r) => r.status, render: (r) => adminBadge(r.status) },
+      ],
+      actions: [
+        { id: "edit", icon: "edit", title: "Edit", run: (r, t) => t.openAt(t._rows.findIndex((x) => x.id === r.id)) },
+        { id: "view", icon: "eye", title: "View on site", href: (r) => `../artist.html?id=${r.id}`, blank: true, show: (r) => r.status === "Published" },
+        { id: "del", icon: "trash", title: "Delete", danger: true, perm: "content.delete", run: (r) => del([r.id]) },
+      ],
+      bulk: [
+        { id: "pub", label: "Publish", icon: "check", perm: "content.publish", run: (ids) => { toast(`${Admin.setStatus("artist", ids, "Published")} published`, "success"); } },
+        { id: "unpub", label: "Unpublish", icon: "eye", perm: "content.publish", confirm: (n) => ({ title: `Unpublish ${n} sheikh${n === 1 ? "" : "s"}?`, body: "They and their lectures stop showing on the listener site until you publish again." }), run: (ids) => { toast(`${Admin.setStatus("artist", ids, "Draft")} unpublished`, "success"); } },
+        { id: "feat", label: "Feature", icon: "star", perm: "content.delete", run: (ids) => { toast(`${Admin.setFeatured("artist", ids, true)} featured`, "success"); } },
+        { id: "unfeat", label: "Unfeature", icon: "star", perm: "content.delete", run: (ids) => { toast(`${Admin.setFeatured("artist", ids, false)} unfeatured`, "success"); } },
+        { id: "del", label: "Delete", icon: "trash", danger: true, perm: "content.delete", run: (ids) => del(ids).then((ok) => ok !== false) },
+      ],
+      canSelect: (r) => AdminAuth.owns("artist", r),
+      onOpen: (r, ctx) => openPanel(r, ctx),
     });
+    // sheikh accounts only ever edit themselves
+    if (isSheikh) table.o.bulk = table.o.bulk.filter((b) => b.id === "pub" || b.id === "unpub");
+
+    function del(ids) {
+      const lects = ids.reduce((n, id) => n + lecturesOf(Admin.find("artist", id)).length, 0);
+      return Admin.deleteFlow("artist", ids, { after: () => table.refresh(), extra: lects ? `<p>${lects} lecture${lects === 1 ? "" : "s"} by ${ids.length === 1 ? "this sheikh" : "these sheikhs"} will stay in the catalog but show no sheikh page. Consider unpublishing instead.</p>` : "" });
+    }
+
+    function openPanel(r, ctx) {
+      const editable = AdminAuth.can("content.edit") && AdminAuth.owns("artist", r);
+      let newImg = null;
+      Panel.open({
+        title: r.name, subtitle: `${r.city}, ${r.country}`, img: r.img,
+        badges: adminBadge(r.status) + (r.featured ? '<span class="badge badge-accent">Featured</span>' : ""),
+        readOnly: !editable, nav: { index: ctx.index, count: ctx.count, go: ctx.go },
+        deleteText: "Move to trash", onDelete: AdminAuth.can("content.delete") ? async () => { if (await del([r.id])) Panel.close(true); } : null,
+        intro: `<div class="panel-stats" style="margin-bottom:18px;"><div class="panel-stat"><b>${lecturesOf(r).length}</b><span>Lectures</span></div><div class="panel-stat"><b>${seriesOf2(r).length}</b><span>Series</span></div><div class="panel-stat"><b>${esc(r.followers)}</b><span>Followers</span></div></div>`,
+        values: r,
+        sections: [
+          { title: "Profile", fields: [
+            { key: "name", label: "Name", required: true },
+            { key: "bio", label: "Bio", type: "textarea", rows: 4, max: 600 },
+            { key: "city", label: "City" }, { key: "country", label: "Country" },
+          ] },
+          { title: "Photo", html: `<label class="dropzone" style="padding:14px;display:block;cursor:${editable ? "pointer" : "default"};"><p style="font-size:12.5px;" id="ph-text">${editable ? "Choose a new photo" : "Photo"}</p>${editable ? '<input type="file" id="ph-file" accept="image/png,image/jpeg,image/webp" hidden />' : ""}</label><span class="limit-note">PNG, JPG or WebP up to ${AdminSettings.get().uploads.maxImageMB} MB.</span>` },
+          { title: "Visibility", fields: [
+            { key: "status", label: "Status", type: "select", options: ["Published", "Draft"], hint: "Draft hides the sheikh and their pages from listeners." },
+            ...(isSheikh ? [] : [{ key: "featured", label: "Featured", type: "toggle", toggleText: "Show in featured sheikhs" }, { key: "verified", label: "Verified", type: "toggle", toggleText: "Show a verified badge" }]),
+          ] },
+        ],
+        actions: [{ label: "Lectures", icon: "layers", run: () => { location.href = `tracks.html?sheikh=${r.id}`; } }],
+        onSave: async (v) => {
+          const patch = { name: v.name.trim(), bio: v.bio, city: v.city, country: v.country, status: v.status };
+          if (!isSheikh) { patch.featured = !!v.featured; patch.verified = !!v.verified; }
+          if (newImg) patch.img = newImg;
+          if (patch.name !== r.name) TRACKS.concat(ALBUMS).forEach((x) => { if (x.artistId === r.id) { x.artist = patch.name; } });
+          Admin.patch("artist", r.id, patch);
+          if (patch.name !== r.name) { ALBUMS.forEach((a) => { if (a.artistId === r.id) Admin.patch("album", a.id, { artist: patch.name }, { audit: false }); }); TRACKS.forEach((t) => { if (t.artistId === r.id) Admin.patch("track", t.id, { artist: patch.name }, { audit: false }); }); }
+          toast("Sheikh saved", "success"); table.refresh(); ctx.go(table._rows.findIndex((x) => x.id === r.id));
+        },
+      });
+      const f = $("ph-file");
+      if (f) f.addEventListener("change", async () => {
+        const file = f.files[0]; if (!file) return;
+        const err = Upload.checkImage(file); if (err) return toast(err, "warning");
+        try { newImg = await Upload.imageToDataURL(file, { maxSide: 500 }); Panel.el.querySelector(".panel-img").src = newImg; $("ph-text").textContent = `New photo ready: ${file.name}`; Panel._setDirty(true); } catch (e) { toast(e.message, "warning"); }
+      });
+    }
+
+    /* ---- Add sheikh ---- */
+    if (AdminAuth.can("content.edit") && !isSheikh) { const b = $("add-btn"); b.hidden = false; b.innerHTML = ICONS.plus + "<span>Add sheikh</span>"; b.addEventListener("click", () => { ensureOverlay(); openModal("add-modal"); setTimeout(() => $("n-name").focus(), 80); }); }
+    $("add-close").innerHTML = ICONS.x;
+    $("n-limit").textContent = `PNG, JPG or WebP up to ${AdminSettings.get().uploads.maxImageMB} MB.`;
+    $("n-login").addEventListener("change", (e) => { $("n-email-wrap").hidden = !e.target.checked; });
+    let photo = null;
+    $("n-photo").addEventListener("change", async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const err = Upload.checkImage(f); if (err) { toast(err, "warning"); e.target.value = ""; return; }
+      try { photo = await Upload.imageToDataURL(f, { maxSide: 500 }); $("n-dz-text").textContent = `Photo ready: ${f.name}`; } catch (x) { toast(x.message, "warning"); }
+    });
+    $("n-create").addEventListener("click", () => {
+      const name = $("n-name").value.trim(); $("e-name").textContent = ""; $("e-email").textContent = "";
+      if (name.length < 3) { $("e-name").textContent = "Enter the sheikh's full name."; return $("n-name").focus(); }
+      const id = Admin.slug(name);
+      if (Admin.collection("artist").some((a) => a.id === id)) { $("e-name").textContent = "A sheikh with this name already exists."; return $("n-name").focus(); }
+      let email = "";
+      if ($("n-login").checked) {
+        email = $("n-email").value.trim();
+        if (!/^\S+@\S+\.\S+$/.test(email)) { $("e-email").textContent = "Enter a valid email address."; return $("n-email").focus(); }
+        if (AdminAuth.staff().some((s) => s.email.toLowerCase() === email.toLowerCase())) { $("e-email").textContent = "That email already belongs to a staff account."; return $("n-email").focus(); }
+      }
+      const a = Admin.create("artist", { id, name, followers: "0", listeners: "0", genre: "Islamic Studies", country: "Uganda", city: $("n-city").value.trim() || "Kampala", verified: false, featured: false, img: photo || AVATAR(name, 400), cover: `${ASSET_BASE}img/pattern-cover.svg`, bio: $("n-bio").value.trim() || `Lectures and reminders by ${name} on Islamic knowledge.`, status: $("n-status").value });
+      if (email) { AdminAuth.staff().push({ id: Admin.uid("stf"), name, email, role: "sheikh", sheikhId: id, status: "Active", created: new Date().toISOString() }); AdminDB.save(); Audit.log({ action: "Created staff account", kind: "staff", label: `${name} (Sheikh account)`, detail: email }); }
+      closeModals(); photo = null; $("n-name").value = ""; $("n-bio").value = ""; $("n-photo").value = ""; $("n-dz-text").textContent = "Drop a photo or click to choose";
+      toast(`${name} added${email ? " with a login" : ""}`, "success"); table.refresh();
+    });
+    if (location.hash === "#add" && !$("add-btn").hidden) $("add-btn").click();
+
   </script>
 </body>
 </html>

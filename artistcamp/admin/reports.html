@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -18,12 +19,54 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Reports</h1><p>Problems reported by listeners, with where they were reported from.</p></div></div>
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Analytics &amp; reports</h1><p id="rep-sub">Listening, downloads and reading by sheikh, series and book. Export anything as CSV or save the page as a PDF.</p></div>
+          <div class="row-actions no-print">
+            <select class="select" id="range" style="width:auto;" aria-label="Date range"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select>
+            <button class="btn btn-secondary" id="print-btn"></button>
+          </div>
+        </div>
+        <div class="kpis" id="kpis"></div>
+        <div class="a-grid side" style="margin-bottom:20px;">
+          <div class="a-card" style="margin:0;"><h3>Plays over time</h3><p class="desc" id="chart-desc"></p><div id="chart"></div></div>
+          <div class="a-card" style="margin:0;"><h3 id="top-title">Top sheikhs</h3><p class="desc">By plays in this period.</p><div class="bar-list" id="top"></div></div>
+        </div>
 
-        <table class="data-table">
-          <thead><tr><th>Type</th><th>Content</th><th>Found On</th><th>Reason</th><th>Message</th><th>Reported By</th><th>Date</th><th>Status</th><th></th></tr></thead>
-          <tbody id="reports-table"></tbody>
-        </table>
+        <div class="tabs admin-tabs no-print" id="rep-tabs" style="margin-top:0;">
+          <button class="tab active" data-target="sheikh">By sheikh</button>
+          <button class="tab" data-target="series">By series</button>
+          <button class="tab" data-target="book">By book</button>
+          <button class="tab" data-target="schedule" id="sched-tab">Scheduled emails</button>
+        </div>
+        <div data-tabpanel="sheikh"><div id="t-sheikh"></div></div>
+        <div data-tabpanel="series" style="display:none;"><div id="t-series"></div></div>
+        <div data-tabpanel="book" style="display:none;"><div id="t-book"></div></div>
+        <div data-tabpanel="schedule" style="display:none;">
+          <div class="a-card">
+            <div class="flex items-center" style="justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px;"><div><h3>Scheduled email summaries</h3><p class="desc" style="margin-bottom:0;">A short table of the numbers above, emailed on a schedule.</p></div><button class="btn btn-primary btn-sm" id="sch-add"></button></div>
+            <div id="sch-list" style="margin-top:14px;"></div>
+          </div>
+          <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div>Prototype: schedules are saved and “Send now” records a test send, but no email leaves your computer. In Laravel, a scheduled command (<code>php artisan schedule:run</code>) builds this table and mails it using the “Scheduled summary” template from Settings → Email templates.</div></div>
+        </div>
+
+        <div class="modal modal-md" id="sch-modal" role="dialog" aria-modal="true" aria-labelledby="sch-title">
+          <div class="modal-head"><h3 id="sch-title">New scheduled summary</h3><button class="icon-btn" id="sch-close" aria-label="Close" onclick="closeModals()"></button></div>
+          <div class="field"><label for="s-name">Name *</label><input class="input" id="s-name" placeholder="e.g. Monday sheikh summary" /><span class="field-hint field-err" id="e-sname"></span></div>
+          <div class="grid grid-2">
+            <div class="field"><label for="s-scope">What to include</label><select class="select" id="s-scope"><option value="sheikh">By sheikh</option><option value="series">By series</option><option value="book">By book</option><option value="all">All three</option></select></div>
+            <div class="field"><label for="s-period">Period covered</label><select class="select" id="s-period"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></div>
+          </div>
+          <div class="grid grid-2">
+            <div class="field"><label for="s-freq">How often</label><select class="select" id="s-freq"><option value="daily">Every day</option><option value="weekly" selected>Every week</option><option value="monthly">Every month</option></select></div>
+            <div class="field" id="s-day-wrap"><label for="s-day">On</label><select class="select" id="s-day"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>
+          </div>
+          <div class="grid grid-2">
+            <div class="field"><label for="s-time">At</label><input class="input" type="time" id="s-time" value="08:00" /></div>
+            <div class="field"><label for="s-format">Attach</label><select class="select" id="s-format"><option value="inline">Table in the email</option><option value="csv">CSV file</option></select></div>
+          </div>
+          <div class="field"><label for="s-to">Send to *</label><textarea class="textarea" id="s-to" rows="2" placeholder="name@example.com, another@example.com"></textarea><span class="field-hint">Separate several addresses with commas.</span><span class="field-hint field-err" id="e-to"></span></div>
+          <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModals()">Cancel</button><button class="btn btn-primary" id="s-save">Save schedule</button></div>
+        </div>
 
       </main>
     </div>
@@ -33,46 +76,112 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
-    initAdminPage("reports", "Reports");
-    const fmtWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); };
 
-    // seeded examples (flagged comments) + real reports sent from the listener app (stored in this browser)
-    const seeded = COMMENTS.filter(c => c.status === "Reported").map((c, i) => ({
-      id: `seed-${c.id}`, type: "Comment", title: c.body.slice(0, 42) + "…", place: "Lecture page", source: "Comments",
-      reason: ["Inappropriate or disrespectful content", "Something else", "Incorrect or misleading content"][i % 3],
-      message: "Flagged by a listener.", by: ["Aisha K.", "Yusuf A.", "Kwame O."][i % 3], date: c.time, status: i % 2 === 0 ? "Open" : "Resolved", seeded: true,
-    }));
-    let reports = [...loadReports(), ...seeded];
+    initAdminPage("reports", "Analytics");
+    if (AdminCore.blocked("reports")) throw new Error("no access");
+    const $ = (id) => document.getElementById(id);
+    const isSuper = AdminAuth.role() === "super_admin", sid = AdminAuth.sheikhScope();
+    $("print-btn").innerHTML = ICONS.download + "<span>Save as PDF</span>"; $("sch-add").innerHTML = ICONS.plus + "<span>New schedule</span>"; $("sch-close").innerHTML = ICONS.x;
+    wireTabs($("rep-tabs"));
+    if (!isSuper) { $("sched-tab").hidden = true; }
+    if (sid) $("rep-sub").textContent = "Your own listening, downloads and reading numbers. Export anything as CSV or save the page as a PDF.";
 
-    function renderReports() {
-      document.getElementById("reports-table").innerHTML = reports.length ? reports.map(r => `
-        <tr data-id="${r.id}">
-          <td><span class="badge badge-neutral">${escapeHTML(r.type)}</span></td>
-          <td class="truncate" style="max-width:220px;" title="${escapeHTML(r.title)}">${escapeHTML(r.title)}</td>
-          <td>${escapeHTML(r.place)}${r.source ? `<div class="text-tertiary" style="font-size:12px;">${escapeHTML(r.source)}</div>` : ""}</td>
-          <td>${escapeHTML(r.reason)}</td>
-          <td style="max-width:280px;white-space:normal;" title="${escapeHTML(r.message)}">${escapeHTML(r.message)}</td>
-          <td>${escapeHTML(r.by)}</td>
-          <td class="text-secondary">${escapeHTML(fmtWhen(r.date))}</td>
-          <td><span class="badge ${r.status==='Open'?'badge-warning':'badge-success'}">${r.status}</span></td>
-          <td><div class="flex gap-8">
-            <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" title="Mark resolved" aria-label="Mark resolved" data-act="resolve">${ICONS.check}</button>
-            <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete report" aria-label="Delete report" data-act="remove">${ICONS.trash}</button>
-          </div></td>
-        </tr>`).join("") : `<tr><td colspan="9"><div class="empty-state"><div class="icon-wrap">${ICONS.flag}</div><h3>No reports</h3><p>Problems reported by listeners will show up here.</p></div></td></tr>`;
-      labelTables();
+    /* ---- demo numbers ----
+       The catalog stores lifetime totals. To show a period, each total is scaled by the length of the period with a small
+       steady wobble per item, so the same range always shows the same figures. In Laravel these come from a stream_events
+       table grouped by day. */
+    const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 1000) / 1000; };
+    let days = 30;
+    const part = (n, id) => Math.round(n * Math.min(1, days / 365) * (0.8 + 0.4 * hash(id + days)));
+    const live = (kind) => Admin.visible(kind).filter((r) => r.status === "Published" || true);
+    const tracksOf = (a) => TRACKS.filter((t) => !t._del && t.artistId === a.id);
+    const sum = (arr, f) => arr.reduce((n, x) => n + f(x), 0);
+    const sheikhRows = () => live("artist").map((a) => { const ts = tracksOf(a); return { id: a.id, name: a.name, lectures: ts.length, series: ALBUMS.filter((s) => !s._del && s.artistId === a.id).length, plays: part(sum(ts, (t) => t.plays), a.id), downloads: part(sum(ts, (t) => t.downloads), a.id + "d"), likes: part(sum(ts, (t) => t.likes), a.id + "l"), comments: COMMENTS.filter((c) => !c._del && ts.some((t) => t.id === c.trackId)).length, followers: parseCount(a.followers) }; });
+    const seriesRows = () => live("album").map((a) => { const ts = a.tracks.filter((t) => !t._del); return { id: a.id, name: a.title, sheikh: a.artist, topic: a.genre, lectures: ts.length, plays: part(sum(ts, (t) => t.plays), a.id), downloads: part(sum(ts, (t) => t.downloads), a.id + "d"), likes: part(sum(ts, (t) => t.likes), a.id + "l"), books: (a.bookIds || []).length }; });
+    const bookRows = () => live("book").map((b) => ({ id: b.id, name: b.title, sheikh: (ARTISTS.find((a) => a.id === b.sheikhId) || {}).name || "—", readers: part(b.readers, b.id), downloads: part(b.downloads, b.id + "d"), lectures: lecturesOfBook(b).length, pages: lastPrintedPage(b), status: b.status }));
+
+    const num = (k) => (r) => `<strong>${fmtCount(r[k])}</strong>`;
+    const col = (key, label, render, csv) => ({ key, label, sort: (r) => (typeof r[key] === "number" ? r[key] : String(r[key] || "")), render: render || ((r) => esc(r[key])), csv: csv || ((r) => r[key]) });
+    const mk = (el, id, rows, columns) => new DataTable({ el: $(el), id, exportName: `report-${id}`, select: false, rows, search: (r) => `${r.name} ${r.sheikh || ""}`, searchPlaceholder: "Search…", defaultSort: { key: "plays", dir: "desc" }, columns, emptyTitle: "No data", emptyBody: "Nothing to report for this period." });
+    const tSheikh = mk("t-sheikh", "sheikh", sheikhRows, [col("name", "Sheikh"), col("lectures", "Lectures"), col("series", "Series"), col("plays", "Plays", num("plays")), col("downloads", "Downloads", num("downloads")), col("likes", "Likes", num("likes")), col("comments", "Comments"), col("followers", "Followers", (r) => fmtCount(r.followers))]);
+    const tSeries = mk("t-series", "series", seriesRows, [col("name", "Series"), col("sheikh", "Sheikh"), col("topic", "Topic"), col("lectures", "Lectures"), col("plays", "Plays", num("plays")), col("downloads", "Downloads", num("downloads")), col("likes", "Likes", num("likes")), col("books", "Books")]);
+    const tBook = new DataTable({ el: $("t-book"), id: "book", exportName: "report-book", select: false, rows: bookRows, search: (r) => `${r.name} ${r.sheikh}`, searchPlaceholder: "Search…", defaultSort: { key: "readers", dir: "desc" }, emptyTitle: "No books", emptyBody: "Upload a book to see reading numbers.", columns: [col("name", "Book"), col("sheikh", "Sheikh"), col("readers", "Readers", num("readers")), col("downloads", "Downloads", num("downloads")), col("lectures", "Lectures linked"), col("pages", "Pages"), col("status", "Status", (r) => adminBadge(r.status))] });
+
+    function spark(values, labels) {
+      const W = 640, H = 150, P = 24, max = Math.max(...values, 1), step = (W - P * 2) / Math.max(values.length - 1, 1);
+      const pts = values.map((v, i) => [P + i * step, H - P - (v / max) * (H - P * 2)]);
+      const line = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+      const grid = [0, 0.5, 1].map((f) => { const y = H - P - f * (H - P * 2); return `<line class="grid" x1="${P}" x2="${W - P}" y1="${y}" y2="${y}"/><text x="2" y="${y + 3}">${fmtCount(Math.round(max * f))}</text>`; }).join("");
+      return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Plays per day over the selected period">${grid}<path class="area" d="${line} L${pts[pts.length - 1][0]},${H - P} L${pts[0][0]},${H - P} Z"/><path class="line" d="${line}"/><text x="${P}" y="${H - 6}">${labels[0]}</text><text x="${W - P}" y="${H - 6}" text-anchor="end">${labels[labels.length - 1]}</text></svg>`;
     }
-    document.getElementById("reports-table").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-act]"); if (!btn) return;
-      const id = btn.closest("tr").dataset.id;
-      const r = reports.find(x => x.id === id); if (!r) return;
-      if (btn.dataset.act === "resolve") { r.status = "Resolved"; toast("Report resolved", "success"); }
-      else { reports = reports.filter(x => x.id !== id); toast("Report deleted", "warning"); }
-      saveReports(reports.filter(x => !x.seeded));
-      renderReports();
+    function overview() {
+      const sh = sheikhRows(), se = seriesRows(), bk = bookRows();
+      const plays = sum(sh, (r) => r.plays), dl = sum(sh, (r) => r.downloads), rd = sum(bk, (r) => r.readers);
+      $("kpis").innerHTML = [["Plays", fmtCount(plays)], ["Downloads", fmtCount(dl)], ["Book readers", fmtCount(rd)], [sid ? "Lectures" : "Active sheikhs", sid ? TRACKS.filter((t) => !t._del).length : sh.filter((r) => r.plays > 0).length]].map(([l, v]) => `<div class="stat-card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+      const n = Math.min(days, 60), per = Math.max(1, Math.round(days / n)), vals = [], labs = [], today = new Date();
+      for (let i = n - 1; i >= 0; i--) { const d = new Date(today - i * per * 86400000); labs.push(d.toLocaleDateString(undefined, { day: "numeric", month: "short" })); vals.push(Math.round((plays / n) * (0.6 + 0.8 * hash(`day${i}${days}`)) * (1 + (n - i) / (n * 4)))); }
+      $("chart").innerHTML = spark(vals, labs); $("chart-desc").textContent = `${fmtCount(plays)} plays in the last ${days} days`;
+      const top = (sid ? se : sh).slice().sort((a, b) => b.plays - a.plays).slice(0, 6), mx = Math.max(...top.map((r) => r.plays), 1);
+      $("top-title").textContent = sid ? "Your top series" : "Top sheikhs";
+      $("top").innerHTML = top.map((r) => `<div class="bar-row"><span class="name" title="${esc(r.name)}">${esc(r.name)}</span><span class="track"><span class="fill" style="width:${(r.plays / mx) * 100}%"></span></span><span class="val">${fmtCount(r.plays)}</span></div>`).join("") || '<p class="small muted">No data yet.</p>';
+    }
+    function all() { overview(); [tSheikh, tSeries, tBook].forEach((t) => t.refresh()); }
+    $("range").addEventListener("change", () => { days = Number($("range").value); all(); });
+    $("print-btn").addEventListener("click", () => { Audit.log({ action: "Exported", kind: "export", label: "Reports page (PDF)" }); window.print(); });
+    all();
+
+    /* ---- scheduled summaries ---- */
+    const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const db = () => AdminDB.get();
+    function nextRun(s) {
+      const [h, m] = s.time.split(":").map(Number), now = new Date(), d = new Date(now); d.setHours(h, m, 0, 0);
+      if (s.freq === "daily") { if (d <= now) d.setDate(d.getDate() + 1); }
+      else if (s.freq === "weekly") { d.setDate(d.getDate() + ((Number(s.day) - d.getDay() + 7) % 7)); if (d <= now) d.setDate(d.getDate() + 7); }
+      else { d.setDate(1); if (d <= now) d.setMonth(d.getMonth() + 1); }
+      return d;
+    }
+    const freqText = (s) => (s.freq === "daily" ? "Every day" : s.freq === "weekly" ? `Every ${DAYS[s.day]}` : "1st of every month") + ` at ${s.time}`;
+    const scopeText = { sheikh: "By sheikh", series: "By series", book: "By book", all: "Sheikh, series and book" };
+    function paintSchedules() {
+      const l = db().schedules;
+      $("sch-list").innerHTML = l.length ? l.map((s) => `<div class="setting-row" data-s="${s.id}"><div><div class="label">${esc(s.name)} ${s.on ? "" : '<span class="badge badge-neutral">Paused</span>'}</div><div class="desc">${esc(scopeText[s.scope])} · last ${s.period} days · ${esc(freqText(s))}<br>To ${esc(s.to.join(", "))} · ${s.format === "csv" ? "CSV attached" : "table in the email"}<br>${s.on ? `Next: ${esc(AdminFmt.when(nextRun(s)))}` : ""}${s.last ? ` · Last sent ${esc(AdminFmt.ago(s.last))}` : ""}</div></div><div class="row-actions"><button type="button" class="switch ${s.on ? "on" : ""}" data-on="${s.id}" role="switch" aria-checked="${s.on}" aria-label="Active"></button><button type="button" class="btn btn-secondary btn-sm" data-preview="${s.id}">Preview</button><button type="button" class="btn btn-secondary btn-sm" data-send="${s.id}">Send now</button><button type="button" class="icon-btn" data-del="${s.id}" aria-label="Delete schedule" style="color:var(--error);">${ICONS.trash}</button></div></div>`).join("") : '<p class="small muted">No schedules yet. Create one to get the numbers in your inbox.</p>';
+    }
+    function summaryText(s) {
+      const save = days; days = s.period; let out = "";
+      const fmt = (rows, cols) => rows.slice().sort((a, b) => b[cols[1][0]] - a[cols[1][0]]).slice(0, 8).map((r) => `  ${r.name.padEnd(34).slice(0, 34)} ${cols.slice(1).map(([k, l]) => `${l}: ${fmtCount(r[k])}`).join("  ")}`).join("\n");
+      if (s.scope === "sheikh" || s.scope === "all") out += `BY SHEIKH\n${fmt(sheikhRows(), [["name"], ["plays", "Plays"], ["downloads", "Downloads"]])}\n\n`;
+      if (s.scope === "series" || s.scope === "all") out += `BY SERIES\n${fmt(seriesRows(), [["name"], ["plays", "Plays"], ["downloads", "Downloads"]])}\n\n`;
+      if (s.scope === "book" || s.scope === "all") out += `BY BOOK\n${fmt(bookRows(), [["name"], ["readers", "Readers"], ["downloads", "Downloads"]])}\n`;
+      days = save; return out.trim();
+    }
+    function render(s) {
+      const t = AdminSettings.template("summary"), site = AdminSettings.get().branding.siteName, vars = { site, period: s.freq === "daily" ? "daily" : s.freq === "weekly" ? "weekly" : "monthly", scope: scopeText[s.scope].toLowerCase(), table: summaryText(s), link: location.href.split("#")[0] };
+      const fill = (x) => x.replace(/\{\{(\w+)\}\}/g, (_, k) => (vars[k] != null ? vars[k] : `{{${k}}}`));
+      return { subject: fill(t.subject), body: fill(t.body) };
+    }
+    $("sch-list").addEventListener("click", async (e) => {
+      const on = e.target.closest("[data-on]"), pv = e.target.closest("[data-preview]"), sd = e.target.closest("[data-send]"), dl = e.target.closest("[data-del]");
+      const find = (id) => db().schedules.find((x) => x.id === id);
+      if (on) { const s = find(on.dataset.on); s.on = !s.on; AdminDB.save(); Audit.log({ action: s.on ? "Resumed a schedule" : "Paused a schedule", kind: "settings", label: s.name }); paintSchedules(); }
+      else if (pv) { const s = find(pv.dataset.preview), m = render(s); Confirm.ask({ title: m.subject, body: `<pre style="white-space:pre-wrap;font-family:var(--font-mono);font-size:12px;max-height:50vh;overflow:auto;background:var(--surface-2);padding:12px;border-radius:8px;">${esc(m.body)}</pre>`, confirmText: "Close", tone: "primary" }); }
+      else if (sd) { const s = find(sd.dataset.send); s.last = new Date().toISOString(); AdminDB.save(); Audit.log({ action: "Sent a summary (test)", kind: "export", label: s.name, detail: s.to.join(", ") }); toast(`Test summary recorded for ${s.to.length} recipient${s.to.length === 1 ? "" : "s"} (nothing was really emailed)`, "success"); paintSchedules(); }
+      else if (dl) { const s = find(dl.dataset.del); if (await Confirm.ask({ title: `Delete “${s.name}”?`, body: "No more emails will be sent for this schedule.", confirmText: "Delete schedule", tone: "danger" })) { db().schedules = db().schedules.filter((x) => x.id !== s.id); AdminDB.save(); Audit.log({ action: "Deleted a schedule", kind: "settings", label: s.name }); paintSchedules(); } }
     });
-    renderReports();
+    $("sch-add").addEventListener("click", () => { ensureOverlay(); openModal("sch-modal"); setTimeout(() => $("s-name").focus(), 80); });
+    $("s-freq").addEventListener("change", () => { $("s-day-wrap").hidden = $("s-freq").value !== "weekly"; });
+    $("s-save").addEventListener("click", () => {
+      ["e-sname", "e-to"].forEach((x) => { $(x).textContent = ""; });
+      const name = $("s-name").value.trim(), to = $("s-to").value.split(/[,\s;]+/).filter(Boolean);
+      if (!name) { $("e-sname").textContent = "Give the schedule a name."; return $("s-name").focus(); }
+      if (!to.length || to.some((x) => !/^\S+@\S+\.\S+$/.test(x))) { $("e-to").textContent = "Enter one or more valid email addresses."; return $("s-to").focus(); }
+      db().schedules.push({ id: Admin.uid("sch"), name, scope: $("s-scope").value, period: Number($("s-period").value), freq: $("s-freq").value, day: $("s-day").value, time: $("s-time").value || "08:00", format: $("s-format").value, to, on: true, last: "" });
+      AdminDB.save(); Audit.log({ action: "Created a schedule", kind: "settings", label: name, detail: to.join(", ") });
+      closeModals(); $("s-name").value = ""; $("s-to").value = ""; toast("Schedule saved", "success"); paintSchedules();
+    });
+    paintSchedules();
+
   </script>
 </body>
 </html>

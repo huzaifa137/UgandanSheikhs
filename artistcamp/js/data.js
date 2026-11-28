@@ -568,3 +568,149 @@ const BookAdminStore = {
   });
   BOOKS.forEach((b) => { b.seriesIds = ALBUMS.filter((a) => (a.bookIds || []).includes(b.id)).map((a) => a.id); });
 })();
+
+/* =====================================================================
+   Admin overrides (AdminDB)
+   The admin area has no database yet, so every change an admin makes (edits, status, deletes, drafts,
+   scheduled lectures, settings, staff, audit trail, moderation) is kept in the browser under the
+   localStorage key "us_admin_db". This block applies those changes to the demo data on EVERY page load,
+   so something unpublished in the admin disappears from the listener pages, and a new lecture appears.
+   Admin pages keep everything (including drafts and trashed rows) and read the flags instead.
+   Laravel: each branch of this object maps to a table (see README, section "Admin").
+   ===================================================================== */
+const ADMIN_DB_KEY = "us_admin_db";
+const IS_ADMIN_PAGE = /\/admin\/[^/]*$/.test(location.pathname);
+const ADMIN_DEFAULTS = () => ({
+  v: 2,
+  ent: { artist: {}, album: {}, track: {}, comment: {}, user: {}, book: {}, genre: {} },   // field patches per id
+  created: { artist: [], album: [], track: [], book: [], genre: [] },                       // rows made in the admin
+  lectures: {},                                                                   // editor extras per lecture id
+  trash: [],                                                                      // soft-deleted rows
+  audit: [],                                                                      // who changed what
+  filters: {},                                                                    // saved table views
+  settings: {},                                                                   // see AdminSettings in admin-core.js
+  mod: { banned: [], warnings: [], decisions: [], reports: {} },                  // moderation centre
+  staff: null,                                                                    // staff accounts (seeded on first use)
+  schedules: [],                                                                  // scheduled e-mail summaries
+  featured: null,                                                                 // curated homepage lists (admin/featured.html)
+});
+const AdminDB = {
+  _o: null,
+  get() {
+    if (!this._o) {
+      let o = null;
+      try { o = JSON.parse(localStorage.getItem(ADMIN_DB_KEY) || "null"); } catch { o = null; }
+      const d = ADMIN_DEFAULTS();
+      this._o = { ...d, ...(o || {}), ent: { ...d.ent, ...((o && o.ent) || {}) }, created: { ...d.created, ...((o && o.created) || {}) }, mod: { ...d.mod, ...((o && o.mod) || {}) } };
+    }
+    return this._o;
+  },
+  save() { try { localStorage.setItem(ADMIN_DB_KEY, JSON.stringify(this._o)); return true; } catch { return false; } },
+  reset() { this._o = ADMIN_DEFAULTS(); try { localStorage.removeItem(ADMIN_DB_KEY); } catch {} },
+};
+
+(function applyAdminOverrides() {
+  const db = AdminDB.get();
+  const now = Date.now();
+  GENRES.forEach((g) => { g.id = g.slug; });
+  const COLL = { artist: ARTISTS, album: ALBUMS, track: TRACKS, user: ADMIN_USERS, comment: COMMENTS, book: BOOKS, genre: GENRES };
+
+  // 1. rows created in the admin
+  db.created.artist.forEach((a) => { if (!ARTISTS.some((x) => x.id === a.id)) ARTISTS.push(a); });
+  db.created.track.forEach((t) => { if (!TRACKS.some((x) => x.id === t.id)) { t.art = t.art || ART(`lecture-${t.id}`, 500, 500); TRACKS.push(t); } });
+  db.created.album.forEach((a) => { if (!ALBUMS.some((x) => x.id === a.id)) { a.art = a.art || ART(`series-${a.id}`, 700, 700); a.tracks = a.tracks || []; ALBUMS.push(a); } });
+  db.created.book.forEach((b) => { if (!BOOKS.some((x) => x.id === b.id)) BOOKS.push(b); });
+  (db.created.genre || []).forEach((g) => { if (!GENRES.some((x) => x.id === g.id)) GENRES.push(g); });
+
+  // 2. field patches
+  Object.entries(db.ent).forEach(([kind, map]) => {
+    Object.entries(map).forEach(([id, patch]) => { const row = (COLL[kind] || []).find((x) => x.id === id); if (row) Object.assign(row, patch); });
+  });
+
+  // 3. lectures: scheduled publishing + series membership + order
+  Object.entries(db.lectures).forEach(([tid, L]) => {
+    const t = TRACKS.find((x) => x.id === tid); if (!t) return;
+    if (L.status === "Scheduled" && L.publishAt && new Date(L.publishAt).getTime() <= now) { L.status = "Published"; t.status = "Published"; db.ent.track[tid] = { ...(db.ent.track[tid] || {}), status: "Published" }; AdminDB.save(); }
+    if (L.chapters) t.chapters = L.chapters;
+    if (L.transcript) t.hasTranscript = true;
+  });
+  ALBUMS.forEach((a) => {
+    // new lectures join the series named on them
+    a.tracks = a.tracks.filter((t) => !t.seriesId || t.seriesId === a.id);   // moved to another series (or to none)
+    TRACKS.forEach((t) => { if (t.seriesId === a.id && !a.tracks.some((x) => x.id === t.id)) a.tracks.push(t); });
+    const ord = (t) => (db.lectures[t.id] && Number.isFinite(db.lectures[t.id].order) ? db.lectures[t.id].order : null);
+    if (a.tracks.some((t) => ord(t) !== null)) a.tracks = a.tracks.map((t, i) => [t, ord(t) !== null ? ord(t) : i + 1]).sort((x, y) => x[1] - y[1]).map((p) => p[0]);
+  });
+
+  // 4. flags every row carries for the admin tables
+  Object.entries(COLL).forEach(([kind, list]) => list.forEach((r) => { r.status = r.status || (kind === "comment" ? "Approved" : kind === "user" ? "Active" : "Published"); }));
+  const trashed = new Set(db.trash.map((x) => `${x.kind}:${x.id}`));
+  Object.entries(COLL).forEach(([kind, list]) => list.forEach((r) => { r._del = trashed.has(`${kind}:${r.id}`); }));
+
+  // 5. listener pages only see live content
+  if (!IS_ADMIN_PAGE) {
+    const live = (kind, r) => !r._del && (kind === "comment" ? !["Rejected", "Hidden"].includes(r.status) : kind === "user" ? true : r.status === "Published");
+    ["artist", "album", "track", "comment", "book", "genre"].forEach((kind) => {
+      const list = COLL[kind];
+      for (let i = list.length - 1; i >= 0; i--) if (!live(kind, list[i])) list.splice(i, 1);
+    });
+    ALBUMS.forEach((a) => { a.tracks = a.tracks.filter((t) => TRACKS.includes(t)); });
+  }
+})();
+
+/* Listener-side effects of admin settings: maintenance page and branding. */
+(function applyAdminSettingsToSite() {
+  const s = AdminDB.get().settings || {};
+  if (IS_ADMIN_PAGE) return;
+  const m = s.maintenance;
+  if (m && m.on) {
+    let bypass = false;
+    try { bypass = !!(m.allowAdmins && JSON.parse(localStorage.getItem("us_admin_session") || "null")); } catch {}
+    if (!bypass) document.addEventListener("DOMContentLoaded", () => {
+      const box = document.createElement("div");
+      box.setAttribute("role", "alert");
+      box.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:var(--bg-base,#0b1a14);color:var(--text-primary,#fff);font-family:system-ui,sans-serif;";
+      const esc = (x) => String(x == null ? "" : x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      box.innerHTML = `<div style="max-width:460px"><div style="font-size:42px;margin-bottom:10px">🛠️</div><h1 style="font-size:24px;margin:0 0 10px">${esc(m.title || "We'll be right back")}</h1><p style="opacity:.8;line-height:1.6;margin:0 0 18px">${esc(m.message || "Ugandan Sheikhs is being updated. Please check back shortly.")}</p>${m.until ? `<p style="opacity:.6;font-size:13px">Expected back: ${esc(new Date(m.until).toLocaleString())}</p>` : ""}</div>`;
+      document.body.appendChild(box);
+      document.body.style.overflow = "hidden";
+    });
+  }
+  const b = s.branding;
+  if (b && (b.siteName || b.logo)) document.addEventListener("DOMContentLoaded", () => {
+    if (b.siteName) document.querySelectorAll(".sidebar-logo .word").forEach((w) => { w.textContent = b.siteName; });
+    if (b.logo) document.querySelectorAll(".logo-mark img").forEach((i) => { if (!i.classList.contains("logo-green")) i.src = b.logo; else i.style.display = "none"; });
+  });
+})();
+
+/* ---- Book files uploaded in the admin live in IndexedDB (too big for localStorage). book.file = "idb:<id>" ---- */
+const BookFiles = {
+  _db() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open("us_files", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("files");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async put(id, blob) { const db = await this._db(); return new Promise((res, rej) => { const tx = db.transaction("files", "readwrite"); tx.objectStore("files").put(blob, id); tx.oncomplete = () => res(true); tx.onerror = () => rej(tx.error); }); },
+  async get(id) { const db = await this._db(); return new Promise((res, rej) => { const q = db.transaction("files").objectStore("files").get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); }); },
+  async del(id) { const db = await this._db(); return new Promise((res) => { const tx = db.transaction("files", "readwrite"); tx.objectStore("files").delete(id); tx.oncomplete = () => res(true); tx.onerror = () => res(false); }); },
+  /* Resolves to a URL pdf.js / <a download> can use, whether the book is a bundled file or an upload. */
+  async urlFor(book) {
+    if (!book.file || !String(book.file).startsWith("idb:")) return book.file;
+    const blob = await this.get(String(book.file).slice(4));
+    if (!blob) throw new Error("The uploaded file is not stored in this browser any more.");
+    return URL.createObjectURL(blob);
+  },
+};
+
+/* Curated homepage lists. admin/featured.html saves ids; the listener home asks for them here.
+   `fallback` is what the page showed before an admin curated anything. */
+function featuredList(name, fallback) {
+  const f = AdminDB.get().featured;
+  if (!f || !f.lists || !f.lists[name]) return fallback;
+  const pool = { artists: ARTISTS, albums: ALBUMS, editor: ALBUMS, playlists: typeof officialCollections === "function" ? officialCollections() : [] }[name] || [];
+  return f.lists[name].map((id) => pool.find((x) => x.id === id)).filter(Boolean);
+}
+function featuredHero() { const f = AdminDB.get().featured; return f && f.hero ? ALBUMS.find((a) => a.id === f.hero) || null : null; }

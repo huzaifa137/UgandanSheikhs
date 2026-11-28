@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -19,43 +20,28 @@
       <main class="admin-content">
 
         <div class="page-header">
-          <div><h1 style="font-size:22px;">Series</h1><p>Manage series, short series and single lectures.</p></div>
-          <button class="btn btn-primary" id="add-album-btn" onclick="ensureOverlay();openModal('add-album-modal')"></button>
+          <div><h1 style="font-size:22px;">Series</h1><p>Series, short series and single lectures, with the books attached to them.</p></div>
+          <button class="btn btn-primary" id="add-btn" hidden></button>
         </div>
+        <div id="table"></div>
 
-        <div class="table-toolbar">
-          <div class="search-field" style="max-width:280px;" id="album-search-wrap"><input id="album-search" placeholder="Search series…" /></div>
-          <select class="select" style="width:auto;"><option>All Types</option><option>Series</option><option>Short Series</option><option>Single Lecture</option><option>Compilation</option></select>
-        </div>
-
-        <table class="data-table">
-          <thead><tr><th>Artwork</th><th>Series</th><th>Sheikh</th><th>Type</th><th>Lectures</th><th>Published</th><th>Status</th><th></th></tr></thead>
-          <tbody id="albums-table"></tbody>
-        </table>
-
-        <div class="modal" id="add-album-modal" style="width:min(560px,92vw);">
-          <div class="modal-head"><h3>Add Series</h3><button class="icon-btn" id="add-album-close" onclick="closeModals()"></button></div>
-          <div class="field"><label>Series title</label><input class="input" placeholder="e.g. Foundations of Tawheed" /></div>
-          <div class="field"><label>Sheikh</label><select class="select" id="album-artist-select"></select></div>
-          <div class="field"><label>Series artwork</label><div class="dropzone" style="padding:22px;"><div class="icon-wrap" style="width:40px;height:40px;margin:0 auto 8px;" id="album-dz-icon"></div><p style="font-size:12.5px;">Drop image or browse</p></div></div>
+        <div class="modal modal-md" id="add-modal" role="dialog" aria-modal="true" aria-labelledby="add-title">
+          <div class="modal-head"><h3 id="add-title">Add series</h3><button class="icon-btn" id="add-close" aria-label="Close" onclick="closeModals()"></button></div>
+          <div class="field"><label for="n-title">Series title *</label><input class="input" id="n-title" placeholder="e.g. Foundations of Tawheed" /><span class="field-hint field-err" id="e-title"></span></div>
+          <div class="field"><label for="n-sheikh">Sheikh *</label><select class="select" id="n-sheikh"></select></div>
           <div class="grid grid-2">
-            <div class="field"><label>Series type</label><select class="select"><option>Series</option><option>Short Series</option><option>Single Lecture</option><option>Compilation</option></select></div>
-            <div class="field"><label>Topic</label><select class="select" id="album-genre-select"></select></div>
+            <div class="field"><label for="n-type">Series type</label><select class="select" id="n-type"><option>Series</option><option>Short Series</option><option>Single Lecture</option><option>Compilation</option></select></div>
+            <div class="field"><label for="n-topic">Topic</label><select class="select" id="n-topic"></select></div>
           </div>
           <div class="grid grid-2">
-            <div class="field"><label>Published date</label><input class="input" type="date" /></div>
-            <div class="field"><label>Publisher</label><input class="input" placeholder="Ugandan Sheikhs" /></div>
+            <div class="field"><label for="n-year">Year</label><input class="input" id="n-year" type="number" min="1990" max="2100" /></div>
+            <div class="field"><label for="n-status">Visibility</label><select class="select" id="n-status"><option>Published</option><option>Draft</option></select></div>
           </div>
-          <div class="field"><label>Description</label><textarea class="textarea"></textarea></div>
-          <div class="field"><label>Copyright</label><input class="input" placeholder="© 2026 Sheikh Name" /></div>
-          <div class="flex gap-16" style="margin-bottom:8px;">
-            <label class="checkbox-row"><input type="checkbox" /> Featured</label>
-            <label class="checkbox-row"><input type="checkbox" checked /> Published</label>
-          </div>
-          <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="closeModals()">Cancel</button>
-            <button class="btn btn-primary" onclick="closeModals();toast('Series created','success')">Create Series</button>
-          </div>
+          <div class="field"><label for="n-desc">Description</label><textarea class="textarea" id="n-desc" rows="3" maxlength="600"></textarea></div>
+          <div class="field"><label>Artwork</label>
+            <label class="dropzone" style="padding:16px;display:block;cursor:pointer;"><p style="font-size:12.5px;" id="n-dz-text">Drop an image or click to choose. Leave empty for a generated cover.</p><input type="file" id="n-art" accept="image/png,image/jpeg,image/webp" hidden /></label>
+            <span class="limit-note" id="n-limit"></span></div>
+          <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModals()">Cancel</button><button class="btn btn-primary" id="n-create">Create series</button></div>
         </div>
 
       </main>
@@ -66,36 +52,139 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
-    initAdminPage("albums", "Series");
-    document.getElementById("add-album-btn").innerHTML = ICONS.plus + "<span>Add Series</span>";
-    document.getElementById("add-album-close").innerHTML = ICONS.x;
-    document.getElementById("album-dz-icon").innerHTML = ICONS.upload;
-    document.getElementById("album-search-wrap").insertAdjacentHTML("afterbegin", ICONS.search);
-    document.getElementById("album-artist-select").innerHTML = ARTISTS.map(a => `<option>${a.name}</option>`).join("");
-    document.getElementById("album-genre-select").innerHTML = GENRES.map(g => `<option>${g.name}</option>`).join("");
 
-    function row(a) {
-      return `<tr>
-        <td><img src="${a.art}" style="width:38px;height:38px;border-radius:6px;object-fit:cover;"/></td>
-        <td>${a.title}</td>
-        <td>${a.artist}</td>
-        <td><span class="badge badge-neutral">${a.type}</span></td>
-        <td>${a.tracks.length}</td>
-        <td class="text-secondary">${a.year}</td>
-        <td><span class="badge badge-success">Published</span></td>
-        <td><div class="flex gap-8">
-          <a class="icon-btn" style="width:30px;height:30px;" href="../album.html?id=${a.id}" title="View">${ICONS.eye}</a>
-          <button class="icon-btn" style="width:30px;height:30px;" title="Edit" onclick="toast('Edit album form opened')">${ICONS.edit}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();toast('Series deleted','warning')">${ICONS.trash}</button>
-        </div></td>
-      </tr>`;
-    }
-    document.getElementById("albums-table").innerHTML = ALBUMS.map(row).join("");
-    document.getElementById("album-search").addEventListener("input", (e) => {
-      const q = e.target.value.toLowerCase();
-      document.getElementById("albums-table").innerHTML = ALBUMS.filter(a => a.title.toLowerCase().includes(q)).map(row).join("");
+    initAdminPage("albums", "Series");
+    const $ = (id) => document.getElementById(id);
+    const sid = AdminAuth.sheikhScope();
+    const TYPES = ["Series", "Short Series", "Single Lecture", "Compilation"];
+    const booksOf = (a) => (a.bookIds || []).map((id) => BOOKS.find((b) => b.id === id)).filter((b) => b && !b._del);
+    const lects = (a) => a.tracks.filter((t) => !t._del);
+    const sheikhOpts = () => Admin.visible("artist").map((a) => ({ v: a.id, l: a.name }));
+
+    const table = new DataTable({
+      el: $("table"), id: "albums", kind: "album", exportName: "series",
+      rows: () => Admin.visible("album"),
+      search: (r) => `${r.title} ${r.artist} ${r.genre} ${r.type}`, searchPlaceholder: "Search series…",
+      defaultSort: { key: "title", dir: "asc" },
+      emptyTitle: "No series yet", emptyBody: "Create a series, then add lectures to it from the lecture editor.",
+      tabs: { options: [{ v: "all", l: "All" }, { v: "pub", l: "Published", test: (r) => r.status === "Published" }, { v: "draft", l: "Drafts", test: (r) => r.status !== "Published" }] },
+      filters: [
+        ...(sid ? [] : [{ key: "sheikh", label: "Sheikh", all: "All sheikhs", options: sheikhOpts, test: (r, v) => r.artistId === v }]),
+        { key: "type", label: "Type", all: "All types", options: TYPES, test: (r, v) => r.type === v },
+        { key: "topic", label: "Topic", all: "All topics", options: () => GENRES.map((g) => g.name), test: (r, v) => r.genre === v },
+        { key: "book", label: "Books", all: "Books: any", options: [{ v: "with", l: "Has a book" }, { v: "without", l: "No book" }], test: (r, v) => (v === "with" ? booksOf(r).length > 0 : !booksOf(r).length) },
+      ],
+      columns: [
+        { key: "title", label: "Series", sort: (r) => r.title, render: (r) => `<div class="dt-cell-main"><img src="${r.art}" alt="" /><div style="min-width:0;"><span class="t">${esc(r.title)}</span><span class="s">${esc(r.type)} · ${esc(r.genre)}</span></div></div>` },
+        { key: "artist", label: "Sheikh", sort: (r) => r.artist, render: (r) => esc(r.artist) },
+        { key: "lectures", label: "Lectures", sort: (r) => lects(r).length, render: (r) => lects(r).length },
+        { key: "books", label: "Books", sort: (r) => booksOf(r).length, render: (r) => booksOf(r).length || '<span class="text-tertiary">—</span>' },
+        { key: "year", label: "Year", sort: (r) => r.year, render: (r) => `<span class="text-secondary">${r.year}</span>` },
+        { key: "featured", label: "Featured", sort: (r) => (r.featured ? 1 : 0), csv: (r) => (r.featured ? "Yes" : "No"), render: (r) => (r.featured ? '<span class="badge badge-accent">Featured</span>' : '<span class="text-tertiary">—</span>') },
+        { key: "status", label: "Status", sort: (r) => r.status, render: (r) => adminBadge(r.status) },
+      ],
+      actions: [
+        { id: "edit", icon: "edit", title: "Edit", run: (r, t) => t.openAt(t._rows.findIndex((x) => x.id === r.id)) },
+        { id: "view", icon: "eye", title: "View on site", href: (r) => `../album.html?id=${r.id}`, blank: true, show: (r) => r.status === "Published" },
+        { id: "del", icon: "trash", title: "Delete", danger: true, perm: "content.delete", run: (r) => del([r.id]) },
+      ],
+      bulk: [
+        { id: "pub", label: "Publish", icon: "check", perm: "content.publish", run: (ids) => { toast(`${Admin.setStatus("album", ids, "Published")} published`, "success"); } },
+        { id: "unpub", label: "Unpublish", icon: "eye", perm: "content.publish", confirm: (n) => ({ title: `Unpublish ${n} series?`, body: "They disappear from the listener site until you publish them again." }), run: (ids) => { toast(`${Admin.setStatus("album", ids, "Draft")} unpublished`, "success"); } },
+        { id: "feat", label: "Feature", icon: "star", perm: "content.delete", run: (ids) => { toast(`${Admin.setFeatured("album", ids, true)} featured`, "success"); } },
+        { id: "unfeat", label: "Unfeature", icon: "star", perm: "content.delete", run: (ids) => { toast(`${Admin.setFeatured("album", ids, false)} unfeatured`, "success"); } },
+        { id: "del", label: "Delete", icon: "trash", danger: true, perm: "content.delete", run: (ids) => del(ids).then((ok) => ok !== false) },
+      ],
+      canSelect: (r) => AdminAuth.owns("album", r),
+      onOpen: (r, ctx) => openPanel(r, ctx),
     });
+    if (sid) table.o.bulk = table.o.bulk.filter((b) => b.id === "pub" || b.id === "unpub");
+
+    function del(ids) {
+      const n = ids.reduce((c, id) => c + lects(Admin.find("album", id)).length, 0);
+      return Admin.deleteFlow("album", ids, { after: () => table.refresh(), extra: n ? `<p>The ${n} lecture${n === 1 ? "" : "s"} inside ${ids.length === 1 ? "it" : "them"} stay in the catalog but will have no series.</p>` : "" });
+    }
+
+    function openPanel(r, ctx) {
+      const editable = AdminAuth.can("content.edit") && AdminAuth.owns("album", r);
+      let newArt = null;
+      const allBooks = BOOKS.filter((b) => !b._del && (!sid || b.sheikhId === sid));
+      const bookBoxes = allBooks.length ? allBooks.map((b) => `<label class="checkbox-row" style="margin-bottom:8px;"><input type="checkbox" data-book="${b.id}" ${(r.bookIds || []).includes(b.id) ? "checked" : ""} ${editable ? "" : "disabled"} /> ${esc(b.title)}</label>`).join("") : '<p class="small muted">No books yet. Upload one from the Books page.</p>';
+      const list = lects(r);
+      Panel.open({
+        title: r.title, subtitle: `${r.type} · ${r.artist}`, img: r.art,
+        badges: adminBadge(r.status) + (r.featured ? '<span class="badge badge-accent">Featured</span>' : ""),
+        readOnly: !editable, nav: { index: ctx.index, count: ctx.count, go: ctx.go },
+        deleteText: "Move to trash", onDelete: AdminAuth.can("content.delete") ? async () => { if (await del([r.id])) Panel.close(true); } : null,
+        intro: `<div class="panel-stats" style="margin-bottom:18px;"><div class="panel-stat"><b>${list.length}</b><span>Lectures</span></div><div class="panel-stat"><b>${booksOf(r).length}</b><span>Books</span></div><div class="panel-stat"><b>${fmtCount(list.reduce((n, t) => n + t.plays, 0))}</b><span>Plays</span></div></div>`,
+        values: { ...r, artistId: r.artistId },
+        sections: [
+          { title: "Details", fields: [
+            { key: "title", label: "Title", required: true },
+            { key: "artistId", label: "Sheikh", type: "select", options: sheikhOpts(), readOnly: !!sid },
+            { key: "type", label: "Type", type: "select", options: TYPES },
+            { key: "genre", label: "Topic", type: "select", options: GENRES.map((g) => g.name) },
+            { key: "year", label: "Year", type: "number", min: 1990, max: 2100 },
+            { key: "description", label: "Description", type: "textarea", rows: 4, max: 600 },
+            { key: "label", label: "Publisher" }, { key: "copyright", label: "Copyright line" },
+          ] },
+          { title: "Artwork", html: `<label class="dropzone" style="padding:14px;display:block;cursor:${editable ? "pointer" : "default"};"><p style="font-size:12.5px;" id="art-text">${editable ? "Choose new artwork" : "Artwork"}</p>${editable ? '<input type="file" id="art-file" accept="image/png,image/jpeg,image/webp" hidden />' : ""}</label>` },
+          { title: "Books attached", html: `<p class="small muted" style="margin-bottom:10px;">Listeners see these books on the series page and can follow along while they listen.</p>${bookBoxes}` },
+          { title: "Lectures in this series", html: list.length ? `<ol class="order-list">${list.map((t, i) => `<li><span class="n">${i + 1}</span><span class="t">${esc(t.title)}</span>${adminBadge(t.status)}<a class="icon-btn" href="lecture-editor.html?id=${t.id}" title="Open in editor" aria-label="Open ${esc(t.title)} in the editor">${ICONS.edit}</a></li>`).join("")}</ol>` : '<p class="small muted">No lectures yet.</p>' },
+          { title: "Visibility", fields: [
+            { key: "status", label: "Status", type: "select", options: ["Published", "Draft"] },
+            ...(sid ? [] : [{ key: "featured", label: "Featured", type: "toggle", toggleText: "Show in featured series" }]),
+          ] },
+        ],
+        actions: [{ label: "New lecture", icon: "plus", run: () => { location.href = `lecture-editor.html?series=${r.id}`; } }],
+        onSave: (v) => {
+          const sh = ARTISTS.find((a) => a.id === v.artistId);
+          const patch = { title: v.title.trim(), artistId: v.artistId, artist: sh ? sh.name : r.artist, type: v.type, genre: v.genre, year: v.year || r.year, description: v.description, label: v.label, copyright: v.copyright, status: v.status };
+          if (!sid) patch.featured = !!v.featured;
+          if (newArt) patch.art = newArt;
+          const ids = [...Panel.el.querySelectorAll("[data-book]:checked")].map((c) => c.dataset.book);
+          patch.bookIds = ids;
+          const o = BookAdminStore.get(); o.seriesBooks[r.id] = ids; BookAdminStore.save();
+          Admin.patch("album", r.id, patch);
+          toast("Series saved", "success"); table.refresh(); ctx.go(table._rows.findIndex((x) => x.id === r.id));
+        },
+      });
+      Panel.el.querySelectorAll("[data-book]").forEach((c) => c.addEventListener("change", () => Panel._setDirty(true)));
+      const f = $("art-file");
+      if (f) f.addEventListener("change", async () => {
+        const file = f.files[0]; if (!file) return;
+        const err = Upload.checkImage(file); if (err) return toast(err, "warning");
+        try { newArt = await Upload.imageToDataURL(file, { maxSide: 700 }); Panel.el.querySelector(".panel-img").src = newArt; $("art-text").textContent = `New artwork ready: ${file.name}`; Panel._setDirty(true); } catch (e) { toast(e.message, "warning"); }
+      });
+    }
+
+    /* ---- Add series ---- */
+    $("add-close").innerHTML = ICONS.x;
+    $("n-limit").textContent = `PNG, JPG or WebP up to ${AdminSettings.get().uploads.maxImageMB} MB.`;
+    $("n-sheikh").innerHTML = sheikhOpts().map((o) => `<option value="${o.v}">${esc(o.l)}</option>`).join("");
+    if (sid) { $("n-sheikh").value = sid; $("n-sheikh").disabled = true; }
+    $("n-topic").innerHTML = GENRES.map((g) => `<option>${esc(g.name)}</option>`).join("");
+    $("n-year").value = new Date().getFullYear();
+    if (AdminAuth.can("content.edit")) { const b = $("add-btn"); b.hidden = false; b.innerHTML = ICONS.plus + "<span>Add series</span>"; b.addEventListener("click", () => { ensureOverlay(); openModal("add-modal"); setTimeout(() => $("n-title").focus(), 80); }); }
+    let art = null;
+    $("n-art").addEventListener("change", async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const err = Upload.checkImage(f); if (err) { toast(err, "warning"); e.target.value = ""; return; }
+      try { art = await Upload.imageToDataURL(f, { maxSide: 700 }); $("n-dz-text").textContent = `Artwork ready: ${f.name}`; } catch (x) { toast(x.message, "warning"); }
+    });
+    $("n-create").addEventListener("click", () => {
+      const title = $("n-title").value.trim(); $("e-title").textContent = "";
+      if (title.length < 3) { $("e-title").textContent = "Give the series a title (3+ characters)."; return $("n-title").focus(); }
+      const sh = ARTISTS.find((a) => a.id === $("n-sheikh").value); if (!sh) return toast("Choose a sheikh", "warning");
+      const id = Admin.nextId("album"), y = Number($("n-year").value) || new Date().getFullYear();
+      Admin.create("album", { id, title, artistId: sh.id, artist: sh.name, type: $("n-type").value, genre: $("n-topic").value, year: y, art: art || ART(`series-${id}`, 700, 700), tracks: [], description: $("n-desc").value.trim() || `${title} is a lecture series by ${sh.name}.`, label: "Ugandan Sheikhs", copyright: `© ${y} ${sh.name}`, status: $("n-status").value, featured: false, bookIds: [] });
+      closeModals(); art = null; $("n-title").value = ""; $("n-desc").value = ""; $("n-art").value = ""; $("n-dz-text").textContent = "Drop an image or click to choose. Leave empty for a generated cover.";
+      toast(`“${title}” created. Add lectures from the lecture editor.`, "success"); table.refresh();
+    });
+    if (location.hash === "#add" && !$("add-btn").hidden) $("add-btn").click();
+
   </script>
 </body>
 </html>

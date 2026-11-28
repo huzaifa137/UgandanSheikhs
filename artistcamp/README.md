@@ -282,3 +282,9 @@ Serve PDFs with HTTP range support (Nginx, S3 and Vercel do) so the first page o
 **Scanned books.** `Bidayat al-Mutafaqqih` is images only, so in-book text search needs OCR first (for example `ocrmypdf -l ara`). Until then the reader offers a contents filter instead.
 
 **Next features that fit:** in-book search after OCR, highlights, flashcards from notes, quizzes per lecture pages, reading streaks, EPUB support, per-chapter audio links, and a "teacher's notes" overlay.
+
+## Admin (roles, audit, trash, settings)
+
+Everything the admin changes is kept in the browser under `localStorage["us_admin_db"]` (`AdminDB`, in `js/data.js`) and applied to the demo data on every page load, so unpublished or deleted items vanish from the listener site. Uploaded book PDFs live in IndexedDB (`BookFiles`). `js/admin-core.js` holds roles, audit, trash, dialogs, the side panel and the reusable `DataTable`.
+
+Laravel mapping: `staff` (role, sheikh_id), `audit_logs` (user_id, action, subject, before/after JSON), soft deletes on every model (`deleted_at`, the trash screen lists `onlyTrashed()`), `lecture_meta` (status, publish_at, transcript, chapters JSON, series_order), `moderation_decisions`, `banned_words`, `user_warnings`, `report_schedules`, `settings` (key/value JSON). Enforce permissions with Gates/Policies and scope sheikh accounts in the query (`where artist_id = auth()->user()->sheikh_id`); the browser checks here are for the prototype only. Scheduled publishing = a scheduled command that flips `Scheduled` lectures whose `publish_at` has passed; scheduled report e-mails = another scheduled command using the "Scheduled summary" template.

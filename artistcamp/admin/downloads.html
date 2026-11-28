@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -18,7 +19,7 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Downloads</h1><p>Platform-wide download activity and quotas.</p></div></div>
+        <div class="page-header"><div><h1 style="font-size:22px;">Downloads &amp; storage</h1><p>Platform-wide download activity and quotas.</p></div></div>
 
         <div class="grid grid-4" style="margin-bottom:28px;" id="dl-stat-cards"></div>
 
@@ -36,8 +37,9 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
-    initAdminPage("downloads", "Downloads");
+    initAdminPage("downloads", "Downloads & storage");
     document.getElementById("dl-stat-cards").innerHTML = `
       <div class="stat-card"><div class="label">Total Downloads</div><div class="value">${fmtCount(TRACKS.reduce((s,t)=>s+t.downloads,0))}</div><div class="delta up">+6.4% this week</div></div>
       <div class="stat-card"><div class="label">Storage Used</div><div class="value">412 GB</div><div class="delta up">of 1 TB</div></div>

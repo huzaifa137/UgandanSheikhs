@@ -23,7 +23,7 @@ const NAV_LIBRARY = [
   { id: "my-books", label: "My Books", href: "library.html#books", icon: "book" },
   { id: "following", label: "Following", href: "following.html", icon: "userPlus" },
   { id: "playlists", label: "Collections", href: "library.html#playlists", icon: "layers" },
-  { id: "downloads", label: "Downloads", href: "downloads.html", icon: "download" },
+  { id: "downloads", label: "Downloads & storage", href: "downloads.html", icon: "download" },
   { id: "offline", label: "Offline Lectures", href: "offline.html", icon: "cloudOff" },
   { id: "history", label: "Recently Played", href: "history.html", icon: "clock" },
 ];
@@ -305,11 +305,17 @@ const ADMIN_NAV_GROUPS = [
   ] },
   { label: "Community", items: [
     { id: "users", label: "Users", href: "users.html", icon: "users" },
-    { id: "comments", label: "Comments", href: "comments.html", icon: "message", badge: "comments" },
-    { id: "reports", label: "Reports", href: "reports.html", icon: "flag", badge: "reports" },
+    { id: "comments", label: "Comments", href: "comments.html", icon: "message" },
+    { id: "moderation", label: "Moderation", href: "moderation.html", icon: "flag", badge: "moderation" },
   ] },
-  { label: "Insights & System", items: [
-    { id: "downloads", label: "Downloads", href: "downloads.html", icon: "download" },
+  { label: "Insights", items: [
+    { id: "reports", label: "Analytics", href: "reports.html", icon: "bar" },
+    { id: "downloads", label: "Downloads & storage", href: "downloads.html", icon: "download" },
+  ] },
+  { label: "System", items: [
+    { id: "roles", label: "Staff & roles", href: "roles.html", icon: "lock" },
+    { id: "audit", label: "Audit log", href: "audit.html", icon: "clock" },
+    { id: "trash", label: "Trash", href: "trash.html", icon: "trash", badge: "trash" },
     { id: "settings", label: "Settings", href: "settings.html", icon: "settings" },
   ] },
 ];
@@ -317,23 +323,30 @@ const ADMIN_NAV = ADMIN_NAV_GROUPS.flatMap((g) => g.items);
 
 /* Work waiting for a human. Used by the sidebar badges, the bell menu and the dashboard "Needs attention" list. */
 function adminQueues() {
-  const flagged = COMMENTS.filter((c) => c.status !== "Approved").length;
-  let stored = [];
-  try { stored = typeof loadReports === "function" ? loadReports() : []; } catch {}
-  const seeded = COMMENTS.filter((c) => c.status === "Reported").filter((_, i) => i % 2 === 0).length;   // same rule as admin/reports.html
-  const openReports = stored.filter((r) => r.status === "Open").length + seeded;
-  const draftBooks = BOOKS.filter((b) => b.status !== "Published").length;
-  const unmappedBooks = BOOKS.filter((b) => !lecturesOfBook(b).length).length;
-  const orphanLectures = TRACKS.filter((t) => !seriesOf(t)).length;
-  const emptySeries = ALBUMS.filter((a) => !a.tracks.length).length;
-  const suspended = ADMIN_USERS.filter((u) => u.status === "Suspended").length;
-  return { comments: flagged, reports: openReports, draftBooks, unmappedBooks, orphanLectures, emptySeries, suspended };
+  const moderation = window.Mod ? Mod.count() : COMMENTS.filter((c) => c.status !== "Approved").length;
+  const draftBooks = BOOKS.filter((b) => !b._del && b.status !== "Published").length;
+  const unmappedBooks = BOOKS.filter((b) => !b._del && !lecturesOfBook(b).length).length;
+  const orphanLectures = TRACKS.filter((t) => !t._del && !seriesOf(t)).length;
+  const emptySeries = ALBUMS.filter((a) => !a._del && !a.tracks.length).length;
+  const suspended = ADMIN_USERS.filter((u) => !u._del && u.status === "Suspended").length;
+  const trash = window.Admin ? Admin.trashed().length : 0;
+  const draftLectures = TRACKS.filter((t) => !t._del && t.status && t.status !== "Published").length;
+  // "comments" / "reports" kept as aliases so older pages keep working
+  return { moderation, comments: moderation, reports: moderation, draftBooks, unmappedBooks, orphanLectures, emptySeries, suspended, trash, draftLectures };
+}
+
+/* the signed-in staff member (falls back to the demo profile if admin-core.js isn't loaded) */
+function adminMe() {
+  const m = window.AdminAuth && AdminAuth.me();
+  if (!m) return { name: CURRENT_USER.name, avatar: CURRENT_USER.avatar, roleLabel: "Admin", role: "super_admin" };
+  return { ...m, avatar: AVATAR(m.name, 100), roleLabel: AdminAuth.ROLES[m.role].label };
 }
 
 function renderAdminSidebar(active) {
   const el = document.getElementById("admin-sidebar");
   if (!el) return;
   const q = adminQueues();
+  const allowed = (i) => !window.AdminAuth || AdminAuth.canPage(i.id);
   const link = (i) => `<a class="nav-link ${active === i.id ? "active" : ""}" href="${i.href}">${ICONS[i.icon]}<span>${i.label}</span>${i.badge && q[i.badge] ? `<span class="nav-count" aria-label="${q[i.badge]} waiting">${q[i.badge]}</span>` : ""}</a>`;
   el.innerHTML = `
     <a class="sidebar-logo" href="dashboard.html">
@@ -342,40 +355,51 @@ function renderAdminSidebar(active) {
       <span class="badge badge-neutral" style="margin-left:auto;">Admin</span>
     </a>
     <nav class="nav-group admin-nav" style="flex:1;overflow-y:auto;">
-      ${ADMIN_NAV_GROUPS.map((g) => `<div class="nav-group-label">${g.label}</div>${g.items.map(link).join("")}`).join("")}
+      ${ADMIN_NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter(allowed) })).filter((g) => g.items.length).map((g) => `<div class="nav-group-label">${g.label}</div>${g.items.map(link).join("")}`).join("")}
     </nav>
     <div class="sidebar-bottom">
       <div class="user-chip" style="width:100%;">
-        <img class="avatar" src="${CURRENT_USER.avatar}" width="30" height="30" />
-        <span class="name">Admin · ${CURRENT_USER.name}</span>
+        <img class="avatar" src="${adminMe().avatar}" width="30" height="30" alt="" />
+        <span class="name" style="min-width:0;"><span class="truncate" style="display:block;">${escapeHTML(adminMe().name)}</span><span style="display:block;font-size:11px;color:var(--text-tertiary);">${escapeHTML(adminMe().roleLabel)}</span></span>
       </div>
-      <a class="nav-link" href="../login.html">${ICONS.logout}<span>Logout</span></a>
+      <a class="nav-link" href="login.html" data-admin-logout>${ICONS.logout}<span>Sign out</span></a>
     </div>
   `;
 }
 
 /* Everything the admin search box can find: [label, sub, href, icon] */
 function adminSearchIndex() {
+  const can = (p) => !window.AdminAuth || AdminAuth.canPage(p);
+  const live = (x) => !x._del;
   return [
-    ...ARTISTS.map((a) => [a.name, "Sheikh", `artists.html`, "users"]),
-    ...ALBUMS.map((a) => [a.title, `Series · ${a.artist}`, `../album.html?id=${a.id}`, "disc"]),
-    ...TRACKS.map((t) => [t.title, `Lecture · ${t.artist}`, `../track.html?id=${t.id}`, "layers"]),
-    ...BOOKS.map((b) => [b.title, `Book · ${b.author}`, `books.html`, "book"]),
-    ...ADMIN_USERS.map((u) => [u.name, `User · ${u.email}`, `users.html`, "users"]),
+    ...(can("artists") ? ARTISTS.filter(live).map((a) => [a.name, "Sheikh", `artists.html`, "users"]) : []),
+    ...(can("albums") ? ALBUMS.filter(live).map((a) => [a.title, `Series · ${a.artist}`, `albums.html`, "disc"]) : []),
+    ...(can("tracks") ? TRACKS.filter(live).map((t) => [t.title, `Lecture · ${t.artist}`, `lecture-editor.html?id=${t.id}`, "layers"]) : []),
+    ...(can("books") ? BOOKS.filter(live).map((b) => [b.title, `Book · ${b.author}`, `books.html`, "book"]) : []),
+    ...(can("users") ? ADMIN_USERS.filter(live).map((u) => [u.name, `User · ${u.email}`, `users.html`, "users"]) : []),
   ];
 }
 
 function renderAdminTopbar(title) {
   const el = document.getElementById("admin-topbar");
   if (!el) return;
-  const q = adminQueues();
-  const waiting = q.comments + q.reports + q.draftBooks;
+  const q = adminQueues(), me = adminMe();
+  const can = (page) => !window.AdminAuth || AdminAuth.canPage(page);
+  const waiting = (can("moderation") ? q.moderation : 0) + (can("books") ? q.draftBooks : 0) + (can("tracks") ? q.draftLectures : 0);
   const alerts = [
-    q.reports ? { icon: "flag", text: `${q.reports} open report${q.reports === 1 ? "" : "s"} from listeners`, href: "reports.html" } : null,
-    q.comments ? { icon: "message", text: `${q.comments} comment${q.comments === 1 ? "" : "s"} waiting for review`, href: "comments.html" } : null,
-    q.draftBooks ? { icon: "book", text: `${q.draftBooks} book${q.draftBooks === 1 ? "" : "s"} still in draft`, href: "books.html" } : null,
-    q.unmappedBooks ? { icon: "headphones", text: `${q.unmappedBooks} book${q.unmappedBooks === 1 ? " has" : "s have"} no lectures linked`, href: "books.html#mapper" } : null,
+    can("moderation") && q.moderation ? { icon: "flag", text: `${q.moderation} item${q.moderation === 1 ? "" : "s"} in the moderation queue`, href: "moderation.html" } : null,
+    can("tracks") && q.draftLectures ? { icon: "layers", text: `${q.draftLectures} lecture${q.draftLectures === 1 ? " is" : "s are"} a draft or scheduled`, href: "tracks.html" } : null,
+    can("books") && q.draftBooks ? { icon: "book", text: `${q.draftBooks} book${q.draftBooks === 1 ? "" : "s"} still in draft`, href: "books.html" } : null,
+    can("books") && q.unmappedBooks ? { icon: "headphones", text: `${q.unmappedBooks} book${q.unmappedBooks === 1 ? " has" : "s have"} no lectures linked`, href: "books.html#mapper" } : null,
   ].filter(Boolean);
+  const quick = [
+    can("tracks") ? `<a class="menu-item" href="lecture-editor.html">${ICONS.upload}New lecture</a>` : "",
+    can("albums") ? `<a class="menu-item" href="albums.html#add">${ICONS.disc}Add series</a>` : "",
+    can("books") ? `<a class="menu-item" href="books.html#add">${ICONS.book}Upload book</a>` : "",
+    can("artists") && me.role !== "sheikh" ? `<a class="menu-item" href="artists.html#add">${ICONS.users}Add sheikh</a>` : "",
+    can("featured") ? `<div class="menu-divider"></div><a class="menu-item" href="featured.html">${ICONS.star}Feature something</a>` : "",
+  ].join("");
+  const staff = window.AdminAuth ? AdminAuth.staff().filter((x) => x.status === "Active") : [];
   el.innerHTML = `
     <button class="icon-btn admin-menu-btn" data-admin-menu aria-label="Open menu">${ICONS.menu}</button>
     <div class="admin-crumbs"><a href="dashboard.html">Admin</a><span>/</span><h1>${title}</h1></div>
@@ -384,15 +408,28 @@ function renderAdminTopbar(title) {
       <div class="menu" id="admin-search-menu" style="left:0;right:0;top:44px;min-width:320px;"></div>
     </div>
     <div class="topbar-right">
-      <div style="position:relative;">
+      ${quick ? `<div style="position:relative;">
         <button class="btn btn-primary btn-sm" id="admin-quick-btn" aria-haspopup="menu">${ICONS.plus}<span>Quick Add</span></button>
-        <div class="menu" id="admin-quick-menu" style="right:0;top:42px;min-width:210px;">
-          <a class="menu-item" href="tracks-upload.html">${ICONS.upload}Upload lecture</a>
-          <a class="menu-item" href="albums.html#add">${ICONS.disc}Add series</a>
-          <a class="menu-item" href="books.html#add">${ICONS.book}Add book</a>
-          <a class="menu-item" href="artists.html#add">${ICONS.users}Add sheikh</a>
-          <div class="menu-divider"></div>
-          <a class="menu-item" href="featured.html">${ICONS.star}Feature something</a>
+        <div class="menu" id="admin-quick-menu" style="right:0;top:42px;min-width:210px;">${quick}</div>
+      </div>` : ""}
+      <div style="position:relative;">
+        <button class="icon-btn" id="admin-theme-btn" aria-haspopup="menu" aria-label="Theme and colour" title="Theme and colour">${ICONS.contrast}</button>
+        <div class="menu palette-menu" id="admin-theme-menu" role="menu">
+          <h5>Theme</h5>
+          <div class="palette-themes">
+            <button type="button" class="palette-theme" data-theme-set="ocean" aria-pressed="false"><span class="sw t-ocean"></span>Royal Blue</button>
+            <button type="button" class="palette-theme" data-theme-set="dark" aria-pressed="false"><span class="sw t-dark"></span>Emerald Night</button>
+            <button type="button" class="palette-theme" data-theme-set="light" aria-pressed="false"><span class="sw t-light"></span>Ivory Light</button>
+          </div>
+          <h5>Accent colour</h5>
+          <div class="palette-accents">
+            <button type="button" class="accent-swatch swatch-default" data-accent-set="default" aria-pressed="false" title="Theme default" aria-label="Theme default"></button>
+            <button type="button" class="accent-swatch" data-accent-set="coral" aria-pressed="false" title="Coral" aria-label="Coral" style="--swatch:#FF5A4E;"></button>
+            <button type="button" class="accent-swatch" data-accent-set="gold" aria-pressed="false" title="Gold" aria-label="Gold" style="--swatch:#F6B73C;"></button>
+            <button type="button" class="accent-swatch" data-accent-set="blue" aria-pressed="false" title="Sky blue" aria-label="Sky blue" style="--swatch:#5AA9FF;"></button>
+            <button type="button" class="accent-swatch" data-accent-set="green" aria-pressed="false" title="Green" aria-label="Green" style="--swatch:#32C48D;"></button>
+          </div>
+          <div class="palette-sys"><span>Match my device</span><button type="button" class="switch" id="theme-system-switch" role="switch" aria-label="Match my device" onclick="Theme.set(Theme.get()==='system' ? document.documentElement.getAttribute('data-theme') : 'system')"></button></div>
         </div>
       </div>
       <div style="position:relative;">
@@ -403,18 +440,22 @@ function renderAdminTopbar(title) {
         </div>
       </div>
       <div style="position:relative;">
-        <button class="user-chip" id="admin-user-btn" aria-haspopup="menu"><img class="avatar" src="${CURRENT_USER.avatar}" width="30" height="30" alt="${CURRENT_USER.name}" /></button>
-        <div class="menu" id="admin-user-menu" style="right:0;top:44px;min-width:200px;">
-          <div class="nav-group-label" style="padding:6px 10px;">${CURRENT_USER.name}</div>
-          <a class="menu-item" href="settings.html">${ICONS.settings}Settings</a>
+        <button class="user-chip" id="admin-user-btn" aria-haspopup="menu" aria-label="Account menu"><img class="avatar" src="${me.avatar}" width="30" height="30" alt="${escapeHTML(me.name)}" /></button>
+        <div class="menu" id="admin-user-menu" style="right:0;top:44px;min-width:250px;">
+          <div class="nav-group-label" style="padding:6px 10px;">${escapeHTML(me.name)} <span class="role-pill" style="margin-left:6px;">${escapeHTML(me.roleLabel)}</span></div>
+          ${can("settings") ? `<a class="menu-item" href="settings.html">${ICONS.settings}Settings</a>` : ""}
           <a class="menu-item" href="../index.html" target="_blank" rel="noopener">${ICONS.eye}View listener site</a>
+          ${staff.length > 1 ? `<div class="menu-divider"></div><div class="nav-group-label" style="padding:6px 10px;">Preview as another role (demo)</div>${staff.map((m) => `<button type="button" class="menu-item menu-role ${m.id === me.id ? "current" : ""}" data-admin-switch="${m.id}"><span class="truncate">${escapeHTML(m.name)}</span><span style="font-size:11px;opacity:.7;">${escapeHTML(AdminAuth.ROLES[m.role].label)}</span></button>`).join("")}` : ""}
           <div class="menu-divider"></div>
-          <a class="menu-item danger" href="../login.html">${ICONS.logout}Sign out</a>
+          <a class="menu-item danger" href="login.html" data-admin-logout>${ICONS.logout}Sign out</a>
         </div>
       </div>
     </div>
   `;
-  wireMenu("admin-quick-btn", "admin-quick-menu");
+  wireMenu("admin-theme-btn", "admin-theme-menu");
+  document.getElementById("admin-theme-menu").addEventListener("click", () => { const m = document.getElementById("admin-theme-menu"); setTimeout(() => m.classList.add("open"), 0); });
+  if (window.Theme) { Theme.set(Theme.get()); }   // re-sync the new picker buttons with the saved theme
+  if (document.getElementById("admin-quick-btn")) wireMenu("admin-quick-btn", "admin-quick-menu");
   wireMenu("admin-bell-btn", "admin-bell-menu");
   wireMenu("admin-user-btn", "admin-user-menu");
   const input = document.getElementById("admin-search"), box = document.getElementById("admin-search-menu");
@@ -435,9 +476,11 @@ function renderAdminTopbar(title) {
 }
 
 function initAdminPage(active, title) {
+  if (window.AdminCore && AdminCore.boot(active) === false) return;   // not signed in → login
   renderAdminSidebar(active);
   renderAdminTopbar(title);
   ensureOverlay();
+  if (window.AdminCore) { AdminCore.after(active); if (AdminCore.blocked(active)) throw new Error("No access to this page for this role"); }
   if (!document.querySelector(".admin-scrim")) {
     const scrim = document.createElement("div");
     scrim.className = "admin-scrim";
@@ -445,6 +488,14 @@ function initAdminPage(active, title) {
     document.body.appendChild(scrim);
   }
 }
+
+/* ---- Sign out / preview as another role ---- */
+document.addEventListener("click", (e) => {
+  const out = e.target.closest("[data-admin-logout]");
+  if (out) { e.preventDefault(); if (window.AdminAuth) AdminAuth.logout(); location.href = "login.html"; return; }
+  const sw = e.target.closest("[data-admin-switch]");
+  if (sw && window.AdminAuth) { e.preventDefault(); AdminAuth.login(sw.dataset.adminSwitch); const here = location.pathname.split("/").pop() || "dashboard.html"; location.href = AdminAuth.canPage(here.replace(".html", "")) ? here : "dashboard.html"; }
+});
 
 /* ---- Admin slide-in menu (small screens) ---- */
 document.addEventListener("click", (e) => {

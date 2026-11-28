@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -18,22 +19,10 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Users</h1><p>View and manage Ugandan Sheikhs listener accounts.</p></div></div>
-
-        <div class="table-toolbar">
-          <div class="search-field" style="max-width:280px;" id="user-search-wrap"><input id="user-search" placeholder="Search users…" /></div>
-          <select class="select" style="width:auto;"><option>All Status</option><option>Active</option><option>Suspended</option></select>
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Users</h1><p>Listeners on the platform: status, warnings and activity.</p></div>
         </div>
-
-        <table class="data-table">
-          <thead><tr><th>User</th><th>Email</th><th>Collections</th><th>Downloads</th><th>Comments</th><th>Status</th><th>Joined</th><th></th></tr></thead>
-          <tbody id="users-table"></tbody>
-        </table>
-
-        <div class="drawer" id="user-drawer">
-          <div class="drawer-head"><h3 style="font-size:17px;">User Details</h3><button class="icon-btn" id="user-drawer-close" onclick="closeModals()"></button></div>
-          <div class="drawer-body" id="user-drawer-body"></div>
-        </div>
+        <div id="table"></div>
 
       </main>
     </div>
@@ -43,56 +32,83 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
-    initAdminPage("users", "Users");
-    document.getElementById("user-drawer-close").innerHTML = ICONS.x;
-    document.getElementById("user-search-wrap").insertAdjacentHTML("afterbegin", ICONS.search);
 
-    function row(u) {
-      return `<tr>
-        <td class="flex items-center gap-8"><img class="avatar" src="${u.avatar}" width="28" height="28"/>${u.name}</td>
-        <td class="text-secondary">${u.email}</td>
-        <td>${u.playlists}</td>
-        <td>${u.downloads}</td>
-        <td>${u.comments}</td>
-        <td><span class="badge ${u.status==='Active'?'badge-success':'badge-error'}">${u.status}</span></td>
-        <td class="text-secondary">${u.joined}</td>
-        <td><div class="flex gap-8">
-          <button class="icon-btn" style="width:30px;height:30px;" title="View" onclick='openUser(${JSON.stringify(u)})'>${ICONS.eye}</button>
-          <button class="icon-btn" style="width:30px;height:30px;" title="Suspend" onclick="toast('User suspended','warning')">${ICONS.lock}</button>
-          <button class="icon-btn" style="width:30px;height:30px;" title="Send Notification" onclick="toast('Notification sent','success')">${ICONS.bell}</button>
-        </div></td>
-      </tr>`;
-    }
-    document.getElementById("users-table").innerHTML = ADMIN_USERS.map(row).join("");
-    document.getElementById("user-search").addEventListener("input", (e) => {
-      const q = e.target.value.toLowerCase();
-      document.getElementById("users-table").innerHTML = ADMIN_USERS.filter(u => u.name.toLowerCase().includes(q)).map(row).join("");
+    initAdminPage("users", "Users");
+    const $ = (id) => document.getElementById(id);
+    const warnsOf = (u) => Mod.warnings(u.name);
+    const commentsOf = (u) => COMMENTS.filter((c) => c.user === u.name && !c._del);
+    const canWarn = AdminAuth.can("users.warn"), canSuspend = AdminAuth.can("users.suspend");
+    const templates = ["Please keep comments respectful and on topic.", "Please do not post links or advertising.", "Your comment broke our community guidelines."];
+
+    const table = new DataTable({
+      el: $("table"), id: "users", kind: "user", exportName: "users",
+      rows: () => Admin.visible("user"),
+      search: (r) => `${r.name} ${r.email}`, searchPlaceholder: "Search name or email…",
+      defaultSort: { key: "name", dir: "asc" },
+      emptyTitle: "No users", emptyBody: "Listeners appear here when they register.",
+      tabs: { options: [{ v: "all", l: "All" }, { v: "act", l: "Active", test: (r) => r.status === "Active" }, { v: "sus", l: "Suspended", test: (r) => r.status === "Suspended" }, { v: "warn", l: "Warned", test: (r) => warnsOf(r).length > 0 }] },
+      filters: [
+        { key: "activity", label: "Activity", all: "Activity: any", options: [{ v: "comments", l: "Has commented" }, { v: "downloads", l: "Has downloaded" }, { v: "quiet", l: "No activity" }], test: (r, v) => (v === "comments" ? r.comments > 0 : v === "downloads" ? r.downloads > 0 : r.comments === 0 && r.downloads === 0) },
+        { key: "joined", label: "Joined", all: "Joined: any", options: () => [...new Set(ADMIN_USERS.map((u) => u.joined))], test: (r, v) => r.joined === v },
+      ],
+      columns: [
+        { key: "name", label: "User", sort: (r) => r.name, render: (r) => `<div class="dt-cell-main"><img src="${r.avatar}" alt="" style="border-radius:50%;" /><div style="min-width:0;"><span class="t">${esc(r.name)}</span><span class="s">${esc(r.email)}</span></div></div>` },
+        { key: "joined", label: "Joined", sort: (r) => r.joined, render: (r) => `<span class="text-secondary">${esc(r.joined)}</span>` },
+        { key: "playlists", label: "Collections", sort: (r) => r.playlists, render: (r) => r.playlists },
+        { key: "downloads", label: "Downloads", sort: (r) => r.downloads, render: (r) => r.downloads },
+        { key: "comments", label: "Comments", sort: (r) => r.comments, render: (r) => r.comments },
+        { key: "warnings", label: "Warnings", sort: (r) => warnsOf(r).length, render: (r) => { const n = warnsOf(r).length; return n ? `<span class="badge badge-warning">${n}</span>` : '<span class="text-tertiary">0</span>'; } },
+        { key: "status", label: "Status", sort: (r) => r.status, render: (r) => adminBadge(r.status) },
+      ],
+      actions: [
+        { id: "open", icon: "panel", title: "Open profile", run: (r, t) => t.openAt(t._rows.findIndex((x) => x.id === r.id)) },
+        { id: "del", icon: "trash", title: "Delete user", danger: true, perm: "users.delete", run: (r) => del([r.id]) },
+      ],
+      bulk: [
+        { id: "warn", label: "Send warning", icon: "alertTriangle", perm: "users.warn", run: async (ids, rows) => { const r = await warnPrompt(rows.length === 1 ? rows[0].name : `${rows.length} users`); if (!r) return false; rows.forEach((u) => Mod.warn(u.name, r)); toast(`Warning recorded for ${rows.length} user${rows.length === 1 ? "" : "s"}`, "success"); } },
+        { id: "sus", label: "Suspend", icon: "lock", perm: "users.suspend", confirm: (n) => ({ title: `Suspend ${n} user${n === 1 ? "" : "s"}?`, body: "They can't sign in, comment or download until reinstated. Their data is kept." }), run: (ids) => { ids.forEach((id) => Admin.patch("user", id, { status: "Suspended" }, { action: "Suspended" })); toast("Suspended", "success"); } },
+        { id: "act", label: "Reinstate", icon: "check", perm: "users.suspend", run: (ids) => { ids.forEach((id) => Admin.patch("user", id, { status: "Active" }, { action: "Reinstated" })); toast("Reinstated", "success"); } },
+        { id: "del", label: "Delete", icon: "trash", danger: true, perm: "users.delete", run: (ids) => del(ids).then((ok) => ok !== false) },
+      ],
+      onOpen: (r, ctx) => openPanel(r, ctx),
     });
 
-    function openUser(u) {
-      document.getElementById("user-drawer-body").innerHTML = `
-        <div style="text-align:center;padding:10px 0 20px;">
-          <img class="avatar" src="${u.avatar}" width="72" height="72" style="margin:0 auto 12px;" />
-          <div style="font-weight:600;font-size:16px;">${u.name}</div>
-          <div class="text-secondary" style="font-size:13px;">${u.email}</div>
-        </div>
-        <div class="grid grid-2" style="margin-bottom:20px;">
-          <div class="stat-card"><div class="label">Collections</div><div class="value" style="font-size:20px;">${u.playlists}</div></div>
-          <div class="stat-card"><div class="label">Downloads</div><div class="value" style="font-size:20px;">${u.downloads}</div></div>
-          <div class="stat-card"><div class="label">Comments</div><div class="value" style="font-size:20px;">${u.comments}</div></div>
-          <div class="stat-card"><div class="label">Joined</div><div class="value" style="font-size:16px;">${u.joined}</div></div>
-        </div>
-        <div class="flex gap-8" style="flex-direction:column;">
-          <button class="btn btn-secondary" style="width:100%;" onclick="toast('Notification sent','success')">Send Notification</button>
-          <button class="btn btn-outline" style="width:100%;" onclick="toast('Account activated','success')">Activate</button>
-          <button class="btn btn-danger" style="width:100%;" onclick="toast('Account suspended','warning')">Suspend</button>
-          <button class="btn btn-danger" style="width:100%;" onclick="toast('Account deleted','warning')">Delete</button>
-        </div>
-      `;
-      ensureOverlay();
-      openDrawer("user-drawer");
+    function del(ids) { return Admin.deleteFlow("user", ids, { after: () => table.refresh(), extra: "<p>Their comments stay on the site until you remove them in Comments.</p>" }); }
+    async function warnPrompt(who) {
+      return Confirm.prompt({ title: `Warn ${who}`, label: "Message", multiline: true, value: templates[0], confirmText: "Record warning", body: "The warning is kept on their profile and sent with the “Comment warning” email template." });
     }
+
+    function openPanel(r, ctx) {
+      const w = warnsOf(r), cs = commentsOf(r).slice(0, 4);
+      const canEdit = canSuspend || AdminAuth.can("users.manage");
+      Panel.open({
+        title: r.name, subtitle: r.email, img: r.avatar, badges: adminBadge(r.status) + (w.length ? `<span class="badge badge-warning">${w.length} warning${w.length === 1 ? "" : "s"}</span>` : ""),
+        readOnly: !canEdit, nav: { index: ctx.index, count: ctx.count, go: ctx.go },
+        deleteText: "Delete user", onDelete: AdminAuth.can("users.delete") ? async () => { if (await del([r.id])) Panel.close(true); } : null,
+        intro: `<div class="panel-stats" style="margin-bottom:18px;"><div class="panel-stat"><b>${r.playlists}</b><span>Collections</span></div><div class="panel-stat"><b>${r.downloads}</b><span>Downloads</span></div><div class="panel-stat"><b>${r.comments}</b><span>Comments</span></div></div>`,
+        values: { status: r.status, note: r.note || "" },
+        sections: [
+          { title: "Account", fields: [
+            { key: "status", label: "Status", type: "select", options: ["Active", "Suspended"], hint: "Suspended users cannot sign in, comment or download." },
+            { key: "note", label: "Internal note", type: "textarea", rows: 3, max: 500, hint: "Only staff can see this." },
+          ] },
+          { title: `Warnings (${w.length})`, html: w.length ? `<div class="panel-list">${w.map((x) => `<div class="panel-list-item">${esc(x.reason)}<small>${esc(AdminFmt.when(x.at))} · by ${esc(x.by)}</small></div>`).join("")}</div>` : '<p class="small muted">No warnings on record.</p>' },
+          { title: "Recent comments", html: cs.length ? `<div class="panel-list">${cs.map((c) => `<div class="panel-list-item">${Mod.highlight(c.body)}<small>${esc(c.time)} · ${esc(c.status)}</small></div>`).join("")}</div>` : '<p class="small muted">No comments.</p>' },
+        ],
+        actions: [
+          ...(canWarn ? [{ label: "Send warning", icon: "alertTriangle", run: async () => { const m = await warnPrompt(r.name); if (!m) return; Mod.warn(r.name, m); toast("Warning recorded", "success"); table.refresh(); ctx.go(table._rows.findIndex((x) => x.id === r.id)); } }] : []),
+          ...(AdminAuth.can("users.manage") ? [{ label: "Reset password", icon: "mail", run: async () => { if (await Confirm.ask({ title: "Email a password reset link?", body: `A reset link goes to <strong>${esc(r.email)}</strong> using the “Password reset” template.`, confirmText: "Send link", tone: "primary" })) { Audit.log({ action: "Sent password reset", kind: "user", id: r.id, label: r.name, detail: r.email }); toast("Reset email queued (prototype: nothing is really sent)", "success"); } } }] : []),
+        ],
+        onSave: async (v) => {
+          if (v.status !== r.status && v.status === "Suspended" && !(await Confirm.ask({ title: `Suspend ${r.name}?`, body: "They will not be able to sign in until you reinstate them.", confirmText: "Suspend", tone: "danger" }))) return false;
+          Admin.patch("user", r.id, { status: v.status, note: v.note });
+          toast("User saved", "success"); table.refresh(); ctx.go(table._rows.findIndex((x) => x.id === r.id));
+        },
+      });
+    }
+
   </script>
 </body>
 </html>

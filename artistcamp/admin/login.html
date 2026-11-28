@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <script src="../js/password-toggle.js" defer></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
@@ -14,24 +15,53 @@
 </head>
 <body style="background:var(--bg-canvas);">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
-    <div class="card" style="width:100%;max-width:380px;padding:36px;">
-      <span class="logo-mark" style="width:88px;height:88px;margin:0 auto 18px;"><img class="logo-blue" src="../img/logo-mark-blue.png" alt="" /><img class="logo-green" src="../img/logo-mark-green.png" alt="" /></span>
+    <div class="card" style="width:100%;max-width:440px;padding:32px;">
+      <span class="logo-mark" style="width:72px;height:72px;margin:0 auto 14px;"><img class="logo-blue" src="../img/logo-mark-blue.png" alt="" /><img class="logo-green" src="../img/logo-mark-green.png" alt="" /></span>
       <div class="flex items-center gap-8" style="margin-bottom:8px;">
         <span style="width:26px;height:26px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;" id="admin-lock"></span>
         <span class="eyebrow" style="color:var(--text-secondary);">Admin Console</span>
       </div>
-      <h1 style="font-size:22px;margin-bottom:6px;">Ugandan Sheikhs Admin</h1>
-      <p class="text-secondary" style="font-size:13.5px;margin-bottom:26px;">Restricted access. Sign in with your administrator account.</p>
-      <form onsubmit="event.preventDefault();toast('Signed in — loading dashboard…','success');setTimeout(()=>location.href='dashboard.html',700);">
-        <div class="field"><label>Email</label><input class="input" type="email" placeholder="admin@ugandansheikhs.dev" required /></div>
-        <div class="field"><label>Password</label><input class="input" type="password" placeholder="••••••••" required /></div>
-        <label class="checkbox-row" style="margin-bottom:20px;"><input type="checkbox" /> Remember me</label>
-        <button class="btn btn-primary" type="submit" style="width:100%;">Sign In to Dashboard</button>
+      <h1 style="font-size:22px;margin-bottom:6px;">Sign in to the admin</h1>
+      <div class="hint-box warn" id="expired" hidden></div>
+      <p class="text-secondary" style="font-size:13.5px;margin-bottom:18px;">Restricted access. Sign in with your staff account.</p>
+      <form id="login-form" novalidate>
+        <div class="field"><label for="email">Email</label><input class="input" id="email" type="email" autocomplete="username" placeholder="you@ugandansheikhs.dev" required /><span class="field-hint field-err" id="e-email"></span></div>
+        <div class="field"><label for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="••••••••" required /><span class="field-hint field-err" id="e-pw"></span></div>
+        <button class="btn btn-primary" type="submit" style="width:100%;">Sign in to dashboard</button>
       </form>
+      <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border-subtle);">
+        <div class="small muted" style="margin-bottom:10px;"><strong>Prototype:</strong> there is no password check. Pick a demo account to see that role's admin.</div>
+        <div class="role-cards" id="roles"></div>
+      </div>
     </div>
   </div>
+  <script src="../js/data.js"></script>
   <script src="../js/icons.js"></script>
   <script src="../js/app.js"></script>
-  <script>document.getElementById("admin-lock").innerHTML = ICONS.lock;</script>
+  <script src="../js/admin-core.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    $("admin-lock").innerHTML = ICONS.lock;
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("expired")) { $("expired").hidden = false; $("expired").innerHTML = ICONS.clock + "<div>You were signed out because of inactivity. Please sign in again.</div>"; }
+    const next = (qs.get("next") || "dashboard.html").replace(/[^\w.#-]/g, "") || "dashboard.html";
+    function go(id) {
+      if (!AdminAuth.login(id)) return toast("That account is disabled", "warning");
+      const m = AdminAuth.me(), page = next.split("#")[0].replace(".html", "");
+      toast(`Signed in as ${m.name}`, "success");
+      setTimeout(() => { location.href = AdminAuth.canPage(page) ? next : "dashboard.html"; }, 450);
+    }
+    $("login-form").addEventListener("submit", (e) => {
+      e.preventDefault(); $("e-email").textContent = $("e-pw").textContent = "";
+      const email = $("email").value.trim().toLowerCase(), pw = $("pw").value;
+      if (!/^\S+@\S+\.\S+$/.test(email)) return ($("e-email").textContent = "Enter your email address.");
+      if (!pw) return ($("e-pw").textContent = "Enter your password.");
+      const m = AdminAuth.staff().find((s) => s.email.toLowerCase() === email);
+      if (!m) return ($("e-email").textContent = "No staff account uses that email.");
+      go(m.id);
+    });
+    $("roles").innerHTML = AdminAuth.staff().filter((s) => s.status === "Active").map((s) => `<button type="button" class="role-card" data-id="${s.id}"><img class="avatar-sm" src="${AVATAR(s.name, 80)}" alt="" /><span><b>${escapeHTML(s.name)}</b><span>${escapeHTML(ROLES[s.role].label)} · ${escapeHTML(ROLES[s.role].desc)}</span></span></button>`).join("");
+    $("roles").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b) go(b.dataset.id); });
+  </script>
 </body>
 </html>

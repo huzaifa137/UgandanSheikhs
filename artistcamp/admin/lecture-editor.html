@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lecture editor — Ugandan Sheikhs Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+<link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
+<script src="../js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header">
+          <div><h1 style="font-size:22px;" id="ed-h1">New lecture</h1><p id="ed-sub">Details, audio, transcript, chapters, series order and book pages, with a checklist before you publish.</p></div>
+          <div class="ed-bar no-print">
+            <span class="autosave" id="autosave" aria-live="polite"></span>
+            <a class="btn btn-ghost" href="tracks.html">Back to lectures</a>
+          </div>
+        </div>
+
+        <div class="ed-layout">
+          <div>
+            <div class="step-tabs" id="tabs" role="tablist">
+              <button type="button" class="active" data-tab="details">Details</button>
+              <button type="button" data-tab="audio">Audio</button>
+              <button type="button" data-tab="transcript">Transcript</button>
+              <button type="button" data-tab="chapters">Chapters</button>
+              <button type="button" data-tab="series">Series &amp; order</button>
+              <button type="button" data-tab="book">Book</button>
+              <button type="button" data-tab="publish">Publishing</button>
+            </div>
+
+            <section data-pane="details" class="a-card">
+              <div class="field"><label for="f-title">Title *</label><input class="input" id="f-title" maxlength="140" /></div>
+              <div class="grid grid-2">
+                <div class="field"><label for="f-sheikh">Sheikh *</label><select class="select" id="f-sheikh"></select></div>
+                <div class="field"><label for="f-topic">Topic *</label><select class="select" id="f-topic"></select></div>
+              </div>
+              <div class="field"><label for="f-desc">Description</label><textarea class="textarea" id="f-desc" rows="5" maxlength="1200"></textarea><span class="field-hint"><span id="desc-count">0</span> / 1200. Listeners see this on the lecture page.</span></div>
+              <div class="grid grid-2">
+                <div class="field"><label for="f-year">Year recorded</label><input class="input" id="f-year" type="number" min="1990" max="2100" /></div>
+                <div class="field"><label>Options</label>
+                  <label class="checkbox-row"><input type="checkbox" id="f-dl" /> Listeners can download the audio</label>
+                  <label class="checkbox-row" style="margin-top:8px;"><input type="checkbox" id="f-feat" /> Featured</label></div>
+              </div>
+            </section>
+
+            <section data-pane="audio" class="a-card" hidden>
+              <h2>Audio recording</h2><p class="desc">Upload the lecture recording. Limits and formats come from Settings → Uploads.</p>
+              <div class="audio-box" id="audio-box">
+                <div style="flex:1;min-width:200px;"><b id="audio-name">No audio attached</b><div class="small muted" id="audio-meta"></div></div>
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;">Choose file<input type="file" id="f-audio" accept="audio/*,.mp3,.m4a,.wav,.flac,.ogg" hidden /></label>
+                <button type="button" class="btn btn-ghost btn-sm" id="audio-clear" hidden>Remove</button>
+              </div>
+              <span class="limit-note" id="audio-limit"></span>
+              <div class="field" style="margin-top:16px;"><label for="f-dur">Duration (mm:ss)</label><input class="input" id="f-dur" placeholder="e.g. 42:10" style="max-width:160px;" /><span class="field-hint">Filled in automatically from the file. Edit if it is wrong.</span></div>
+              <div class="hint-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div>Prototype: the file is read in your browser to get its length, then only its name and size are kept. In Laravel the file is stored on disk or S3 and transcoded to the bitrates in Settings → Audio quality.</div></div>
+            </section>
+
+            <section data-pane="transcript" class="a-card" hidden>
+              <h2>Transcript</h2><p class="desc">Upload a .txt, .srt or .vtt file, or paste the text. It helps search and accessibility.</p>
+              <div class="row-actions" style="margin-bottom:12px;">
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;">Upload transcript<input type="file" id="f-tr-file" accept=".txt,.srt,.vtt,text/plain" hidden /></label>
+                <button type="button" class="btn btn-ghost btn-sm" id="tr-clear">Clear</button>
+                <span class="small muted" id="tr-info"></span>
+              </div>
+              <textarea class="textarea" id="f-transcript" rows="12" placeholder="Paste the transcript here…"></textarea>
+            </section>
+
+            <section data-pane="chapters" class="a-card" hidden>
+              <h2>Chapters &amp; timestamps</h2><p class="desc">Listeners can jump to each part. Times must go up and stay inside the lecture length.</p>
+              <div id="chap-rows"></div>
+              <div class="row-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="chap-add"><span>Add chapter</span></button>
+                <button type="button" class="btn btn-ghost btn-sm" id="chap-paste">Paste a list</button>
+              </div>
+              <span class="field-hint field-err" id="chap-err"></span>
+            </section>
+
+            <section data-pane="series" class="a-card" hidden>
+              <h2>Series &amp; order</h2><p class="desc">Choose the series, then set where this lecture sits in it.</p>
+              <div class="field"><label for="f-series">Series *</label><select class="select" id="f-series"></select></div>
+              <div class="field"><label>Order in the series</label><ol class="order-list" id="order-list"></ol><span class="field-hint">Use the arrows to move this lecture up or down.</span></div>
+            </section>
+
+            <section data-pane="book" class="a-card" hidden>
+              <h2>Linked book</h2><p class="desc">Link the lecture to the book it teaches. Listeners can follow the pages while they listen.</p>
+              <div class="field"><label for="f-book">Book</label><select class="select" id="f-book"></select></div>
+              <div id="book-fields" hidden>
+                <div class="grid grid-2">
+                  <div class="field"><label for="f-from">From printed page</label><input class="input" id="f-from" type="number" /></div>
+                  <div class="field"><label for="f-to">To printed page</label><input class="input" id="f-to" type="number" /></div>
+                </div>
+                <div class="field"><label for="f-sync">Sync points (optional)</label><input class="input sync" id="f-sync" placeholder="0:00=48, 12:30=49" /><span class="field-hint">Format <code>mm:ss=page</code>, separated by commas. Makes “follow along” exact.</span></div>
+                <p class="small muted" id="book-range"></p>
+                <a class="btn btn-ghost btn-sm" id="book-open" target="_blank" rel="noopener">Open the book at these pages</a>
+              </div>
+              <span class="field-hint field-err" id="book-err"></span>
+            </section>
+
+            <section data-pane="publish" class="a-card" hidden>
+              <h2>Publishing</h2><p class="desc">Save as a draft, schedule it for later, or publish now.</p>
+              <div class="field"><label for="f-status">Status</label>
+                <select class="select" id="f-status"><option value="Draft">Draft (hidden from listeners)</option><option value="Scheduled">Scheduled (publishes automatically)</option><option value="Published">Published</option></select></div>
+              <div class="field" id="when-wrap" hidden><label for="f-when">Publish on</label><input class="input" type="datetime-local" id="f-when" style="max-width:260px;" /><span class="field-hint">Uses this device's time zone. The prototype publishes it the next time any page loads after this moment.</span></div>
+              <div class="hint-box" id="review-note" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><div>Settings require a review before publishing: lectures from sheikh accounts are marked Draft until an editor publishes them.</div></div>
+            </section>
+          </div>
+
+          <aside class="ed-aside">
+            <div class="a-card" style="margin:0;">
+              <h3>Before you publish</h3><p class="desc" id="ck-summary"></p>
+              <ul class="checklist" id="checklist"></ul>
+            </div>
+            <div class="a-card" style="margin:0;">
+              <div class="ed-bar" style="flex-direction:column;align-items:stretch;">
+                <button type="button" class="btn btn-secondary" id="btn-draft">Save draft</button>
+                <button type="button" class="btn btn-secondary" id="btn-schedule" hidden>Schedule</button>
+                <button type="button" class="btn btn-primary" id="btn-publish">Publish now</button>
+                <a class="btn btn-ghost btn-sm" id="btn-view" target="_blank" rel="noopener" hidden>View on the site</a>
+                <button type="button" class="btn btn-danger btn-sm" id="btn-del" hidden>Move to trash</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
+  <script>
+
+    initAdminPage("tracks", "Lecture editor");
+    if (AdminCore.blocked("tracks")) throw new Error("no access");
+    const $ = (id) => document.getElementById(id);
+    const qs = new URLSearchParams(location.search);
+    const sid = AdminAuth.sheikhScope();
+    const existing = qs.get("id") ? Admin.find("track", qs.get("id")) : null;
+    if (qs.get("id") && (!existing || existing._del)) { document.querySelector(".admin-content").innerHTML = `<div class="empty-state" style="margin-top:60px;"><div class="icon-wrap">${ICONS.search}</div><h3>That lecture wasn't found</h3><p>It may have been moved to the trash.</p><a class="btn btn-primary" href="tracks.html" style="margin-top:14px;">Back to lectures</a></div>`; throw new Error("not found"); }
+    if (existing && !AdminAuth.owns("track", existing)) { document.querySelector(".admin-content").innerHTML = `<div class="empty-state" style="margin-top:60px;"><div class="icon-wrap">${ICONS.lock}</div><h3>This lecture belongs to another sheikh</h3><p>Sheikh accounts can only edit their own lectures.</p></div>`; throw new Error("not owner"); }
+
+    const draftKey = `us_lecture_draft:${existing ? existing.id : "new"}`;
+    const tempId = existing ? existing.id : "trk-new";
+    const M0 = existing ? Admin.lectureMeta(existing.id) : {};
+    const toHM = (s) => (s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "");
+    const fromHM = (x) => { const m = /^(\d+):([0-5]?\d)$/.exec(String(x).trim()); return m ? Number(m[1]) * 60 + Number(m[2]) : /^\d+$/.test(String(x).trim()) ? Number(x) * 60 : NaN; };
+    const localDT = (iso) => { if (!iso) return ""; const d = new Date(iso); if (isNaN(d)) return ""; const p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+
+    /* ---- state ---- */
+    const seriesNow = existing ? seriesOf(existing) : null;
+    const preSeries = qs.get("series") && Admin.find("album", qs.get("series"));
+    const S = {
+      title: existing ? existing.title : "", artistId: existing ? existing.artistId : (sid || (preSeries && preSeries.artistId) || ""),
+      genre: existing ? existing.genre : (preSeries ? preSeries.genre : GENRES[0].name),
+      description: existing ? existing.description || "" : "", year: existing ? existing.year : new Date().getFullYear(),
+      downloadable: existing ? !!existing.downloadable : true, featured: existing ? !!existing.featured : false,
+      audioName: (existing && (existing.audioName || M0.audioName)) || "", audioSize: (existing && (existing.audioSize || M0.audioSize)) || 0, duration: existing ? existing.duration : 0,
+      transcript: M0.transcript || "", transcriptName: M0.transcriptName || "", chapters: (M0.chapters || (existing && existing.chapters) || []).map((c) => ({ ...c })),
+      seriesId: seriesNow ? seriesNow.id : (preSeries ? preSeries.id : ""), order: null,
+      bookRef: existing && existing.bookRef ? { ...existing.bookRef } : null, sync: existing && existing.syncPoints ? existing.syncPoints.map((x) => ({ ...x })) : [],
+      status: existing ? (existing.status || "Published") : "Draft", publishAt: M0.publishAt || "",
+    };
+    // restore an unsaved draft from a previous visit
+    try { const d = JSON.parse(localStorage.getItem(draftKey) || "null"); if (d && d.savedAt && (!existing || true)) { if (confirm(`You have unsaved changes from ${new Date(d.savedAt).toLocaleString()}. Restore them?`)) Object.assign(S, d.S); else localStorage.removeItem(draftKey); } } catch {}
+
+    /* ---- build the controls ---- */
+    const sheikhs = Admin.visible("artist").filter((a) => !sid || a.id === sid);
+    $("f-sheikh").innerHTML = `<option value="">Choose a sheikh…</option>` + sheikhs.map((a) => `<option value="${a.id}">${esc(a.name)}</option>`).join("");
+    $("f-topic").innerHTML = GENRES.map((g) => `<option>${esc(g.name)}</option>`).join("");
+    $("audio-limit").textContent = `Formats: ${Upload.limits().audioFormats.map((x) => x.toUpperCase()).join(", ")}. Up to ${Upload.limits().maxAudioMB} MB.`;
+    if (existing) { $("ed-h1").textContent = "Edit lecture"; $("ed-sub").textContent = existing.title; $("btn-view").hidden = existing.status !== "Published"; $("btn-view").href = `../track.html?id=${existing.id}`; if (AdminAuth.can("content.delete")) $("btn-del").hidden = false; }
+    const needsReview = sid && AdminSettings.get().uploads.requireReview && !AdminAuth.can("content.delete");
+    if (needsReview) { $("review-note").hidden = false; }
+
+    function fillFromState() {
+      $("f-title").value = S.title; $("f-sheikh").value = S.artistId; if (sid) $("f-sheikh").disabled = true; $("f-topic").value = S.genre;
+      $("f-desc").value = S.description; $("desc-count").textContent = S.description.length; $("f-year").value = S.year;
+      $("f-dl").checked = S.downloadable; $("f-feat").checked = S.featured; $("f-feat").disabled = !!sid;
+      $("f-dur").value = toHM(S.duration); $("f-transcript").value = S.transcript; $("f-status").value = S.status; $("f-when").value = localDT(S.publishAt);
+      paintAudio(); paintTr(); paintChapters(); fillSeries(); fillBooks(); syncStatus();
+    }
+
+    /* ---- tabs ---- */
+    const tabs = $("tabs");
+    function showTab(name) { tabs.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name)); document.querySelectorAll("[data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== name; }); }
+    tabs.addEventListener("click", (e) => { const b = e.target.closest("button[data-tab]"); if (b) showTab(b.dataset.tab); });
+    if (location.hash) showTab(location.hash.slice(1));
+
+    /* ---- audio ---- */
+    function paintAudio() {
+      $("audio-box").classList.toggle("has", !!S.audioName || !!existing);
+      $("audio-name").textContent = S.audioName || (existing ? "Existing recording" : "No audio attached");
+      $("audio-meta").textContent = S.audioName ? `${Upload.mb(S.audioSize)}${S.duration ? ` · ${toHM(S.duration)}` : ""}` : existing ? "Uploaded earlier. Choose a file to replace it." : "Upload an mp3, m4a, wav, flac or ogg file.";
+      $("audio-clear").hidden = !S.audioName;
+    }
+    $("f-audio").addEventListener("change", async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const err = Upload.checkAudio(f); if (err) { e.target.value = ""; return toast(err, "warning"); }
+      S.audioName = f.name; S.audioSize = f.size;
+      const d = await Upload.audioDuration(f); if (d) { S.duration = d; $("f-dur").value = toHM(d); }
+      if (!S.title) { S.title = f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim(); $("f-title").value = S.title; }
+      paintAudio(); refresh();
+    });
+    $("audio-clear").addEventListener("click", () => { S.audioName = ""; S.audioSize = 0; $("f-audio").value = ""; paintAudio(); refresh(); });
+    $("f-dur").addEventListener("input", () => { const s = fromHM($("f-dur").value); S.duration = Number.isFinite(s) ? s : 0; refresh(); });
+
+    /* ---- transcript ---- */
+    function paintTr() { $("tr-info").textContent = S.transcript ? `${S.transcriptName ? S.transcriptName + " · " : ""}${S.transcript.length.toLocaleString()} characters` : ""; }
+    $("f-tr-file").addEventListener("change", async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      if (f.size > 2 * 1048576) { e.target.value = ""; return toast("Transcripts can be up to 2 MB", "warning"); }
+      let t = await f.text();
+      if (/\.(srt|vtt)$/i.test(f.name)) t = t.replace(/^WEBVTT.*\n/i, "").replace(/^\d+\s*$/gm, "").replace(/\d\d:\d\d:\d\d[.,]\d+ --> .*$/gm, "").replace(/\n{2,}/g, "\n").trim();
+      S.transcript = t; S.transcriptName = f.name; $("f-transcript").value = t; paintTr(); refresh();
+    });
+    $("f-transcript").addEventListener("input", () => { S.transcript = $("f-transcript").value; paintTr(); refresh(); });
+    $("tr-clear").addEventListener("click", async () => { if (!S.transcript || await Confirm.ask({ title: "Clear the transcript?", body: "The text will be removed when you save.", confirmText: "Clear", tone: "danger" })) { S.transcript = ""; S.transcriptName = ""; $("f-transcript").value = ""; paintTr(); refresh(); } });
+
+    /* ---- chapters ---- */
+    function paintChapters() {
+      $("chap-rows").innerHTML = S.chapters.length ? S.chapters.map((c, i) => `<div class="chap-row"><input class="input" data-ct="${i}" value="${toHM(c.t) || "0:00"}" aria-label="Start time" /><input class="input" data-cn="${i}" value="${esc(c.title)}" placeholder="Chapter title" aria-label="Chapter title" /><button type="button" class="icon-btn" data-cx="${i}" aria-label="Remove chapter">${ICONS.x}</button></div>`).join("") : '<p class="small muted">No chapters yet.</p>';
+    }
+    $("chap-rows").addEventListener("input", (e) => {
+      const t = e.target.dataset.ct, n = e.target.dataset.cn;
+      if (t !== undefined) { const s = fromHM(e.target.value); S.chapters[t].t = Number.isFinite(s) ? s : -1; }
+      if (n !== undefined) S.chapters[n].title = e.target.value;
+      validateChapters(); refresh();
+    });
+    $("chap-rows").addEventListener("click", (e) => { const x = e.target.closest("[data-cx]"); if (x) { S.chapters.splice(Number(x.dataset.cx), 1); paintChapters(); validateChapters(); refresh(); } });
+    $("chap-add").innerHTML = ICONS.plus + "<span>Add chapter</span>";
+    $("chap-add").addEventListener("click", () => { const last = S.chapters.length ? S.chapters[S.chapters.length - 1].t + 60 : 0; S.chapters.push({ t: last, title: "" }); paintChapters(); refresh(); });
+    $("chap-paste").addEventListener("click", async () => {
+      const txt = await Confirm.prompt({ title: "Paste chapters", label: "One per line, like  0:00 Introduction", multiline: true, confirmText: "Add chapters" });
+      if (!txt) return;
+      const list = []; txt.split(/\n/).forEach((ln) => { const m = /^\s*(\d+:\d{2}(?::\d{2})?)\s*[-–—:]?\s*(.+)$/.exec(ln); if (m) { const p = m[1].split(":").map(Number), t = p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1]; list.push({ t, title: m[2].trim() }); } });
+      if (!list.length) return toast("No lines like “0:00 Title” were found", "warning");
+      S.chapters = list.sort((a, b) => a.t - b.t); paintChapters(); validateChapters(); refresh(); toast(`${list.length} chapters added`, "success");
+    });
+    function validateChapters() {
+      let msg = ""; let prev = -1;
+      for (const [i, c] of S.chapters.entries()) {
+        if (c.t < 0) { msg = `Chapter ${i + 1}: time should look like 12:30.`; break; }
+        if (c.t <= prev) { msg = `Chapter ${i + 1}: times must go up.`; break; }
+        if (S.duration && c.t >= S.duration) { msg = `Chapter ${i + 1} starts after the lecture ends (${toHM(S.duration)}).`; break; }
+        if (!c.title.trim()) { msg = `Chapter ${i + 1} needs a title.`; break; }
+        prev = c.t;
+      }
+      $("chap-err").textContent = msg; return !msg;
+    }
+
+    /* ---- series + order ---- */
+    function fillSeries() {
+      const list = Admin.visible("album").filter((a) => (!sid || a.artistId === sid) && (!S.artistId || a.artistId === S.artistId || a.id === S.seriesId));
+      $("f-series").innerHTML = (S.artistId ? `<option value="">${list.length ? "Choose a series…" : "This sheikh has no series yet"}</option>` : `<option value="">Choose a sheikh first…</option>`) + list.map((a) => `<option value="${a.id}">${esc(a.title)}${a.artistId !== S.artistId ? " · " + esc(a.artist) : ""}</option>`).join("");
+      $("f-series").value = S.seriesId; paintOrder();
+    }
+    function seriesLectures() { const a = Admin.find("album", S.seriesId); return a ? a.tracks.filter((t) => !t._del && t.id !== tempId).map((t) => ({ id: t.id, title: t.title })) : []; }
+    let orderList = null;
+    function paintOrder() {
+      if (!S.seriesId) { $("order-list").innerHTML = '<li><span class="t muted">Choose a series first.</span></li>'; return; }
+      if (!orderList || orderList.series !== S.seriesId) {
+        const a = Admin.find("album", S.seriesId), cur = a ? a.tracks.filter((t) => !t._del && t.id !== tempId).map((t) => ({ id: t.id, title: t.title })) : [];
+        const inSeries = existing && a && a.tracks.some((t) => t.id === existing.id);
+        const idx = inSeries ? a.tracks.filter((t) => !t._del).findIndex((t) => t.id === existing.id) : cur.length;
+        cur.splice(Math.min(idx, cur.length), 0, { id: tempId, title: S.title || "This lecture", me: true });
+        orderList = { series: S.seriesId, items: cur };
+      }
+      orderList.items.forEach((x) => { if (x.me) x.title = S.title || "This lecture"; });
+      $("order-list").innerHTML = orderList.items.map((x, i) => `<li class="${x.me ? "me" : ""}"><span class="n">${i + 1}</span><span class="t">${esc(x.title)}</span>${x.me ? `<button type="button" class="icon-btn" data-mv="-1" ${i === 0 ? "disabled" : ""} aria-label="Move up">▲</button><button type="button" class="icon-btn" data-mv="1" ${i === orderList.items.length - 1 ? "disabled" : ""} aria-label="Move down">▼</button>` : ""}</li>`).join("");
+    }
+    $("order-list").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-mv]"); if (!b) return;
+      const i = orderList.items.findIndex((x) => x.me), j = i + Number(b.dataset.mv); if (j < 0 || j >= orderList.items.length) return;
+      [orderList.items[i], orderList.items[j]] = [orderList.items[j], orderList.items[i]]; paintOrder(); markDirty();
+    });
+    $("f-series").addEventListener("change", () => { S.seriesId = $("f-series").value; orderList = null; paintOrder(); refresh(); });
+    $("f-sheikh").addEventListener("change", () => { S.artistId = $("f-sheikh").value; const a = Admin.find("album", S.seriesId); if (a && a.artistId !== S.artistId) { S.seriesId = ""; orderList = null; } fillSeries(); refresh(); });
+
+    /* ---- book ---- */
+    function fillBooks() {
+      $("f-book").innerHTML = `<option value="">Not linked to a book</option>` + BOOKS.filter((b) => !b._del && (!sid || b.sheikhId === sid)).map((b) => `<option value="${b.id}">${esc(b.title)}</option>`).join("");
+      $("f-book").value = S.bookRef ? S.bookRef.bookId : "";
+      $("f-from").value = S.bookRef ? S.bookRef.from : ""; $("f-to").value = S.bookRef ? S.bookRef.to : "";
+      $("f-sync").value = S.sync.map((x) => `${toHM(x.t)}=${x.page}`).join(", "); paintBook();
+    }
+    function parseSync(text) {
+      if (!text.trim()) return { ok: true, list: [] };
+      const list = []; for (const part of text.split(",")) { const [t, pg] = part.split("="); const sec = fromHM((t || "").trim().includes(":") ? t : `${t}:00`), page = parseInt(pg, 10); if (!Number.isFinite(sec) || !Number.isFinite(page)) return { ok: false }; list.push({ t: sec, page }); }
+      return { ok: true, list: list.sort((a, b) => a.t - b.t) };
+    }
+    function paintBook() {
+      const b = bookById($("f-book").value); $("book-fields").hidden = !b; $("book-err").textContent = "";
+      if (!b) return;
+      $("book-range").textContent = `Printed pages ${1 - b.pageOffset} to ${lastPrintedPage(b)} (the file has ${b.pages} pages; printed page 1 is PDF page ${1 + b.pageOffset}).`;
+      const f = Number($("f-from").value) || 1; $("book-open").href = `../reader.html?id=${b.id}&page=${f}`;
+    }
+    function readBook() {
+      const b = bookById($("f-book").value);
+      if (!b) { S.bookRef = null; S.sync = []; return; }
+      const from = parseInt($("f-from").value, 10), to = parseInt($("f-to").value, 10), s = parseSync($("f-sync").value);
+      S.bookRef = { bookId: b.id, from: Number.isFinite(from) ? from : NaN, to: Number.isFinite(to) ? to : NaN };
+      S.sync = s.ok ? s.list : [];
+      let msg = ""; if (!Number.isFinite(from) || !Number.isFinite(to)) msg = "Enter both pages."; else if (from < 1 - b.pageOffset || to > lastPrintedPage(b)) msg = `Pages must be between ${1 - b.pageOffset} and ${lastPrintedPage(b)}.`; else if (to < from) msg = "“To” can't be before “From”."; else if (!s.ok) msg = "Sync points look like 0:00=48, 12:30=49."; else if (s.list.some((x) => x.page < from || x.page > to || (S.duration && x.t > S.duration))) msg = "Each sync point must sit inside the lecture's pages and time.";
+      $("book-err").textContent = msg;
+    }
+    ["f-book", "f-from", "f-to", "f-sync"].forEach((id) => $(id).addEventListener(id === "f-book" ? "change" : "input", () => { readBook(); paintBook(); if (id !== "f-book") { $("book-err").textContent = $("book-err").textContent; } refresh(); }));
+
+    /* ---- publishing ---- */
+    function syncStatus() { $("when-wrap").hidden = $("f-status").value !== "Scheduled"; $("btn-schedule").hidden = false; }
+    $("f-status").addEventListener("change", () => { S.status = $("f-status").value; if (S.status === "Scheduled" && !$("f-when").value) { const d = new Date(Date.now() + 86400000); d.setMinutes(0); $("f-when").value = localDT(d.toISOString()); S.publishAt = d.toISOString(); } syncStatus(); refresh(); });
+    $("f-when").addEventListener("input", () => { S.publishAt = $("f-when").value ? new Date($("f-when").value).toISOString() : ""; refresh(); });
+
+    /* ---- plain fields ---- */
+    $("f-title").addEventListener("input", () => { S.title = $("f-title").value; paintOrder(); refresh(); });
+    $("f-topic").addEventListener("change", () => { S.genre = $("f-topic").value; refresh(); });
+    $("f-desc").addEventListener("input", () => { S.description = $("f-desc").value; $("desc-count").textContent = S.description.length; refresh(); });
+    $("f-year").addEventListener("input", () => { S.year = Number($("f-year").value) || S.year; refresh(); });
+    $("f-dl").addEventListener("change", () => { S.downloadable = $("f-dl").checked; refresh(); });
+    $("f-feat").addEventListener("change", () => { S.featured = $("f-feat").checked; refresh(); });
+
+    /* ---- checklist ---- */
+    function candidate() { const sh = ARTISTS.find((a) => a.id === S.artistId); return { id: tempId, title: S.title, artistId: S.artistId, artist: sh ? sh.name : "", genre: S.genre, duration: S.duration, description: S.description, seriesId: S.seriesId, audioName: S.audioName, bookRef: S.bookRef && Number.isFinite(S.bookRef.from) ? S.bookRef : S.bookRef, chapters: S.chapters }; }
+    function checklist() {
+      const t = existing ? { ...existing } : { id: tempId };
+      return Admin.lectureChecklist(t, { ...candidate(), status: S.status, publishAt: S.publishAt, meta: { chapters: S.chapters, transcript: S.transcript, status: S.status, publishAt: S.publishAt, audioName: S.audioName } });
+    }
+    let dirty = false;
+    function markDirty() { dirty = true; try { localStorage.setItem(draftKey, JSON.stringify({ savedAt: Date.now(), S })); $("autosave").textContent = `Draft kept in this browser at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; } catch {} }
+    function refresh() {
+      markDirty();
+      const cl = checklist(), bad = cl.filter((i) => i.state === "bad"), warn = cl.filter((i) => i.state === "warn");
+      $("checklist").innerHTML = cl.map((i) => `<li class="${i.state}"><span class="ck">${i.state === "ok" ? ICONS.check : i.state === "bad" ? ICONS.x : "!"}</span><span>${esc(i.label)}${i.required ? "" : ' <span class="text-tertiary">(recommended)</span>'}${i.state !== "ok" && i.note ? `<small>${esc(i.note)}</small>` : ""}</span></li>`).join("");
+      $("ck-summary").textContent = bad.length ? `${bad.length} required item${bad.length === 1 ? "" : "s"} left.` : warn.length ? `Ready to publish. ${warn.length} optional item${warn.length === 1 ? "" : "s"} could improve it.` : "Everything is done.";
+      $("btn-publish").disabled = bad.length > 0; $("btn-schedule").disabled = bad.length > 0 || !S.publishAt;
+      $("btn-publish").title = bad.length ? "Finish the required items first" : "";
+      // tab dots
+      const map = { title: "details", sheikh: "details", topic: "details", audio: "audio", duration: "audio", series: "series", book: "book", schedule: "publish" };
+      tabs.querySelectorAll(".dot").forEach((d) => d.remove());
+      new Set(bad.map((i) => map[i.id])).forEach((n) => { const b = tabs.querySelector(`[data-tab="${n}"]`); if (b) b.insertAdjacentHTML("beforeend", '<span class="dot" title="Needs attention"></span>'); });
+    }
+    $("btn-schedule").textContent = "Schedule";
+
+    /* ---- saving ---- */
+    function validateForSave(forPublish) {
+      if (S.title.trim().length < 3) { showTab("details"); $("f-title").focus(); toast("Give the lecture a title", "warning"); return false; }
+      if (!S.artistId) { showTab("details"); $("f-sheikh").focus(); toast("Choose a sheikh", "warning"); return false; }
+      if (!validateChapters()) { showTab("chapters"); toast("Fix the chapter times first", "warning"); return false; }
+      readBook(); if ($("book-err").textContent) { showTab("book"); toast($("book-err").textContent, "warning"); return false; }
+      return true;
+    }
+    function save(status) {
+      if (!validateForSave(status !== "Draft")) return;
+      if (status !== "Draft") { const bad = checklist().filter((i) => i.state === "bad"); if (bad.length) { toast(`Finish: ${bad.map((i) => i.label.toLowerCase()).join(", ")}`, "warning"); return; } }
+      if (status === "Scheduled" && !S.publishAt) { showTab("publish"); return toast("Pick a publish date and time", "warning"); }
+      if (needsReview && status === "Published") { status = "Draft"; toast("A review is required, so it was saved as a draft for an editor to publish", "warning"); }
+      const sh = ARTISTS.find((a) => a.id === S.artistId);
+      const fields = { title: S.title.trim(), artistId: sh.id, artist: sh.name, genre: S.genre, description: S.description, year: S.year, downloadable: S.downloadable, duration: S.duration, audioName: S.audioName, audioSize: S.audioSize, seriesId: S.seriesId || "none" };
+      if (!sid) fields.featured = S.featured;
+      let t;
+      if (existing) {
+        t = existing; Admin.patch("track", t.id, fields);
+      } else {
+        const id = Admin.nextId("track");
+        t = Admin.create("track", { id, plays: 0, downloads: 0, likes: 0, explicit: false, album: "", ...fields, art: ART(`lecture-${id}`, 500, 500), featured: !!S.featured, status: "Draft" });
+      }
+      // series membership + order
+      ALBUMS.forEach((a) => { a.tracks = a.tracks.filter((x) => x.id !== t.id); });
+      if (S.seriesId) {
+        const a = Admin.find("album", S.seriesId);
+        if (a) {
+          if (orderList && orderList.series === S.seriesId) {
+            const byId = new Map(TRACKS.map((x) => [x.id, x])); byId.set(tempId, t); byId.set(t.id, t);
+            a.tracks = orderList.items.map((x) => byId.get(x.id)).filter(Boolean);
+          } else a.tracks.push(t);
+          a.tracks.forEach((x, i) => { Admin.setLectureMeta(x.id, { order: i + 1 }); });
+          t.album = a.title; Admin.patch("track", t.id, { album: a.title, seriesId: a.id }, { audit: false });
+        }
+      }
+      try { delete _seriesOfCache[t.id]; } catch {}
+      // book link goes through the same store the Books page uses, so the reader and series pages pick it up
+      const o = BookAdminStore.get();
+      if (S.bookRef) { o.links[t.id] = { bookId: S.bookRef.bookId, from: S.bookRef.from, to: S.bookRef.to, sync: S.sync }; t.bookRef = { ...S.bookRef }; if (S.sync.length) t.syncPoints = S.sync; else delete t.syncPoints; const a = S.seriesId && Admin.find("album", S.seriesId); if (a) { const cur = new Set(a.bookIds || []); cur.add(S.bookRef.bookId); a.bookIds = [...cur]; o.seriesBooks[a.id] = a.bookIds; } }
+      else { o.links[t.id] = null; delete t.bookRef; delete t.syncPoints; }
+      BookAdminStore.save();
+      Admin.setLectureMeta(t.id, { transcript: S.transcript, transcriptName: S.transcriptName, chapters: S.chapters.map((c) => ({ ...c })), audioName: S.audioName, audioSize: S.audioSize });
+      Admin.setStatus("track", [t.id], status);
+      if (status === "Scheduled") Admin.setLectureMeta(t.id, { status: "Scheduled", publishAt: S.publishAt });
+      if (status === "Scheduled") Admin.patch("track", t.id, { status: "Scheduled" }, { audit: false });
+      Audit.log({ action: existing ? "Saved lecture" : "Created lecture", kind: "track", id: t.id, label: t.title, detail: status === "Scheduled" ? `Scheduled for ${AdminFmt.when(S.publishAt)}` : status });
+      try { localStorage.removeItem(draftKey); } catch {}
+      dirty = false;
+      toast(status === "Published" ? "Lecture published" : status === "Scheduled" ? `Scheduled for ${AdminFmt.when(S.publishAt)}` : "Draft saved", "success");
+      setTimeout(() => { location.href = `lecture-editor.html?id=${t.id}`; }, 600);
+    }
+    $("btn-draft").addEventListener("click", () => save("Draft"));
+    $("btn-publish").addEventListener("click", () => save(S.status === "Scheduled" ? "Scheduled" : "Published"));
+    $("btn-schedule").addEventListener("click", () => { S.status = "Scheduled"; $("f-status").value = "Scheduled"; syncStatus(); if (!S.publishAt) { showTab("publish"); return toast("Pick a publish date and time", "warning"); } save("Scheduled"); });
+    $("btn-del").addEventListener("click", async () => { if (await Admin.deleteFlow("track", [existing.id], {})) { try { localStorage.removeItem(draftKey); } catch {} location.href = "tracks.html"; } });
+    window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+    fillFromState(); dirty = false;
+    // reflect the saved status on the primary button text
+    $("btn-publish").textContent = existing && existing.status === "Published" ? "Save changes" : "Publish now";
+    refresh(); dirty = false; $("autosave").textContent = "";
+
+  </script>
+</body>
+</html>

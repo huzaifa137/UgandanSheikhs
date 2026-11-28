@@ -142,7 +142,7 @@
         /* Featured Series carousel: 5 series, advances every 7s, pauses on hover/focus,
            dots to jump, and no auto-advance when the visitor prefers reduced motion. */
         (function featuredCarousel() {
-            const slides = ALBUMS.slice(0, 5);
+            const slides = (() => { const l = featuredList("albums", ALBUMS.slice(0, 5)).slice(); const h = featuredHero(); if (h) { const i = l.findIndex((x) => x.id === h.id); if (i > -1) l.splice(i, 1); l.unshift(h); } return l.length ? l.slice(0, 6) : ALBUMS.slice(0, 5); })();
             const hero = document.querySelector(".home-hero");
             const dots = document.getElementById("hero-dots");
             let cur = 0, timer = null;
@@ -239,7 +239,7 @@
 
         document.getElementById("new-releases-grid").innerHTML = ALBUMS.slice(0, 6).map((a) => cardHTML(a, "album")).join("");
 
-        document.getElementById("featured-artists-rail").innerHTML = ARTISTS.slice(0, 10).map((a) => `
+        document.getElementById("featured-artists-rail").innerHTML = featuredList("artists", ARTISTS.slice(0, 10)).map((a) => `
       <div class="card card-w artist">
         <a href="artist.html?id=${a.id}">
           <div class="card-art"><img src="${a.img}" alt="${a.name}" /></div>
@@ -251,7 +251,7 @@
 
         document.getElementById("genre-grid").innerHTML = GENRES.map(topicTileHTML).join("");
 
-        document.getElementById("editors-grid").innerHTML = ALBUMS.slice(6, 9).map((a) => `
+        document.getElementById("editors-grid").innerHTML = featuredList("editor", ALBUMS.slice(6, 9)).map((a) => `
       <a class="card" href="album.html?id=${a.id}" style="display:flex;gap:14px;align-items:center;padding:14px;">
         <img src="${a.art}" style="width:74px;height:74px;border-radius:8px;object-fit:cover;flex-shrink:0;" />
         <div>
@@ -261,7 +261,7 @@
         </div>
       </a>`).join("");
 
-        document.getElementById("popular-playlists-grid").innerHTML = officialCollections().slice(0, 5).map((p) => cardHTML(p, "playlist")).join("");
+        document.getElementById("popular-playlists-grid").innerHTML = featuredList("playlists", officialCollections().slice(0, 5)).map((p) => cardHTML(p, "playlist")).join("");
     </script>
 </body>
 

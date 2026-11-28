@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Audit log — Ugandan Sheikhs Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+<link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
+<script src="../js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Audit log</h1><p>Who changed what, and when. Deleted items can be undone from here for as long as they are in the trash.</p></div>
+        </div>
+        <div id="table"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
+  <script>
+
+    initAdminPage("audit", "Audit log");
+    if (AdminCore.blocked("audit")) throw new Error("no access");
+    const $ = (id) => document.getElementById(id);
+    const KINDS = { artist: "Sheikh", album: "Series", track: "Lecture", user: "User", comment: "Comment", book: "Book", staff: "Staff", settings: "Settings", moderation: "Moderation", session: "Session", trash: "Trash", export: "Export" };
+    const canUndo = (r) => r.undo && r.undo.type === "restore" && Admin.trashed().some((t) => t.tid === r.undo.tid);
+    const table = new DataTable({
+      el: $("table"), id: "audit", exportName: "audit-log", select: false, pageSize: 25,
+      rows: () => Audit.list(),
+      search: (r) => `${r.by} ${r.action} ${r.label} ${r.detail} ${KINDS[r.kind] || r.kind}`, searchPlaceholder: "Search the log…",
+      defaultSort: { key: "at", dir: "desc" },
+      emptyTitle: "Nothing logged yet", emptyBody: "Changes made in the admin appear here.",
+      filters: [
+        { key: "who", label: "Who", all: "Everyone", options: () => [...new Set(Audit.list().map((a) => a.by))].sort(), test: (r, v) => r.by === v },
+        { key: "kind", label: "Type", all: "All types", options: () => [...new Set(Audit.list().map((a) => a.kind).filter(Boolean))].map((k) => ({ v: k, l: KINDS[k] || k })), test: (r, v) => r.kind === v },
+        { key: "action", label: "Action", all: "All actions", options: () => [...new Set(Audit.list().map((a) => a.action))].sort(), test: (r, v) => r.action === v },
+        { key: "when", label: "When", all: "Any time", options: [{ v: "1", l: "Last 24 hours" }, { v: "7", l: "Last 7 days" }, { v: "30", l: "Last 30 days" }], test: (r, v) => Date.now() - new Date(r.at) < Number(v) * 86400000 },
+      ],
+      columns: [
+        { key: "at", label: "When", sort: (r) => r.at, csv: (r) => r.at, render: (r) => `<span title="${esc(AdminFmt.when(r.at))}">${esc(AdminFmt.when(r.at))}</span><div class="text-tertiary" style="font-size:12px;">${esc(AdminFmt.ago(r.at))}</div>` },
+        { key: "by", label: "Who", sort: (r) => r.by, render: (r) => `${esc(r.by)}${r.role && ROLES[r.role] ? `<div class="text-tertiary" style="font-size:12px;">${esc(ROLES[r.role].label)}</div>` : ""}` },
+        { key: "action", label: "Action", sort: (r) => r.action, render: (r) => `<span class="badge ${/Deleted|Suspend|Rejected|forever|timed/i.test(r.action) ? "badge-error" : /Created|Published|Restored|Approved/i.test(r.action) ? "badge-success" : "badge-neutral"}">${esc(r.action)}</span>` },
+        { key: "kind", label: "Type", sort: (r) => KINDS[r.kind] || r.kind || "", csv: (r) => KINDS[r.kind] || r.kind, render: (r) => esc(KINDS[r.kind] || r.kind || "—") },
+        { key: "label", label: "Item", sort: (r) => r.label, render: (r) => `<span class="truncate" style="display:block;max-width:280px;" title="${esc(r.label)}">${esc(r.label || "—")}</span>` },
+        { key: "detail", label: "Details", sort: (r) => r.detail || "", render: (r) => `<span class="small muted" style="display:block;max-width:340px;white-space:normal;">${esc(r.detail || "")}</span>` },
+      ],
+      actions: [{ id: "undo", icon: "repeat", title: "Undo this delete", show: canUndo, run: async (r) => { if (Admin.restore(r.undo.tid)) { toast(`“${r.label}” restored`, "success"); table.refresh(); } } }],
+    });
+
+  </script>
+</body>
+</html>

@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/tokens.css" />
 <link rel="stylesheet" href="../css/main.css" />
 <link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
 <script src="../js/theme.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
 <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
@@ -18,22 +19,10 @@
       <header class="admin-topbar" id="admin-topbar"></header>
       <main class="admin-content">
 
-        <div class="page-header"><div><h1 style="font-size:22px;">Comments</h1><p>Moderate listener discussion across the platform.</p></div></div>
-
-        <div class="chip-row" id="status-chips" style="margin-bottom:20px;">
-          <button class="chip active">All</button><button class="chip">Pending</button><button class="chip">Approved</button><button class="chip">Reported</button><button class="chip">Hidden</button>
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Comments</h1><p>Every comment on the site. For the review queue with context and decisions, open <a href="moderation.html" style="color:var(--accent);">Moderation</a>.</p></div>
         </div>
-
-        <table class="data-table">
-          <thead><tr><th>User</th><th>Lecture</th><th>Comment</th><th>Date</th><th>Likes</th><th>Reports</th><th>Status</th><th></th></tr></thead>
-          <tbody id="comments-table"></tbody>
-        </table>
-        <div id="comments-empty"></div>
-
-        <div class="drawer" id="comment-drawer">
-          <div class="drawer-head"><h3 style="font-size:17px;">Comment Thread</h3><button class="icon-btn" onclick="closeModals()" id="comment-drawer-close"></button></div>
-          <div class="drawer-body" id="comment-drawer-body"></div>
-        </div>
+        <div id="table"></div>
 
       </main>
     </div>
@@ -43,74 +32,83 @@
   <script src="../js/icons.js"></script>
   <script src="../js/shell.js"></script>
   <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
   <script>
+
     initAdminPage("comments", "Comments");
-    document.getElementById("comment-drawer-close").innerHTML = ICONS.x;
-    const STATUS_BADGE = { Approved: "badge-success", Pending: "badge-warning", Reported: "badge-error", Hidden: "badge-neutral" };
+    const $ = (id) => document.getElementById(id);
+    const lecture = (c) => TRACKS.find((t) => t.id === c.trackId);
+    const canMod = AdminAuth.can("comments.moderate");
+    const STATUSES = ["Approved", "Pending", "Reported", "Rejected", "Hidden"];
 
-    /* Status chips: show only the rows whose data-status matches ("All" shows everything).
-       Rows are hidden, not re-rendered, so a deleted comment stays deleted. */
-    let statusFilter = "All";
-    function applyStatusFilter() {
-      let shown = 0;
-      document.querySelectorAll("#comments-table tr").forEach(tr => {
-        const show = statusFilter === "All" || tr.dataset.status === statusFilter;
-        tr.style.display = show ? "" : "none";
-        if (show) shown++;
+    const table = new DataTable({
+      el: $("table"), id: "comments", kind: "comment", exportName: "comments", pageSize: 25,
+      rows: () => Admin.visible("comment"),
+      search: (r) => `${r.user} ${r.body} ${(lecture(r) || {}).title || ""}`, searchPlaceholder: "Search comments or people…",
+      defaultSort: { key: "status", dir: "desc" },
+      emptyTitle: "No comments", emptyBody: "Comments listeners post on lectures appear here.",
+      tabs: { options: [
+        { v: "all", l: "All" }, { v: "review", l: "Needs review", test: (r) => r.status === "Pending" || r.status === "Reported" },
+        { v: "ok", l: "Approved", test: (r) => r.status === "Approved" }, { v: "off", l: "Rejected / hidden", test: (r) => r.status === "Rejected" || r.status === "Hidden" },
+      ] },
+      filters: [
+        { key: "status", label: "Status", all: "Any status", options: STATUSES, test: (r, v) => r.status === v },
+        { key: "flag", label: "Flag", all: "Flags: any", options: [{ v: "word", l: "Contains a banned word" }], test: (r) => Mod.hits(r.body).length > 0 },
+        { key: "lecture", label: "Lecture", all: "All lectures", options: () => [...new Set(COMMENTS.map((c) => c.trackId))].map((id) => ({ v: id, l: (TRACKS.find((t) => t.id === id) || {}).title || id })), test: (r, v) => r.trackId === v },
+      ],
+      columns: [
+        { key: "user", label: "Comment", sort: (r) => r.user, csv: (r) => `${r.user}: ${r.body}`, render: (r) => `<div class="dt-cell-main"><img src="${r.avatar}" alt="" style="border-radius:50%;width:32px;height:32px;" /><div style="min-width:0;"><span class="t">${esc(r.user)}</span><span class="s" style="max-width:340px;" title="${esc(r.body)}">${Mod.highlight(r.body)}</span></div></div>` },
+        { key: "lecture", label: "Lecture", sort: (r) => (lecture(r) || {}).title || "", render: (r) => { const t = lecture(r); return t ? `<span class="truncate" style="display:block;max-width:200px;">${esc(t.title)}</span><span class="text-tertiary" style="font-size:12px;">${esc(t.artist)}</span>` : "—"; } },
+        { key: "time", label: "Posted", sort: (r) => COMMENTS.indexOf(r), render: (r) => `<span class="text-secondary">${esc(r.time)}</span>` },
+        { key: "likes", label: "Likes", sort: (r) => r.likes, render: (r) => r.likes },
+        { key: "status", label: "Status", sort: (r) => r.status, render: (r) => adminBadge(r.status) },
+      ],
+      actions: [
+        { id: "open", icon: "panel", title: "Open", run: (r, t) => t.openAt(t._rows.findIndex((x) => x.id === r.id)) },
+        { id: "ok", icon: "check", title: "Approve", perm: "comments.moderate", show: (r) => r.status !== "Approved", run: (r) => decide([r.id], "Approved") },
+        { id: "del", icon: "trash", title: "Delete", danger: true, perm: "comments.moderate", run: (r) => del([r.id]) },
+      ],
+      bulk: [
+        { id: "ok", label: "Approve", icon: "check", perm: "comments.moderate", run: (ids) => decide(ids, "Approved") },
+        { id: "rej", label: "Reject", icon: "x", perm: "comments.moderate", confirm: (n) => ({ title: `Reject ${n} comment${n === 1 ? "" : "s"}?`, body: "Rejected comments are hidden from listeners. You can approve them again later." }), run: (ids) => decide(ids, "Rejected") },
+        { id: "hide", label: "Hide", icon: "eye", perm: "comments.moderate", run: (ids) => decide(ids, "Hidden") },
+        { id: "del", label: "Delete", icon: "trash", danger: true, perm: "comments.moderate", run: (ids) => del(ids).then((ok) => ok !== false) },
+      ],
+      canSelect: () => canMod,
+      onOpen: (r, ctx) => openPanel(r, ctx),
+    });
+
+    function decide(ids, status) {
+      ids.forEach((id) => { const c = Admin.find("comment", id); if (!c || c.status === status) return; Admin.patch("comment", id, { status }, { audit: false }); Mod.record({ itemKind: "comment", itemId: id, itemLabel: Admin.label("comment", c), decision: status === "Approved" ? "Approved" : status === "Rejected" ? "Rejected" : "Hidden", reason: "From the Comments table" }); if (status === "Approved") Mod.clear(id); });
+      toast(`${ids.length} comment${ids.length === 1 ? "" : "s"} ${status.toLowerCase()}`, "success");
+    }
+    function del(ids) { return Admin.deleteFlow("comment", ids, { after: () => table.refresh() }); }
+
+    function openPanel(r, ctx) {
+      const t = lecture(r), hits = Mod.hits(r.body), u = Mod.userByName(r.user), w = Mod.warnings(r.user);
+      Panel.open({
+        title: `Comment by ${r.user}`, subtitle: t ? `on “${t.title}”` : "", img: r.avatar,
+        badges: adminBadge(r.status) + hits.map((h) => `<span class="badge badge-error">Banned word: ${esc(h)}</span>`).join(""),
+        readOnly: !canMod, nav: { index: ctx.index, count: ctx.count, go: ctx.go },
+        deleteText: "Delete", onDelete: canMod ? async () => { if (await del([r.id])) Panel.close(true); } : null,
+        intro: `<div class="mod-quote">${Mod.highlight(r.body)}</div>`,
+        values: { body: r.body, status: r.status },
+        sections: [
+          { title: "Edit", fields: [
+            { key: "body", label: "Text", type: "textarea", rows: 4, max: 600, hint: "Edit to remove a word instead of rejecting the whole comment. The change is logged." },
+            { key: "status", label: "Status", type: "select", options: STATUSES },
+          ] },
+          { title: "Context", html: `<table class="ctx-table"><tr><td>Lecture</td><td>${t ? `<a href="lecture-editor.html?id=${t.id}" style="color:var(--accent);">${esc(t.title)}</a>` : "—"}</td></tr><tr><td>Sheikh</td><td>${t ? esc(t.artist) : "—"}</td></tr><tr><td>Posted</td><td>${esc(r.time)}</td></tr><tr><td>Likes</td><td>${r.likes}</td></tr><tr><td>User</td><td>${esc(r.user)}${u ? ` · ${esc(u.status)}` : ""}${w.length ? ` · ${w.length} warning${w.length === 1 ? "" : "s"}` : ""}</td></tr></table>` },
+        ],
+        actions: canMod ? [{ label: "Open in Moderation", icon: "flag", run: () => { location.href = `moderation.html?c=${r.id}`; } }] : [],
+        onSave: (v) => {
+          if (v.status !== r.status) decide([r.id], v.status);
+          if (v.body.trim() !== r.body) Admin.patch("comment", r.id, { body: v.body.trim() }, { action: "Edited comment text" });
+          toast("Comment saved", "success"); table.refresh(); ctx.go(table._rows.findIndex((x) => x.id === r.id));
+        },
       });
-      document.getElementById("comments-empty").innerHTML = shown ? "" : emptyStateHTML({
-        icon: "message",
-        title: statusFilter === "All" ? "No comments" : `No ${statusFilter.toLowerCase()} comments`,
-        body: "Nothing to review in this view right now.",
-      });
-    }
-    wireChips(document.getElementById("status-chips"), { onChange: (value) => { statusFilter = value; applyStatusFilter(); } });
-
-    // Approve / Hide change the row's real status, so the chips stay truthful
-    function setStatus(btn, status) {
-      const tr = btn.closest("tr");
-      tr.dataset.status = status;
-      const badge = tr.querySelector(".status-badge");
-      badge.className = `badge status-badge ${STATUS_BADGE[status]}`;
-      badge.textContent = status;
-      applyStatusFilter();
-      toast(status === "Approved" ? "Comment approved" : "Comment hidden", status === "Approved" ? "success" : "warning");
     }
 
-    function row(c) {
-      const track = TRACKS.find(t => t.id === c.trackId) || TRACKS[0];
-      const statusBadge = STATUS_BADGE[c.status];
-      return `<tr data-status="${c.status}">
-        <td class="flex items-center gap-8"><img class="avatar" src="${c.avatar}" width="26" height="26"/>${c.user}</td>
-        <td class="truncate" style="max-width:120px;">${track.title}</td>
-        <td class="truncate" style="max-width:260px;">${c.body}</td>
-        <td class="text-secondary">${c.time}</td>
-        <td>${c.likes}</td>
-        <td>${c.status === "Reported" ? Math.ceil(c.likes/60)+1 : 0}</td>
-        <td><span class="badge status-badge ${statusBadge}">${c.status}</span></td>
-        <td><div class="flex gap-8">
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--success);" title="Approve" onclick="setStatus(this,'Approved')">${ICONS.check}</button>
-          <button class="icon-btn" style="width:30px;height:30px;" title="Hide" onclick="setStatus(this,'Hidden')">${ICONS.cloudOff}</button>
-          <button class="icon-btn" style="width:30px;height:30px;color:var(--error);" title="Delete" onclick="this.closest('tr').remove();applyStatusFilter();toast('Comment deleted','warning')">${ICONS.trash}</button>
-          <button class="icon-btn" style="width:30px;height:30px;" title="View Thread" onclick='openThread(${JSON.stringify(c).replace(/'/g,"&apos;")})'>${ICONS.message}</button>
-        </div></td>
-      </tr>`;
-    }
-    document.getElementById("comments-table").innerHTML = COMMENTS.map(row).join("");
-
-    function openThread(c) {
-      document.getElementById("comment-drawer-body").innerHTML = `
-        <div style="display:flex;gap:10px;margin-bottom:16px;">
-          <img class="avatar" src="${c.avatar}" width="34" height="34" />
-          <div><strong style="font-size:13.5px;">${c.user}</strong><div class="text-tertiary" style="font-size:11.5px;">${c.time}</div></div>
-        </div>
-        <p style="font-size:13.5px;margin-bottom:16px;">${c.body}</p>
-        <div class="nav-group-label">Replies</div>
-        <div style="padding:20px 0;color:var(--text-tertiary);font-size:13px;">No replies on this comment yet.</div>
-      `;
-      ensureOverlay();
-      openDrawer("comment-drawer");
-    }
   </script>
 </body>
 </html>

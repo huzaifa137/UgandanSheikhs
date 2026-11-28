@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trash — Ugandan Sheikhs Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+<link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
+<script src="../js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Trash</h1><p id="trash-sub">Deleted items wait here so nothing is lost by accident.</p></div>
+          <button class="btn btn-danger" id="empty-btn">Empty trash</button>
+        </div>
+        <div class="hint-box" id="trash-hint"></div>
+        <div id="table"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
+  <script>
+
+    initAdminPage("trash", "Trash");
+    if (AdminCore.blocked("trash")) throw new Error("no access");
+    const $ = (id) => document.getElementById(id);
+    const days = AdminSettings.get().security.trashDays;
+    $("trash-hint").innerHTML = ICONS.clock + `<div>${days ? `Items are deleted for good ${days} days after they were moved here.` : "Items stay here until you empty the trash."} Change this in Settings → Security.</div>`;
+    const canEmpty = AdminAuth.role() === "super_admin";
+    $("empty-btn").hidden = !canEmpty;
+    const KINDS = Admin.KIND_LABEL;
+    const left = (t) => (days ? Math.max(0, Math.ceil(days - (Date.now() - new Date(t.at)) / 86400000)) : null);
+    const table = new DataTable({
+      el: $("table"), id: "trash", exportName: "trash", getId: (r) => r.tid, pageSize: 25,
+      rows: () => Admin.trashed(),
+      search: (r) => `${r.label} ${r.sub} ${KINDS[r.kind]} ${r.by}`, searchPlaceholder: "Search the trash…",
+      defaultSort: { key: "at", dir: "desc" },
+      emptyTitle: "The trash is empty", emptyBody: "Deleted sheikhs, series, lectures, books, users and comments show up here.",
+      tabs: { options: [{ v: "all", l: "All" }, ...["track", "album", "artist", "book", "comment", "user"].map((k) => ({ v: k, l: KINDS[k] + "s", test: (r) => r.kind === k }))] },
+      columns: [
+        { key: "label", label: "Item", sort: (r) => r.label, render: (r) => `<div class="dt-cell-main"><div style="min-width:0;"><span class="t">${esc(r.label)}</span><span class="s">${esc(r.sub || "")}</span></div></div>` },
+        { key: "kind", label: "Type", sort: (r) => KINDS[r.kind], csv: (r) => KINDS[r.kind], render: (r) => `<span class="badge badge-neutral">${esc(KINDS[r.kind])}</span>` },
+        { key: "by", label: "Deleted by", sort: (r) => r.by, render: (r) => esc(r.by) },
+        { key: "at", label: "Deleted", sort: (r) => r.at, csv: (r) => r.at, render: (r) => `${esc(AdminFmt.when(r.at))}<div class="text-tertiary" style="font-size:12px;">${esc(AdminFmt.ago(r.at))}</div>` },
+        { key: "left", label: "Auto-delete in", sort: (r) => (left(r) == null ? 9999 : left(r)), csv: (r) => (left(r) == null ? "" : left(r)), render: (r) => (left(r) == null ? "—" : `<span class="badge ${left(r) <= 3 ? "badge-error" : "badge-neutral"}">${left(r)} day${left(r) === 1 ? "" : "s"}</span>`) },
+      ],
+      actions: [
+        { id: "restore", icon: "repeat", title: "Restore", run: (r) => restore([r.tid]) },
+        { id: "purge", icon: "trash", title: "Delete forever", danger: true, perm: "content.delete", run: (r) => purge([r.tid]) },
+      ],
+      bulk: [
+        { id: "restore", label: "Restore", icon: "repeat", run: (ids) => restore(ids).then(() => true) },
+        { id: "purge", label: "Delete forever", icon: "trash", danger: true, perm: "content.delete", run: (ids) => purge(ids).then((ok) => ok !== false) },
+      ],
+    });
+    async function restore(ids) { let n = 0; ids.forEach((id) => { if (Admin.restore(id)) n++; }); toast(`${n} restored`, "success"); table.refresh(); }
+    async function purge(ids) {
+      const ok = await Confirm.ask({ title: `Delete ${ids.length === 1 ? "this item" : ids.length + " items"} forever?`, body: "This can't be undone. Books also lose their uploaded PDF.", confirmText: "Delete forever", tone: "danger", typeText: ids.length >= 5 ? "DELETE" : undefined });
+      if (!ok) return false; ids.forEach((id) => Admin.purge(id)); toast("Deleted forever", "warning"); table.refresh();
+    }
+    $("empty-btn").addEventListener("click", async () => {
+      const all = Admin.trashed(); if (!all.length) return toast("The trash is already empty");
+      if (await Confirm.ask({ title: `Empty the trash (${all.length} item${all.length === 1 ? "" : "s"})?`, body: "Everything in the trash is deleted forever. This can't be undone.", confirmText: "Empty trash", tone: "danger", typeText: "EMPTY" })) { all.forEach((t) => Admin.purge(t.tid)); table.refresh(); toast("Trash emptied", "warning"); }
+    });
+
+  </script>
+</body>
+</html>

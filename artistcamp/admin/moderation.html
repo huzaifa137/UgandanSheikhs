@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moderation — Ugandan Sheikhs Admin</title>
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/main.css" />
+<link rel="stylesheet" href="../css/theme-ocean.css" />
+<link rel="stylesheet" href="../css/admin.css" />
+<script src="../js/theme.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png" />
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="admin-topbar"></header>
+      <main class="admin-content">
+
+        <div class="page-header">
+          <div><h1 style="font-size:22px;">Moderation centre</h1><p>Comments and listener reports in one queue, with context, banned words, warnings and a record of every decision.</p></div>
+        </div>
+        <div class="kpis" id="kpis"></div>
+        <div class="tabs admin-tabs" id="mod-tabs" style="margin-top:0;">
+          <button class="tab active" data-target="queue">Queue <span class="dt-count" id="q-count"></span></button>
+          <button class="tab" data-target="history">Decision history</button>
+          <button class="tab" data-target="warnings">Warnings</button>
+          <button class="tab" data-target="words">Banned words</button>
+        </div>
+
+        <div data-tabpanel="queue">
+          <div class="mod-layout">
+            <div>
+              <div class="table-toolbar" style="margin-bottom:10px;">
+                <select class="select" id="q-filter" aria-label="Filter the queue"><option value="">Everything</option><option value="comment">Comments</option><option value="report">Reports</option><option value="word">Banned word hits</option></select>
+              </div>
+              <div class="mod-queue" id="queue" role="listbox" aria-label="Moderation queue"></div>
+            </div>
+            <div id="detail"></div>
+          </div>
+        </div>
+        <div data-tabpanel="history" style="display:none;"><div id="hist"></div></div>
+        <div data-tabpanel="warnings" style="display:none;"><div id="warn"></div></div>
+        <div data-tabpanel="words" style="display:none;">
+          <div class="a-grid cols-2">
+            <div class="a-card">
+              <h3>Banned words</h3><p class="desc">Comments containing these words are flagged and highlighted in the queue. They are not removed automatically.</p>
+              <div class="row-actions"><input class="input" id="w-new" placeholder="Add a word or phrase" style="max-width:260px;" /><button class="btn btn-primary btn-sm" id="w-add">Add</button></div>
+              <div class="word-chips" id="w-chips"></div>
+              <p class="small muted" id="w-note" style="margin-top:14px;"></p>
+            </div>
+            <div class="a-card">
+              <h3>Automatic rules</h3><p class="desc">Applies to new comments from listeners.</p>
+              <div class="setting-row"><div><div class="label">Profanity filter</div><div class="desc">Flag comments that match the banned words.</div></div><button type="button" class="switch" id="rule-prof" role="switch" aria-label="Profanity filter"></button></div>
+              <div class="setting-row"><div><div class="label">Hide after reports</div><div class="desc">Hide a comment from listeners once it has this many open reports. 0 turns it off.</div></div><input class="input" type="number" id="rule-hide" min="0" max="50" style="width:90px;" /></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/shell.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/admin-core.js"></script>
+  <script>
+
+    initAdminPage("moderation", "Moderation");
+    if (AdminCore.blocked("moderation")) throw new Error("no access");
+    const $ = (id) => document.getElementById(id);
+    wireTabs($("mod-tabs"), (v) => { if (v === "history") hist.refresh(); if (v === "warnings") warn.refresh(); if (v === "words") paintWords(); });
+    let sel = new URLSearchParams(location.search).get("c") ? `c:${new URLSearchParams(location.search).get("c")}` : null;
+    const TYPE_MAP = { Lecture: "track", Series: "album", Sheikh: "artist", Book: "book", Collection: null };
+    const lecture = (c) => TRACKS.find((t) => t.id === c.trackId);
+
+    function kpis() {
+      const q = Mod.queue(), d = Mod.decisions(), today = d.filter((x) => Date.now() - new Date(x.at) < 86400000);
+      $("kpis").innerHTML = [["In the queue", q.length], ["Banned-word hits", q.filter((i) => i.hits.length).length], ["Decisions today", today.length], ["Warnings given", db().mod.warnings.length]].map(([l, v]) => `<div class="stat-card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+    }
+    const db = () => AdminDB.get();
+
+    function items() { const f = $("q-filter").value; return Mod.queue().filter((i) => !f || (f === "word" ? i.hits.length : i.kind === f)); }
+    function paintQueue() {
+      const list = items(); $("q-count").textContent = Mod.queue().length;
+      if (sel && !list.some((i) => i.key === sel)) sel = null;
+      if (!sel && list[0]) sel = list[0].key;
+      $("queue").innerHTML = list.length ? list.map((i) => {
+        const who = i.kind === "comment" ? i.comment.user : i.report.by, body = i.kind === "comment" ? i.comment.body : i.report.message;
+        return `<button type="button" class="mod-item ${i.key === sel ? "active" : ""}" data-k="${esc(i.key)}" role="option" aria-selected="${i.key === sel}"><span class="top"><span><strong>${esc(who)}</strong> <span class="text-tertiary small">· ${i.kind === "comment" ? "Comment" : esc(i.report.type + " report")}</span></span><span class="text-tertiary small">${esc(i.kind === "comment" ? i.when : AdminFmt.ago(i.when))}</span></span><span class="body">${i.kind === "comment" ? Mod.highlight(body) : esc(body)}</span><span class="flex gap-8" style="flex-wrap:wrap;">${i.reasons.map((r) => `<span class="badge ${/Banned/.test(r) ? "badge-error" : "badge-warning"}">${esc(r)}</span>`).join("")}</span></button>`;
+      }).join("") : `<div class="empty-state"><div class="icon-wrap">${ICONS.check}</div><h3>All clear</h3><p>Nothing is waiting for review.</p></div>`;
+      paintDetail();
+    }
+    $("queue").addEventListener("click", (e) => { const b = e.target.closest("[data-k]"); if (b) { sel = b.dataset.k; paintQueue(); if (innerWidth < 1000) $("detail").scrollIntoView({ behavior: "smooth", block: "start" }); } });
+    $("q-filter").addEventListener("change", paintQueue);
+
+    function paintDetail() {
+      const it = Mod.queue().find((i) => i.key === sel);
+      if (!it) { $("detail").innerHTML = `<div class="a-card"><div class="empty-state"><div class="icon-wrap">${ICONS.flag}</div><h3>Select an item</h3><p>Pick something from the queue to review it.</p></div></div>`; return; }
+      $("detail").innerHTML = it.kind === "comment" ? commentDetail(it) : reportDetail(it);
+      wireDetail(it);
+    }
+    function commentDetail(it) {
+      const c = it.comment, t = lecture(c), u = Mod.userByName(c.user), w = Mod.warnings(c.user), others = COMMENTS.filter((x) => x.user === c.user && x.id !== c.id && !x._del).length;
+      return `<div class="a-card">
+        <div class="flex items-center gap-12" style="margin-bottom:6px;"><img class="avatar-sm" src="${c.avatar}" alt="" /><div><strong>${esc(c.user)}</strong><div class="small muted">${esc(c.time)} · ${c.likes} likes · ${adminBadge(c.status)}</div></div></div>
+        <div class="mod-quote">${Mod.highlight(c.body)}</div>
+        ${it.hits.length ? `<div class="hint-box warn">${ICONS.alertTriangle}<div>Contains banned word${it.hits.length === 1 ? "" : "s"}: <strong>${it.hits.map(esc).join(", ")}</strong></div></div>` : ""}
+        <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin:14px 0 6px;">Context</h4>
+        <table class="ctx-table">
+          <tr><td>Lecture</td><td>${t ? `<a href="../track.html?id=${t.id}" target="_blank" rel="noopener" style="color:var(--accent);">${esc(t.title)}</a>` : "—"}</td></tr>
+          <tr><td>Sheikh</td><td>${t ? esc(t.artist) : "—"}</td></tr>
+          <tr><td>Why it is here</td><td>${it.reasons.map(esc).join("<br>")}</td></tr>
+          <tr><td>The user</td><td>${esc(c.user)}${u ? ` · ${esc(u.status)} · joined ${esc(u.joined)}` : ""}<br><span class="small muted">${others} other comment${others === 1 ? "" : "s"} · ${w.length} warning${w.length === 1 ? "" : "s"}</span></td></tr>
+          ${it.reports.length ? `<tr><td>Reports</td><td>${it.reports.map((r) => `${esc(r.reason)}: <em>${esc(r.message)}</em><br><span class="small muted">${esc(r.by)} · ${esc(AdminFmt.ago(r.date))}</span>`).join("<hr style='border:none;border-top:1px solid var(--border-subtle);margin:6px 0'>")}</td></tr>` : ""}
+        </table>
+        ${w.length ? `<div class="panel-list" style="margin-top:12px;">${w.slice(0, 3).map((x) => `<div class="panel-list-item">${esc(x.reason)}<small>${esc(AdminFmt.when(x.at))} · ${esc(x.by)}</small></div>`).join("")}</div>` : ""}
+        <div class="field" style="margin-top:16px;"><label for="d-note">Note for the decision history (optional)</label><input class="input" id="d-note" maxlength="200" placeholder="e.g. Disrespectful to another listener" /></div>
+        <div class="mod-actions">
+          <button class="btn btn-primary" data-d="approve">${ICONS.check}<span>Approve</span></button>
+          <button class="btn btn-secondary" data-d="reject">${ICONS.x}<span>Reject</span></button>
+          <button class="btn btn-secondary" data-d="warn">${ICONS.alertTriangle}<span>Reject &amp; warn user</span></button>
+          <button class="btn btn-danger" data-d="delete">${ICONS.trash}<span>Delete</span></button>
+          ${AdminAuth.can("users.suspend") && u && u.status === "Active" ? `<button class="btn btn-danger" data-d="suspend">${ICONS.lock}<span>Suspend user</span></button>` : ""}
+        </div></div>`;
+    }
+    function reportDetail(it) {
+      const r = it.report, kind = TYPE_MAP[r.type], row = kind && r.itemId ? Admin.find(kind, r.itemId) : null;
+      return `<div class="a-card">
+        <div class="flex items-center gap-8" style="margin-bottom:6px;"><span class="badge badge-neutral">${esc(r.type)} report</span><span class="small muted">${esc(AdminFmt.when(r.date))}</span></div>
+        <h3 style="font-size:17px;">${esc(r.title)}</h3>
+        <div class="mod-quote">${esc(r.message)}</div>
+        <table class="ctx-table">
+          <tr><td>Reason</td><td>${esc(r.reason)}</td></tr>
+          <tr><td>Reported by</td><td>${esc(r.by)}</td></tr>
+          <tr><td>Found on</td><td>${esc(r.place)}${r.source ? ` · ${esc(r.source)}` : ""}</td></tr>
+          <tr><td>Item</td><td>${row ? `${esc(Admin.label(kind, row))} · ${adminBadge(row.status)}` : "—"}${r.itemHref ? ` <a href="../${esc(r.itemHref)}" target="_blank" rel="noopener" style="color:var(--accent);">Open on site</a>` : ""}</td></tr>
+        </table>
+        <div class="field" style="margin-top:16px;"><label for="d-note">Note for the decision history (optional)</label><input class="input" id="d-note" maxlength="200" /></div>
+        <div class="mod-actions">
+          <button class="btn btn-primary" data-d="resolve">${ICONS.check}<span>Resolved, action taken</span></button>
+          <button class="btn btn-secondary" data-d="dismiss">${ICONS.x}<span>Dismiss, no action</span></button>
+          ${row && AdminAuth.can("content.publish") && row.status === "Published" ? `<button class="btn btn-danger" data-d="unpublish">${ICONS.eye}<span>Unpublish the ${esc(r.type.toLowerCase())}</span></button>` : ""}
+        </div></div>`;
+    }
+    const templates = ["Please keep comments respectful and on topic.", "Please do not post links or advertising.", "Your comment broke our community guidelines."];
+    function wireDetail(it) {
+      $("detail").querySelectorAll("[data-d]").forEach((b) => b.addEventListener("click", () => decide(it, b.dataset.d)));
+    }
+    async function decide(it, act) {
+      const note = ($("d-note") && $("d-note").value.trim()) || "";
+      if (it.kind === "comment") {
+        const c = it.comment, label = Admin.label("comment", c);
+        const rec = (decision, reason) => Mod.record({ itemKind: "comment", itemId: c.id, itemLabel: label, decision, reason: reason || note, user: c.user });
+        const closeReports = (st) => it.reports.forEach((r) => Mod.resolveReport(r, st));
+        if (act === "approve") { Admin.patch("comment", c.id, { status: "Approved" }, { audit: false }); Mod.clear(c.id); closeReports("Dismissed"); rec("Approved"); toast("Comment approved", "success"); }
+        else if (act === "reject") { Admin.patch("comment", c.id, { status: "Rejected" }, { audit: false }); closeReports("Resolved"); rec("Rejected"); toast("Comment rejected and hidden", "success"); }
+        else if (act === "warn") {
+          const m = await Confirm.prompt({ title: `Warn ${c.user}`, label: "Message to the user", multiline: true, value: templates[0], confirmText: "Reject and warn", body: "The comment is rejected and the warning is kept on the user's profile." });
+          if (!m) return; Admin.patch("comment", c.id, { status: "Rejected" }, { audit: false }); Mod.warn(c.user, m, c.id); closeReports("Resolved"); rec("Rejected and warned", m); toast("Rejected, warning recorded", "success");
+        } else if (act === "delete") {
+          if (!(await Confirm.ask({ title: "Move this comment to the trash?", body: "You can restore it from Trash.", confirmText: "Move to trash", tone: "danger" }))) return;
+          Admin.remove("comment", [c.id]); closeReports("Resolved"); rec("Deleted"); toast("Moved to trash", "warning");
+        } else if (act === "suspend") {
+          const u = Mod.userByName(c.user); if (!u) return;
+          if (!(await Confirm.ask({ title: `Suspend ${u.name}?`, body: "They can't sign in, comment or download until reinstated. The comment is rejected too.", confirmText: "Suspend user", tone: "danger" }))) return;
+          Admin.patch("user", u.id, { status: "Suspended" }, { action: "Suspended" }); Admin.patch("comment", c.id, { status: "Rejected" }, { audit: false }); closeReports("Resolved"); rec("Rejected and suspended user"); toast("User suspended", "success");
+        }
+      } else {
+        const r = it.report, kind = TYPE_MAP[r.type], row = kind && r.itemId ? Admin.find(kind, r.itemId) : null;
+        const rec = (decision) => Mod.record({ itemKind: "report", itemId: r.id, itemLabel: `${r.type}: ${r.title}`, decision, reason: note || r.reason });
+        if (act === "resolve") { Mod.resolveReport(r, "Resolved"); rec("Report resolved"); toast("Report resolved", "success"); }
+        else if (act === "dismiss") { Mod.resolveReport(r, "Dismissed"); rec("Report dismissed"); toast("Report dismissed", "success"); }
+        else if (act === "unpublish" && row) {
+          if (!(await Confirm.ask({ title: `Unpublish this ${r.type.toLowerCase()}?`, body: "It disappears from the listener site until someone publishes it again.", confirmText: "Unpublish", tone: "danger" }))) return;
+          Admin.setStatus(kind, [row.id], "Draft"); Mod.resolveReport(r, "Resolved"); rec("Unpublished the item"); toast("Unpublished", "success");
+        }
+      }
+      sel = null; refreshAll();
+    }
+    function refreshAll() { kpis(); paintQueue(); if (typeof hist !== "undefined") hist.refresh(); }
+
+    /* ---- decision history ---- */
+    const hist = new DataTable({
+      el: $("hist"), id: "mod-history", exportName: "moderation-history", select: false, pageSize: 25,
+      rows: () => Mod.decisions(),
+      search: (r) => `${r.itemLabel} ${r.decision} ${r.reason} ${r.by} ${r.user || ""}`, searchPlaceholder: "Search the history…",
+      defaultSort: { key: "at", dir: "desc" },
+      emptyTitle: "No decisions yet", emptyBody: "Approvals, rejections and warnings are recorded here.",
+      filters: [{ key: "dec", label: "Decision", all: "All decisions", options: () => [...new Set(Mod.decisions().map((d) => d.decision))], test: (r, v) => r.decision === v }, { key: "by", label: "Moderator", all: "All moderators", options: () => [...new Set(Mod.decisions().map((d) => d.by))], test: (r, v) => r.by === v }],
+      columns: [
+        { key: "at", label: "When", sort: (r) => r.at, csv: (r) => r.at, render: (r) => `<span class="text-secondary">${esc(AdminFmt.when(r.at))}</span>` },
+        { key: "by", label: "Moderator", sort: (r) => r.by, render: (r) => esc(r.by) },
+        { key: "decision", label: "Decision", sort: (r) => r.decision, render: (r) => `<span class="badge ${/Approved|resolved/i.test(r.decision) ? "badge-success" : /dismiss|Reversed/i.test(r.decision) ? "badge-neutral" : "badge-error"}">${esc(r.decision)}</span>` },
+        { key: "item", label: "Item", sort: (r) => r.itemLabel, render: (r) => `<span class="truncate" style="display:block;max-width:300px;" title="${esc(r.itemLabel)}">${esc(r.itemLabel)}</span>` },
+        { key: "reason", label: "Note", sort: (r) => r.reason || "", render: (r) => esc(r.reason || "—") },
+      ],
+      actions: [{ id: "rev", icon: "repeat", title: "Reverse this decision", show: (r) => r.itemKind === "comment" && /Approved|Rejected|Hidden/.test(r.decision) && !r.reversed && !!Admin.find("comment", r.itemId), run: async (r) => { if (!(await Confirm.ask({ title: "Reverse this decision?", body: "The comment goes back to “Pending” and returns to the queue.", confirmText: "Reverse", tone: "primary" }))) return; Admin.patch("comment", r.itemId, { status: "Pending" }, { audit: false }); r.reversed = true; AdminDB.save(); Mod.record({ itemKind: "comment", itemId: r.itemId, itemLabel: r.itemLabel, decision: "Reversed", reason: `Reversed: ${r.decision}` }); toast("Decision reversed", "success"); refreshAll(); } }],
+    });
+
+    /* ---- warnings ---- */
+    const warn = new DataTable({
+      el: $("warn"), id: "mod-warnings", exportName: "warnings", select: false,
+      rows: () => db().mod.warnings,
+      search: (r) => `${r.user} ${r.reason} ${r.by}`, searchPlaceholder: "Search warnings…", defaultSort: { key: "at", dir: "desc" },
+      emptyTitle: "No warnings", emptyBody: "Warnings given to listeners are listed here.",
+      columns: [
+        { key: "at", label: "When", sort: (r) => r.at, csv: (r) => r.at, render: (r) => `<span class="text-secondary">${esc(AdminFmt.when(r.at))}</span>` },
+        { key: "user", label: "User", sort: (r) => r.user, render: (r) => esc(r.user) },
+        { key: "reason", label: "Message", sort: (r) => r.reason, render: (r) => esc(r.reason) },
+        { key: "by", label: "By", sort: (r) => r.by, render: (r) => esc(r.by) },
+      ],
+    });
+
+    /* ---- banned words ---- */
+    function paintWords() {
+      const l = Mod.banned();
+      $("w-chips").innerHTML = l.length ? l.map((w) => `<span class="chip-btn">${esc(w)} <button type="button" class="x" data-rm="${esc(w)}" aria-label="Remove ${esc(w)}" style="background:none;border:none;color:inherit;cursor:pointer;">${ICONS.x}</button></span>`).join("") : '<span class="small muted">No banned words.</span>';
+      const hits = COMMENTS.filter((c) => !c._del && Mod.hits(c.body).length).length;
+      $("w-note").textContent = `${hits} existing comment${hits === 1 ? "" : "s"} match${hits === 1 ? "es" : ""} the list right now.`;
+      const s = AdminSettings.get().moderation; $("rule-prof").classList.toggle("on", !!s.profanityFilter); $("rule-prof").setAttribute("aria-checked", !!s.profanityFilter); $("rule-hide").value = s.autoHideAfter;
+    }
+    $("w-add").addEventListener("click", () => { const v = $("w-new").value; if (Mod.addWord(v)) { $("w-new").value = ""; paintWords(); kpis(); paintQueue(); toast("Word added", "success"); } else toast("Enter a new word", "warning"); });
+    $("w-new").addEventListener("keydown", (e) => { if (e.key === "Enter") $("w-add").click(); });
+    $("w-chips").addEventListener("click", async (e) => { const b = e.target.closest("[data-rm]"); if (!b) return; if (await Confirm.ask({ title: `Remove “${b.dataset.rm}”?`, body: "Comments with this word will no longer be flagged.", confirmText: "Remove", tone: "danger" })) { Mod.removeWord(b.dataset.rm); paintWords(); kpis(); paintQueue(); } });
+    $("rule-prof").addEventListener("click", () => { const on = !$("rule-prof").classList.contains("on"); AdminSettings.set("moderation", { profanityFilter: on }); Audit.log({ action: "Changed a setting", kind: "settings", label: `Profanity filter ${on ? "on" : "off"}` }); paintWords(); });
+    $("rule-hide").addEventListener("change", () => { const n = Math.max(0, Math.min(50, Number($("rule-hide").value) || 0)); AdminSettings.set("moderation", { autoHideAfter: n }); Audit.log({ action: "Changed a setting", kind: "settings", label: `Hide after ${n} reports` }); toast("Saved", "success"); });
+
+    /* auto-hide: a comment with enough open reports leaves the site until someone decides */
+    (function autoHide() {
+      const n = AdminSettings.get().moderation.autoHideAfter; if (!n) return;
+      Mod.queue().forEach((i) => { if (i.kind === "comment" && i.reports.length >= n && i.comment.status === "Approved") Admin.patch("comment", i.comment.id, { status: "Pending" }, { audit: false }); });
+    })();
+
+    kpis(); paintQueue();
+
+  </script>
+</body>
+</html>
